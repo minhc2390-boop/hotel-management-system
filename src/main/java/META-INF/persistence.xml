@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
+             version="2.2">
+             
+    <persistence-unit name="HotelPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        
+        <!-- Declared Managed Entities -->
+        <class>com.hotel.model.User</class>
+        <class>com.hotel.model.RoomType</class>
+        <class>com.hotel.model.Room</class>
+        <class>com.hotel.model.Service</class>
+        <class>com.hotel.model.Bill</class>
+        <class>com.hotel.model.BillDetail</class>
+        
+        <properties>
+            <!-- Database Connection Properties -->
+            <property name="javax.persistence.jdbc.driver" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:sqlserver://localhost:1433;databaseName=HotelManage;encrypt=true;trustServerCertificate=true;"/>
+            <property name="javax.persistence.jdbc.user" value="sa"/>
+            <property name="javax.persistence.jdbc.password" value="123"/>
+            
+            <!-- Hibernate ORM Configurations -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServer2012Dialect"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            
+            <!-- Update database schema on startup without dropping it -->
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            
+            <!-- JDBC Connection Pool settings -->
+            <property name="hibernate.connection.pool_size" value="10"/>
+        </properties>
+    </persistence-unit>
+    
+</persistence>
