@@ -1,70 +1,60 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập - Hotel Manage</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập - Nestora Hotel Manager</title>
+  <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
 </head>
 <body>
-    <div class="container" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h2>🏨 LUXURY HOTEL</h2>
-                <p style="color: var(--text-light); margin-top: 0.5rem;">Quản lý khách sạn thông minh</p>
-            </div>
-            
-            <% 
-                String error = (String) request.getAttribute("error"); 
-                if (error != null) { 
-            %>
-                <div class="error-message">
-                    <%= error %>
-                </div>
-            <% 
-                } 
-            %>
-
-            <% 
-                String success = (String) request.getAttribute("success"); 
-                if (success != null) { 
-            %>
-                <div class="success-message">
-                    <%= success %>
-                </div>
-            <% 
-                } 
-            %>
-
-            <form action="<%= request.getContextPath() %>/login" method="POST">
-                <div class="form-group">
-                    <label class="form-label" for="username">Tên đăng nhập</label>
-                    <input type="text" id="username" name="username" class="form-control" 
-                           placeholder="Nhập tên đăng nhập..." required 
-                           value="<%= request.getAttribute("username") != null ? request.getAttribute("username") : "" %>">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="password">Mật khẩu</label>
-                    <input type="password" id="password" name="password" class="form-control" 
-                           placeholder="Nhập mật khẩu..." required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.5rem;">
-                    ĐĂNG NHẬP
-                </button>
-            </form>
-            
-            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-light);">
-                <p>Tài khoản dùng thử:</p>
-                <div style="background-color: var(--bg); padding: 0.5rem; border-radius: var(--radius-sm); margin-top: 0.5rem; text-align: left; font-family: monospace;">
-                    <div>Admin: <strong>admin</strong> / password: <strong>admin123</strong></div>
-                    <div>Lễ tân: <strong>receptionist</strong> / password: <strong>rep123</strong></div>
-                    <div>Khách hàng: <strong>customer</strong> / password: <strong>cus123</strong></div>
-                </div>
-            </div>
-        </div>
+<div class="login-page">
+  <section class="login-visual">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true"><img src="<%= request.getContextPath() %>/assets/icons/logo.svg" alt=""></div>
+      <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
     </div>
+
+    <div class="login-copy">
+      <div class="login-chip">VẬN HÀNH KHÁCH SẠN HIỆU QUẢ</div>
+      <h1>Trải nghiệm, lưu trú,<br>trong tầm kiểm soát.</h1>
+      <p>Nền tảng quản lý đồng bộ cho đội ngũ lễ tân và quản lý khách sạn hiện đại.</p>
+      <div class="login-metrics">
+        <div class="login-metric"><strong>60+</strong><span>Phòng vận hành</span></div>
+        <div class="login-metric"><strong>1.2K</strong><span>Khách hàng</span></div>
+        <div class="login-metric"><strong>99.9%</strong><span>Ổn định</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="login-panel">
+    <div class="login-form-wrap">
+      <h2>Chào mừng trở lại</h2>
+      <p>Đăng nhập để tiếp tục quản lý khách sạn.</p>
+      <% String error = (String) request.getAttribute("error"); if (error != null) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+      <% String success = (String) request.getAttribute("success"); if (success != null) { %>
+        <div class="alert alert-success"><%= success %></div>
+      <% } %>
+      <form action="<%= request.getContextPath() %>/login" method="POST" autocomplete="on">
+        <div class="form-group">
+          <label class="form-label" for="username">Tên đăng nhập</label>
+          <input class="form-control" type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required value="<%= request.getAttribute("username") != null ? request.getAttribute("username") : "" %>">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Mật khẩu</label>
+          <input class="form-control" type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
+        </div>
+        <div class="login-options">
+          <label><input type="checkbox" name="remember"> Ghi nhớ đăng nhập</label>
+          <a href="#">Quên mật khẩu?</a>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" style="height:42px;">Đăng nhập</button>
+      </form>
+      <div class="login-footer">© 2026 Nestora Hotel Manager · Hệ thống nội bộ</div>
+    </div>
+  </section>
+</div>
 </body>
 </html>

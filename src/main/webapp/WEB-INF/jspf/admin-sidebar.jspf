@@ -1,0 +1,89 @@
+<%@ page pageEncoding="UTF-8" %>
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true"><img src="<%= request.getContextPath() %>/assets/icons/logo.svg" alt=""></div>
+      <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
+    </div>
+  </div>
+
+  <div class="sidebar-scroll">
+    <div class="nav-section">
+      <a class="nav-link <%= "dashboard".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/home">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/dashboard.svg')" aria-hidden="true"></span>
+        <span>Tổng quan</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Vận hành</div>
+      <a class="nav-link <%= "roomMap".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/room-map.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-map.svg')" aria-hidden="true"></span>
+        <span>Sơ đồ phòng</span>
+      </a>
+      <a class="nav-link <%= "rooms".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/rooms?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-list.svg')" aria-hidden="true"></span>
+        <span>Danh sách phòng</span>
+      </a>
+      <a class="nav-link <%= "equipments".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/equipments.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/equipment.svg')" aria-hidden="true"></span>
+        <span>Quản lý thiết bị</span>
+      </a>
+      <a class="nav-link <%= "customers".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/customers.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
+        <span>Khách hàng</span>
+      </a>
+      <a class="nav-link <%= "bookings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/bookings.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
+        <span>Đặt phòng</span>
+      </a>
+      <a class="nav-link <%= "checkin".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/bookings.jsp?mode=checkin">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/check-in.svg')" aria-hidden="true"></span>
+        <span>Nhận phòng</span>
+      </a>
+      <a class="nav-link <%= "checkout".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/payment.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/check-out.svg')" aria-hidden="true"></span>
+        <span>Trả phòng</span>
+      </a>
+      <a class="nav-link <%= "services".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/services?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
+        <span>Dịch vụ</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Tài chính</div>
+      <a class="nav-link <%= "bills".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/bills?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/bill.svg')" aria-hidden="true"></span>
+        <span>Hóa đơn</span>
+      </a>
+      <a class="nav-link <%= "profits".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/profits.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/revenue.svg')" aria-hidden="true"></span>
+        <span>Doanh thu</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Quản trị</div>
+      <a class="nav-link <%= "employees".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/employees.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
+        <span>Nhân viên</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="sidebar-foot">
+    <a class="nav-link" href="#" data-sidebar-collapse>
+      <span class="nav-icon collapse-icon" aria-hidden="true">‹</span>
+      <span>Thu gọn menu</span>
+    </a>
+    <a class="nav-link" href="#">
+      <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/settings.svg')" aria-hidden="true"></span>
+      <span>Cài đặt</span>
+    </a>
+    <a class="nav-link danger" href="<%= request.getContextPath() %>/logout">
+      <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/logout.svg')" aria-hidden="true"></span>
+      <span>Đăng xuất</span>
+    </a>
+  </div>
+</aside>
