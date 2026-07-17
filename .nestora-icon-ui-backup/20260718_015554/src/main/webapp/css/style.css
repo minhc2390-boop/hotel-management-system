@@ -95,7 +95,7 @@ img, svg { display: block; }
   background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.12);
 }
-.brand-logo svg { width: 22px; height: 22px; }
+.brand-logo svg, .brand-logo img { width: 22px; height: 22px; object-fit: contain; }
 .brand-name strong { display: block; font-size: 15px; letter-spacing: .02em; }
 .brand-name small { display: block; font-size: 9px; letter-spacing: .22em; opacity: .88; }
 .login-copy { position: relative; z-index: 1; max-width: 510px; margin-bottom: clamp(40px, 8vh, 92px); }
@@ -239,7 +239,7 @@ select.form-control { appearance: auto; }
 .nav-link.danger { color: var(--danger); }
 .sidebar-collapsed { --sidebar-width: 78px; }
 .sidebar-collapsed .brand-name,
-.sidebar-collapsed .nav-link span,
+.sidebar-collapsed .nav-link > span:not(.nav-icon),
 .sidebar-collapsed .nav-label { display: none; }
 .sidebar-collapsed .sidebar-head { justify-content: center; padding: 0; }
 .sidebar-collapsed .nav-link { justify-content: center; padding: 0; }
@@ -464,9 +464,11 @@ body {
   height: 48px;
   border-radius: 14px;
 }
-.sidebar-head .brand-logo svg {
+.sidebar-head .brand-logo svg,
+.brand-logo img {
   width: 25px;
   height: 25px;
+  object-fit: contain;
 }
 .sidebar-head .brand-name strong {
   font-size: 20px;
@@ -755,3 +757,62 @@ textarea {
   th, td { font-size: 12px; }
 }
 
+
+
+/* =========================================================
+   NESTORA COMPLETE FIX:
+   - Giữ icon SVG khi sidebar thu gọn
+   - Giữ logo SVG đúng kích thước
+   ========================================================= */
+.brand-logo img {
+  display: block;
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
+.sidebar-collapsed .nav-link > .nav-icon {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 24px !important;
+  height: 24px !important;
+  flex: 0 0 24px !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-collapsed .nav-link > span:not(.nav-icon) {
+  display: none !important;
+}
+
+.sidebar-collapsed .nav-link {
+  justify-content: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.sidebar-collapsed .exported-icon {
+  display: inline-block !important;
+  background-color: currentColor !important;
+  -webkit-mask-image: var(--icon) !important;
+  mask-image: var(--icon) !important;
+  -webkit-mask-repeat: no-repeat !important;
+  mask-repeat: no-repeat !important;
+  -webkit-mask-position: center !important;
+  mask-position: center !important;
+  -webkit-mask-size: contain !important;
+  mask-size: contain !important;
+}
+
+.sidebar-collapsed .collapse-icon {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.sidebar-collapsed .brand-logo {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}

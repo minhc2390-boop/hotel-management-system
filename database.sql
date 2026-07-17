@@ -1,7 +1,7 @@
 -- Create Database
-CREATE DATABASE HotelManage;
-GO
-USE HotelManage;
+-- CREATE DATABASE HotelManage;
+-- GO
+USE Hotel_manage;
 GO
 
 -- 1. Table: Users (For Authentication & Authorization: Admin, Receptionist, Customer)

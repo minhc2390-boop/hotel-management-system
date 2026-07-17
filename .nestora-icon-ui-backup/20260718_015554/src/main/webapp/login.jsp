@@ -11,9 +11,7 @@
 <div class="login-page">
   <section class="login-visual">
     <div class="brand">
-      <div class="brand-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7M8 10h.01M12 10h.01M16 10h.01"/></svg>
-      </div>
+      <div class="brand-logo" aria-hidden="true"><img src="<%= request.getContextPath() %>/assets/icons/logo.svg" alt=""></div>
       <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
     </div>
 
