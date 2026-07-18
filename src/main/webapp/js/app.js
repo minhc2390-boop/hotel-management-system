@@ -18,7 +18,11 @@
 
   document.addEventListener('click', function (event) {
     if (!sidebar || window.innerWidth > 900) return;
-    if (sidebar.classList.contains('open') && !sidebar.contains(event.target) && (!mobileToggle || !mobileToggle.contains(event.target))) {
+    if (
+      sidebar.classList.contains('open') &&
+      !sidebar.contains(event.target) &&
+      (!mobileToggle || !mobileToggle.contains(event.target))
+    ) {
       sidebar.classList.remove('open');
     }
   });

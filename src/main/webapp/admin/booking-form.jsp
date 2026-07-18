@@ -1,5 +1,84 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %>
-<% HttpSession sess=request.getSession(false); User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null; String activeMenu="bookings"; %>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tạo phiếu đặt phòng - Nestora</title><link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css"></head><body><div class="admin-layout"><%@ include file="../WEB-INF/jspf/admin-sidebar.jspf" %><main class="main-shell"><%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %><section class="content"><div class="content-inner">
-<div class="page-head"><div><div class="breadcrumb">Vận hành / Đặt phòng / Tạo mới</div><h1 class="page-title">Tạo phiếu đặt phòng</h1><p class="page-desc">Chọn khách hàng, phòng và thời gian lưu trú.</p></div></div><section class="surface surface-pad form-surface"><h2 class="form-title">Thông tin đặt phòng</h2><form><div class="form-grid"><div class="form-group"><label class="form-label">Khách hàng</label><select class="form-control"><option>Chọn khách hàng</option><option>Nguyễn Hoàng Anh</option><option>Trần Minh Huy</option></select><div class="validation">Vui lòng chọn khách hàng</div></div><div class="form-group"><label class="form-label">Phòng</label><select class="form-control"><option>Chọn phòng trống</option><option>101 - Deluxe King</option><option>103 - Superior</option></select></div><div class="form-group"><label class="form-label">Ngày nhận phòng</label><input class="form-control" type="date"></div><div class="form-group"><label class="form-label">Ngày trả phòng</label><input class="form-control" type="date"></div><div class="form-group"><label class="form-label">Số người</label><input class="form-control" type="number" min="1" value="1"></div><div class="form-group"><label class="form-label">Tiền đặt cọc</label><input class="form-control" type="number" placeholder="0"></div><div class="form-group full"><label class="form-label">Ghi chú</label><textarea class="form-control" placeholder="Yêu cầu đặc biệt của khách"></textarea></div></div><div class="form-actions"><a class="btn btn-outline" href="bookings.jsp">Hủy</a><button class="btn btn-primary" type="button">Lưu đặt phòng</button></div></form></section>
-</div></section></main></div><script src="<%=request.getContextPath()%>/js/app.js"></script></body></html>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page import="com.hotel.model.User" %>
+<%
+    HttpSession sess = request.getSession(false);
+    User currentUser = sess != null ? (User)sess.getAttribute("currentUser") : null;
+    String activeMenu = "bookings";
+%>
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tạo phiếu đặt phòng - Nestora</title>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <%@ include file="../WEB-INF/jspf/admin-sidebar.jspf" %>
+      <main class="main-shell">
+        <%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %>
+        <section class="content">
+          <div class="content-inner">
+            <div class="page-head">
+              <div>
+                <div class="breadcrumb">Vận hành / Đặt phòng / Tạo mới</div>
+                <h1 class="page-title">Tạo phiếu đặt phòng</h1>
+                <p class="page-desc">Chọn khách hàng, phòng và thời gian lưu trú.</p>
+              </div>
+            </div>
+            <section class="surface surface-pad form-surface">
+              <h2 class="form-title">Thông tin đặt phòng</h2>
+              <form>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label">Khách hàng</label>
+                    <select class="form-control">
+                      <option>Chọn khách hàng</option>
+                      <option>Nguyễn Hoàng Anh</option>
+                      <option>Trần Minh Huy</option>
+                    </select>
+                    <div class="validation">Vui lòng chọn khách hàng</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Phòng</label>
+                    <select class="form-control">
+                      <option>Chọn phòng trống</option>
+                      <option>101 - Deluxe King</option>
+                      <option>103 - Superior</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Ngày nhận phòng</label>
+                    <input class="form-control" type="date" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Ngày trả phòng</label>
+                    <input class="form-control" type="date" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Số người</label>
+                    <input class="form-control" type="number" min="1" value="1" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tiền đặt cọc</label>
+                    <input class="form-control" type="number" placeholder="0" />
+                  </div>
+                  <div class="form-group full">
+                    <label class="form-label">Ghi chú</label>
+                    <textarea class="form-control" placeholder="Yêu cầu đặc biệt của khách"></textarea>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <a class="btn btn-outline" href="bookings.jsp">Hủy</a>
+                  <button class="btn btn-primary" type="button">Lưu đặt phòng</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="<%= request.getContextPath() %>/js/app.js"></script>
+  </body>
+</html>

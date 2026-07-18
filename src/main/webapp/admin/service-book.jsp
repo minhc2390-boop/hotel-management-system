@@ -1,5 +1,111 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %>
-<% HttpSession sess=request.getSession(false); User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null; String activeMenu="services"; %>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dịch vụ đã gọi - Nestora</title><link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css"></head><body><div class="admin-layout"><%@ include file="../WEB-INF/jspf/admin-sidebar.jspf" %><main class="main-shell"><%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %><section class="content"><div class="content-inner">
-<div class="page-head"><div><div class="breadcrumb">Vận hành / Dịch vụ / Dịch vụ đã gọi</div><h1 class="page-title">Danh sách dịch vụ đã gọi</h1><p class="page-desc">Theo dõi các dịch vụ phát sinh theo từng phòng.</p></div><div class="page-actions"><a class="btn btn-primary" href="<%=request.getContextPath()%>/services?action=list">Danh mục dịch vụ</a></div></div><section class="surface"><div class="table-tools"><div class="search-box"><input type="search" placeholder="Tìm theo phòng hoặc tên dịch vụ..."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></div><div class="table-meta">4 dịch vụ</div></div><div class="table-wrap"><table><thead><tr><th>PHÒNG</th><th>DỊCH VỤ</th><th>SỐ LƯỢNG</th><th>ĐƠN GIÁ</th><th>THÀNH TIỀN</th><th>TRẠNG THÁI</th><th>THAO TÁC</th></tr></thead><tbody><tr><td class="table-primary">P.102</td><td class="table-strong">Buffet sáng</td><td>2</td><td>150.000 đ</td><td>300.000 đ</td><td><span class="status success">Đang sử dụng</span></td><td><div class="row-actions"><button class="btn btn-outline btn-icon">✎</button><button class="btn btn-danger btn-icon">×</button></div></td></tr><tr><td class="table-primary">P.102</td><td class="table-strong">Giặt ủi</td><td>1</td><td>120.000 đ</td><td>120.000 đ</td><td><span class="status success">Đang sử dụng</span></td><td><div class="row-actions"><button class="btn btn-outline btn-icon">✎</button><button class="btn btn-danger btn-icon">×</button></div></td></tr><tr><td class="table-primary">P.203</td><td class="table-strong">Đưa đón sân bay</td><td>1</td><td>450.000 đ</td><td>450.000 đ</td><td><span class="status info">Đã xác nhận</span></td><td><div class="row-actions"><button class="btn btn-outline btn-icon">✎</button><button class="btn btn-danger btn-icon">×</button></div></td></tr></tbody></table></div><div class="pagination"><span class="page-number active">1</span></div></section>
-</div></section></main></div><script src="<%=request.getContextPath()%>/js/app.js"></script></body></html>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page import="com.hotel.model.User" %>
+<%
+    HttpSession sess = request.getSession(false);
+    User currentUser = sess != null ? (User)sess.getAttribute("currentUser") : null;
+    String activeMenu = "services";
+%>
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dịch vụ đã gọi - Nestora</title>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <%@ include file="../WEB-INF/jspf/admin-sidebar.jspf" %>
+      <main class="main-shell">
+        <%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %>
+        <section class="content">
+          <div class="content-inner">
+            <div class="page-head">
+              <div>
+                <div class="breadcrumb">Vận hành / Dịch vụ / Dịch vụ đã gọi</div>
+                <h1 class="page-title">Danh sách dịch vụ đã gọi</h1>
+                <p class="page-desc">Theo dõi các dịch vụ phát sinh theo từng phòng.</p>
+              </div>
+              <div class="page-actions">
+                <a class="btn btn-primary" href="<%= request.getContextPath() %>/services?action=list">Danh mục dịch vụ</a>
+              </div>
+            </div>
+            <section class="surface">
+              <div class="table-tools">
+                <div class="search-box">
+                  <input type="search" placeholder="Tìm theo phòng hoặc tên dịch vụ..." />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M20 20l-3.5-3.5" />
+                  </svg>
+                </div>
+                <div class="table-meta">4 dịch vụ</div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>PHÒNG</th>
+                      <th>DỊCH VỤ</th>
+                      <th>SỐ LƯỢNG</th>
+                      <th>ĐƠN GIÁ</th>
+                      <th>THÀNH TIỀN</th>
+                      <th>TRẠNG THÁI</th>
+                      <th>THAO TÁC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="table-primary">P.102</td>
+                      <td class="table-strong">Buffet sáng</td>
+                      <td>2</td>
+                      <td>150.000 đ</td>
+                      <td>300.000 đ</td>
+                      <td><span class="status success">Đang sử dụng</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <button class="btn btn-outline btn-icon">✎</button>
+                          <button class="btn btn-danger btn-icon">×</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="table-primary">P.102</td>
+                      <td class="table-strong">Giặt ủi</td>
+                      <td>1</td>
+                      <td>120.000 đ</td>
+                      <td>120.000 đ</td>
+                      <td><span class="status success">Đang sử dụng</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <button class="btn btn-outline btn-icon">✎</button>
+                          <button class="btn btn-danger btn-icon">×</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="table-primary">P.203</td>
+                      <td class="table-strong">Đưa đón sân bay</td>
+                      <td>1</td>
+                      <td>450.000 đ</td>
+                      <td>450.000 đ</td>
+                      <td><span class="status info">Đã xác nhận</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <button class="btn btn-outline btn-icon">✎</button>
+                          <button class="btn btn-danger btn-icon">×</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination"><span class="page-number active">1</span></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="<%= request.getContextPath() %>/js/app.js"></script>
+  </body>
+</html>

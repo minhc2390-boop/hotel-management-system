@@ -1,5 +1,118 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %>
-<% HttpSession sess=request.getSession(false); User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null; String activeMenu="equipments"; %>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quản lý thiết bị - Nestora</title><link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css"></head><body><div class="admin-layout"><%@ include file="../WEB-INF/jspf/admin-sidebar.jspf" %><main class="main-shell"><%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %><section class="content"><div class="content-inner">
-<div class="page-head"><div><div class="breadcrumb">Vận hành / Quản lý thiết bị</div><h1 class="page-title">Quản lý thiết bị</h1><p class="page-desc">Theo dõi thiết bị, số lượng và tình trạng sử dụng.</p></div><div class="page-actions"><a class="btn btn-primary" href="equipment-form.jsp">＋ Thêm mới</a></div></div><section class="surface"><div class="table-tools"><div class="search-box"><input type="search" placeholder="Tìm theo tên hoặc mã thiết bị..."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></div><div class="table-meta">5 thiết bị</div></div><div class="table-wrap"><table><thead><tr><th>MÃ THIẾT BỊ</th><th>TÊN THIẾT BỊ</th><th>SỐ LƯỢNG</th><th>ĐƠN VỊ</th><th>TRẠNG THÁI</th><th>THAO TÁC</th></tr></thead><tbody><tr><td class="table-primary">#TB001</td><td class="table-strong">Máy lạnh Daikin</td><td>24</td><td>Cái</td><td><span class="status success">Hoạt động tốt</span></td><td><div class="row-actions"><a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a><button class="btn btn-danger btn-icon">×</button></div></td></tr><tr><td class="table-primary">#TB002</td><td class="table-strong">Tivi Samsung 43 inch</td><td>18</td><td>Cái</td><td><span class="status success">Hoạt động tốt</span></td><td><div class="row-actions"><a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a><button class="btn btn-danger btn-icon">×</button></div></td></tr><tr><td class="table-primary">#TB003</td><td class="table-strong">Máy sấy tóc</td><td>20</td><td>Cái</td><td><span class="status warning">Cần kiểm tra</span></td><td><div class="row-actions"><a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a><button class="btn btn-danger btn-icon">×</button></div></td></tr><tr><td class="table-primary">#TB004</td><td class="table-strong">Tủ lạnh mini</td><td>22</td><td>Cái</td><td><span class="status success">Hoạt động tốt</span></td><td><div class="row-actions"><a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a><button class="btn btn-danger btn-icon">×</button></div></td></tr></tbody></table></div><div class="pagination"><span class="page-number active">1</span></div></section>
-</div></section></main></div><script src="<%=request.getContextPath()%>/js/app.js"></script></body></html>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page import="com.hotel.model.User" %>
+<%
+    HttpSession sess = request.getSession(false);
+    User currentUser = sess != null ? (User)sess.getAttribute("currentUser") : null;
+    String activeMenu = "equipments";
+%>
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý thiết bị - Nestora</title>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <%@ include file="../WEB-INF/jspf/admin-sidebar.jspf" %>
+      <main class="main-shell">
+        <%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %>
+        <section class="content">
+          <div class="content-inner">
+            <div class="page-head">
+              <div>
+                <div class="breadcrumb">Vận hành / Quản lý thiết bị</div>
+                <h1 class="page-title">Quản lý thiết bị</h1>
+                <p class="page-desc">Theo dõi thiết bị, số lượng và tình trạng sử dụng.</p>
+              </div>
+              <div class="page-actions"><a class="btn btn-primary" href="equipment-form.jsp">＋ Thêm mới</a></div>
+            </div>
+            <section class="surface">
+              <div class="table-tools">
+                <div class="search-box">
+                  <input type="search" placeholder="Tìm theo tên hoặc mã thiết bị..." />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M20 20l-3.5-3.5" />
+                  </svg>
+                </div>
+                <div class="table-meta">5 thiết bị</div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>MÃ THIẾT BỊ</th>
+                      <th>TÊN THIẾT BỊ</th>
+                      <th>SỐ LƯỢNG</th>
+                      <th>ĐƠN VỊ</th>
+                      <th>TRẠNG THÁI</th>
+                      <th>THAO TÁC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="table-primary">#TB001</td>
+                      <td class="table-strong">Máy lạnh Daikin</td>
+                      <td>24</td>
+                      <td>Cái</td>
+                      <td><span class="status success">Hoạt động tốt</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
+                          <button class="btn btn-danger btn-icon">×</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="table-primary">#TB002</td>
+                      <td class="table-strong">Tivi Samsung 43 inch</td>
+                      <td>18</td>
+                      <td>Cái</td>
+                      <td><span class="status success">Hoạt động tốt</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
+                          <button class="btn btn-danger btn-icon">×</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="table-primary">#TB003</td>
+                      <td class="table-strong">Máy sấy tóc</td>
+                      <td>20</td>
+                      <td>Cái</td>
+                      <td><span class="status warning">Cần kiểm tra</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
+                          <button class="btn btn-danger btn-icon">×</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="table-primary">#TB004</td>
+                      <td class="table-strong">Tủ lạnh mini</td>
+                      <td>22</td>
+                      <td>Cái</td>
+                      <td><span class="status success">Hoạt động tốt</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
+                          <button class="btn btn-danger btn-icon">×</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination"><span class="page-number active">1</span></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="<%= request.getContextPath() %>/js/app.js"></script>
+  </body>
+</html>
