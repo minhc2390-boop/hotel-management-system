@@ -29,6 +29,34 @@
   NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi","VN"));
   SimpleDateFormat dateTime = new SimpleDateFormat("dd/MM/yyyy HH:mm");
   String activeMenu = "dashboard";
+
+  // Tính toán doanh thu 7 ngày gần đây
+  java.time.LocalDate today = java.time.LocalDate.now();
+  double[] dailyRev7 = new double[7];
+  String[] dailyLabels7 = new String[7];
+  java.time.format.DateTimeFormatter fmt7 = java.time.format.DateTimeFormatter.ofPattern("dd/MM");
+  double maxDayRevenue7 = 100000; // Tránh chia cho 0
+
+  for (int i = 0; i < 7; i++) {
+      java.time.LocalDate date = today.minusDays(6 - i);
+      dailyLabels7[i] = date.format(fmt7);
+      
+      double dayTotal = 0;
+      if (recentBills != null) {
+          for (Bill b : recentBills) {
+              if ("Paid".equals(b.getStatus())) {
+                  java.time.LocalDate billDate = b.getCreatedAt().toLocalDateTime().toLocalDate();
+                  if (billDate.equals(date)) {
+                      dayTotal += b.getTotalAmount();
+                  }
+              }
+          }
+      }
+      dailyRev7[i] = dayTotal;
+      if (dayTotal > maxDayRevenue7) {
+          maxDayRevenue7 = dayTotal;
+      }
+  }
 %>
 <!DOCTYPE html>
 <html lang="vi"><head>
@@ -54,15 +82,15 @@
 
       <div class="dashboard-grid">
         <section class="surface">
-          <div class="surface-head"><div><h2 class="surface-title">Doanh thu 7 ngày gần đây</h2><p class="surface-subtitle">Biểu đồ minh họa giao diện; số tổng lấy từ backend.</p></div><a href="<%= request.getContextPath() %>/admin/profits.jsp" class="table-primary">Xem chi tiết</a></div>
+          <div class="surface-head"><div><h2 class="surface-title">Doanh thu 7 ngày gần đây</h2><p class="surface-subtitle">Biểu đồ thể hiện doanh thu thực tế từ backend.</p></div><a href="<%= request.getContextPath() %>/admin/profits.jsp" class="table-primary">Xem chi tiết</a></div>
           <div class="chart-area">
-            <div class="chart-col"><div class="chart-bar" style="height:32%"></div></div>
-            <div class="chart-col"><div class="chart-bar" style="height:48%"></div></div>
-            <div class="chart-col"><div class="chart-bar" style="height:41%"></div></div>
-            <div class="chart-col"><div class="chart-bar" style="height:57%"></div></div>
-            <div class="chart-col"><div class="chart-bar primary" style="height:76%"></div></div>
-            <div class="chart-col"><div class="chart-bar" style="height:49%"></div></div>
-            <div class="chart-col"><div class="chart-bar" style="height:62%"></div></div>
+            <% for (int i = 0; i < 7; i++) { 
+                int height = (int) Math.round(dailyRev7[i] * 100.0 / maxDayRevenue7);
+            %>
+              <div class="chart-col" title="Ngày <%= dailyLabels7[i] %>: <%= money.format(dailyRev7[i]) %>">
+                <div class="chart-bar <%= i == 6 ? "primary" : "" %>" style="height:<%= height %>%"></div>
+              </div>
+            <% } %>
           </div>
         </section>
         <section class="surface">

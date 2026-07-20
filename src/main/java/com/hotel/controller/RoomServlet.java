@@ -87,6 +87,16 @@ public class RoomServlet extends HttpServlet {
                 request.getRequestDispatcher("/booking.jsp").forward(request, response);
                 break;
                 
+            case "map":
+                if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+                    response.sendRedirect(request.getContextPath() + "/home");
+                    return;
+                }
+                List<Room> mapRooms = roomDAO.getAllRooms();
+                request.setAttribute("rooms", mapRooms);
+                request.getRequestDispatcher("/admin/room-map.jsp").forward(request, response);
+                break;
+                
             default:
                 response.sendRedirect(request.getContextPath() + "/home");
                 break;

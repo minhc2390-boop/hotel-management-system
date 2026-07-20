@@ -19,7 +19,7 @@
 
     <div class="nav-section">
       <div class="nav-label">Vận hành</div>
-      <a class="nav-link <%= "roomMap".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/room-map.jsp">
+      <a class="nav-link <%= "roomMap".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/rooms?action=map">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-map.svg')" aria-hidden="true"></span>
         <span>Sơ đồ phòng</span>
       </a>
@@ -27,13 +27,17 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-list.svg')" aria-hidden="true"></span>
         <span>Danh sách phòng</span>
       </a>
+      <a class="nav-link <%= "roomTypes".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/roomtypes?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-list.svg')" aria-hidden="true"></span>
+        <span>Loại phòng</span>
+      </a>
       <a class="nav-link <%= "equipments".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/equipments.jsp">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/equipment.svg')" aria-hidden="true"></span>
         <span>Quản lý thiết bị</span>
       </a>
-      <a class="nav-link <%= "customers".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/customers.jsp">
+      <a class="nav-link <%= "customers".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/users?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
-        <span>Khách hàng</span>
+        <span>Người dùng & Khách hàng</span>
       </a>
       <a class="nav-link <%= "bookings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/bookings.jsp">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
