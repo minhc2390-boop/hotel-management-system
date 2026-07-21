@@ -4,9 +4,12 @@
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <!-- Declared Managed Entities -->
         <class>com.hotel.model.User</class>
+        <class>com.hotel.model.Customer</class>
         <class>com.hotel.model.RoomType</class>
         <class>com.hotel.model.Room</class>
         <class>com.hotel.model.Service</class>
+        <class>com.hotel.model.Equipment</class>
+        <class>com.hotel.model.Booking</class>
         <class>com.hotel.model.Bill</class>
         <class>com.hotel.model.BillDetail</class>
         <properties>
