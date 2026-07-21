@@ -36,6 +36,15 @@ public class Equipment {
         this.description = description;
     }
 
+    public Equipment(int equipmentId, String equipmentName, int totalQuantity, String unit, String status, String description) {
+        this.equipmentId = equipmentId;
+        this.equipmentName = equipmentName;
+        this.totalQuantity = totalQuantity;
+        this.unit = unit;
+        this.status = status;
+        this.description = description;
+    }
+
     public int getEquipmentId() {
         return equipmentId;
     }

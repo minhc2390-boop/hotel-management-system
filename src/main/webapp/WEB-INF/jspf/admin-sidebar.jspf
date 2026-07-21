@@ -31,7 +31,7 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-list.svg')" aria-hidden="true"></span>
         <span>Loại phòng</span>
       </a>
-      <a class="nav-link <%= "equipments".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/equipments.jsp">
+      <a class="nav-link <%= "equipments".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/equipments?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/equipment.svg')" aria-hidden="true"></span>
         <span>Quản lý thiết bị</span>
       </a>
