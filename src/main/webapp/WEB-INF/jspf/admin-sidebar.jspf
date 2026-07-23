@@ -39,13 +39,10 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
         <span>Người dùng & Khách hàng</span>
       </a>
-
-      <!-- ✅ ĐÃ SỬA: Gọi thẳng vào BookingServlet (/bookings) -->
-      <a class="nav-link <%= "bookings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/bookings">
+      <a class="nav-link <%= "bookings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/bookings.jsp">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
         <span>Đặt phòng</span>
       </a>
-
       <a class="nav-link <%= "checkin".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/bookings.jsp?mode=checkin">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/check-in.svg')" aria-hidden="true"></span>
         <span>Nhận phòng</span>
