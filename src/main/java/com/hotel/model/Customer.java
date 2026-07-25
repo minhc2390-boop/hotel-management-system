@@ -11,7 +11,7 @@ public class Customer {
     @Column(name = "customer_id")
     private int customerId;
 
-    @Column(name = "customer_name", nullable = false)
+    @Column(name = "customer_name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String customerName;
 
     @Column(name = "customer_cccd", unique = true)

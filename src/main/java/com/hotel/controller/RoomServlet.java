@@ -77,10 +77,6 @@ public class RoomServlet extends HttpServlet {
                 break;
                 
             case "bookForm":
-                if (currentUser == null) {
-                    response.sendRedirect(request.getContextPath() + "/login");
-                    return;
-                }
                 int bookRoomId = Integer.parseInt(request.getParameter("roomId"));
                 Room bookRoom = roomDAO.getRoomById(bookRoomId);
                 request.setAttribute("room", bookRoom);

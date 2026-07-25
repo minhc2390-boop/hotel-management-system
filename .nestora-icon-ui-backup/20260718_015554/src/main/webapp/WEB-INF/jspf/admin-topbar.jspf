@@ -1,4 +1,4 @@
-<%@ page pageEncoding="UTF-8" %>
+﻿<%@ page pageEncoding="UTF-8" %>
 <%
   String topName = (currentUser != null && currentUser.getFullName() != null) ? currentUser.getFullName() : "Ngọc Linh";
   String topRole = (currentUser != null && currentUser.getRole() != null) ? currentUser.getRole() : "Quản lý";

@@ -56,7 +56,7 @@ public class BillServlet extends HttpServlet {
 
             case "mybills":
                 // Customers see only their bills
-                List<Bill> myBills = billDAO.getBillsByUserId(currentUser.getId());
+                List<Bill> myBills = billDAO.getBillsByUserId(currentUser.getId(), currentUser.getEmail());
                 request.setAttribute("bills", myBills);
                 request.getRequestDispatcher("/my-bills.jsp").forward(request, response);
                 break;
@@ -65,8 +65,10 @@ public class BillServlet extends HttpServlet {
                 int billId = Integer.parseInt(request.getParameter("id"));
                 Bill bill = billDAO.getBillById(billId);
                 
-                // Security check: Customer can only see their own bills
-                if ("Customer".equals(currentUser.getRole()) && bill.getUserId() != currentUser.getId()) {
+                // Security check: Customer can only see their own bills (either matching user id or customer email)
+                boolean isOwnBill = (bill.getUserId() == currentUser.getId()) || 
+                                    (bill.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(bill.getCustomer().getCustomerEmail()));
+                if ("Customer".equals(currentUser.getRole()) && !isOwnBill) {
                     response.sendRedirect(request.getContextPath() + "/home");
                     return;
                 }

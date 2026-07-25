@@ -1,4 +1,4 @@
-package com.hotel.dao;
+﻿package com.hotel.dao;
 
 import com.hotel.model.User;
 import javax.persistence.EntityManager;
@@ -7,6 +7,42 @@ import javax.persistence.TypedQuery;
 import java.util.List;
 
 public class UserDAO {
+
+    public User findByEmail(String email) {
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT u FROM User u WHERE u.email = :email";
+            TypedQuery<User> query = em.createQuery(jpql, User.class);
+            query.setParameter("email", email);
+            List<User> results = query.getResultList();
+            if (!results.isEmpty()) {
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+        return null;
+    }
+
+    public User findByEmailOrUsername(String loginKey) {
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT u FROM User u WHERE u.email = :loginKey OR u.username = :loginKey";
+            TypedQuery<User> query = em.createQuery(jpql, User.class);
+            query.setParameter("loginKey", loginKey);
+            List<User> results = query.getResultList();
+            if (!results.isEmpty()) {
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+        return null;
+    }
 
     public User login(String username, String password) {
         EntityManager em = DBContext.getEntityManager();

@@ -39,6 +39,24 @@ public class UserServlet extends HttpServlet {
                 request.getRequestDispatcher("/admin/customers.jsp").forward(request, response);
                 break;
 
+            case "employees":
+                if (!"Admin".equals(currentUser.getRole())) {
+                    response.sendRedirect(request.getContextPath() + "/home");
+                    return;
+                }
+                List<User> allUsers = userDAO.getAllUsers();
+                List<User> employees = new java.util.ArrayList<>();
+                if (allUsers != null) {
+                    for (User u : allUsers) {
+                        if ("Admin".equals(u.getRole()) || "Receptionist".equals(u.getRole())) {
+                            employees.add(u);
+                        }
+                    }
+                }
+                request.setAttribute("employees", employees);
+                request.getRequestDispatcher("/admin/employees.jsp").forward(request, response);
+                break;
+
             case "add":
                 request.getRequestDispatcher("/admin/customer-form.jsp").forward(request, response);
                 break;
@@ -55,7 +73,12 @@ public class UserServlet extends HttpServlet {
                     int deleteId = Integer.parseInt(request.getParameter("id"));
                     userDAO.deleteUser(deleteId);
                 }
-                response.sendRedirect(request.getContextPath() + "/users?action=list");
+                String referer = request.getHeader("referer");
+                if (referer != null && referer.contains("action=employees")) {
+                    response.sendRedirect(request.getContextPath() + "/users?action=employees");
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/users?action=list");
+                }
                 break;
 
             default:
@@ -86,13 +109,21 @@ public class UserServlet extends HttpServlet {
             String phone = request.getParameter("phone");
             String role = request.getParameter("role");
 
-            if (role == null || role.isEmpty()) {
+            // Chỉ Admin mới được phân bổ quyền (gán vai trò bất kỳ), Lễ tân chỉ được tạo Khách hàng
+            if (currentUser == null || !"Admin".equals(currentUser.getRole())) {
+                role = "Customer";
+            } else if (role == null || role.isEmpty()) {
                 role = "Customer";
             }
 
             User user = new User(username, password, fullName, email, phone, role);
             userDAO.register(user);
-            response.sendRedirect(request.getContextPath() + "/users?action=list");
+            
+            if ("Admin".equals(currentUser.getRole()) && ("Admin".equals(role) || "Receptionist".equals(role))) {
+                response.sendRedirect(request.getContextPath() + "/users?action=employees");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/users?action=list");
+            }
 
         } else if ("update".equals(action)) {
             int id = Integer.parseInt(request.getParameter("id"));
@@ -107,14 +138,24 @@ public class UserServlet extends HttpServlet {
                 existingUser.setFullName(fullName);
                 existingUser.setEmail(email);
                 existingUser.setPhone(phone);
-                if (role != null && !role.isEmpty()) {
-                    existingUser.setRole(role);
+                
+                // Chỉ Admin mới có quyền thay đổi vai trò (phân bổ quyền)
+                if (currentUser != null && "Admin".equals(currentUser.getRole())) {
+                    if (role != null && !role.isEmpty()) {
+                        existingUser.setRole(role);
+                    }
                 }
+                
                 if (newPassword != null && !newPassword.trim().isEmpty()) {
                     existingUser.setPassword(newPassword);
                 }
 
                 userDAO.updateUser(existingUser);
+                
+                if ("Admin".equals(currentUser.getRole()) && ("Admin".equals(existingUser.getRole()) || "Receptionist".equals(existingUser.getRole()))) {
+                    response.sendRedirect(request.getContextPath() + "/users?action=employees");
+                    return;
+                }
             }
             response.sendRedirect(request.getContextPath() + "/users?action=list");
         }

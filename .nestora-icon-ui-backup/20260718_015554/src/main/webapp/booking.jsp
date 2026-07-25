@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %><%@ page import="com.hotel.model.Room" %><%@ page import="java.text.NumberFormat" %><%@ page import="java.util.Locale" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %><%@ page import="com.hotel.model.Room" %><%@ page import="java.text.NumberFormat" %><%@ page import="java.util.Locale" %>
 <%
 HttpSession sess=request.getSession(false);User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null;Room room=(Room)request.getAttribute("room");if(currentUser==null||room==null){response.sendRedirect(request.getContextPath()+"/login");return;}NumberFormat money=NumberFormat.getCurrencyInstance(new Locale("vi","VN"));
 %>

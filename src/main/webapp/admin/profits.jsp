@@ -195,30 +195,91 @@
             </div>
           </div>
           
-          <div class="chart-container-box">
-            <div class="chart-area" style="height:350px; grid-template-columns:repeat(14,1fr); gap:10px; display:grid;">
-              <% for (int i = 0; i < 14; i++) { 
-                  int roomHeight = (int) Math.round(dailyRoom[i] * 100.0 / maxDayRevenue);
-                  int serviceHeight = (int) Math.round(dailyService[i] * 100.0 / maxDayRevenue);
-              %>
-                <div class="chart-col" title="Ngày <%= dailyLabels[i] %>: Phòng <%= money.format(dailyRoom[i]) %>, Dịch vụ <%= money.format(dailyService[i]) %>">
-                  <div class="chart-bar primary" style="height:<%= roomHeight %>%" aria-label="Doanh thu phòng"></div>
-                  <div class="chart-bar" style="height:<%= serviceHeight %>%" aria-label="Doanh thu dịch vụ"></div>
-                </div>
-              <% } %>
-            </div>
-            
-            <div class="chart-labels-row">
-              <% for (int i = 0; i < 14; i++) { %>
-                <div><%= dailyLabels[i] %></div>
-              <% } %>
-            </div>
+          <div style="position: relative; height: 350px; width: 100%; padding: 10px 0;">
+              <canvas id="revenueChart"></canvas>
           </div>
         </section>
       </div>
     </section>
   </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="<%=request.getContextPath()%>/js/app.js"></script>
+<script>
+  (function() {
+    const dailyLabels = [<%= String.join(",", java.util.Arrays.stream(dailyLabels).map(s -> "'" + s + "'").toArray(String[]::new)) %>];
+    const dailyRoomData = [<%= java.util.Arrays.stream(dailyRoom).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
+    const dailyServiceData = [<%= java.util.Arrays.stream(dailyService).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
+    
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dailyLabels,
+            datasets: [
+                {
+                    label: 'Doanh thu phòng',
+                    data: dailyRoomData,
+                    backgroundColor: '#0f172a', // Navy đậm quý tộc
+                    borderColor: '#0f172a',
+                    borderWidth: 1,
+                    borderRadius: 4
+                },
+                {
+                    label: 'Doanh thu dịch vụ',
+                    data: dailyServiceData,
+                    backgroundColor: '#c5a880', // Gold/Bronze sang trọng
+                    borderColor: '#c5a880',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true // Stacked Bar Chart
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumSignificantDigits: 3 }).format(value);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            family: 'Outfit, Inter, sans-serif',
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+  })();
+</script>
 </body>
 </html>

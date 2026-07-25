@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %>
 <% HttpSession sess=request.getSession(false); User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null; String activeMenu="checkout"; %>
 <!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trả phòng & thanh toán - Nestora</title><link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css">
 <style>

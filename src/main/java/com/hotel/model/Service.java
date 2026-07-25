@@ -1,4 +1,4 @@
-package com.hotel.model;
+﻿package com.hotel.model;
 
 import javax.persistence.*;
 
@@ -20,19 +20,29 @@ public class Service {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "status")
+    private String status; // Active, Inactive
+
+    @Column(name = "unit")
+    private String unit; // Lượt, Chiếc, Bộ, Lon...
+
     public Service() {}
 
-    public Service(int id, String name, double price, String description) {
+    public Service(int id, String name, double price, String description, String status, String unit) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.description = description;
+        this.status = status;
+        this.unit = unit;
     }
 
-    public Service(String name, double price, String description) {
+    public Service(String name, double price, String description, String status, String unit) {
         this.name = name;
         this.price = price;
         this.description = description;
+        this.status = status;
+        this.unit = unit;
     }
 
     // Getters and Setters
@@ -68,12 +78,30 @@ public class Service {
         this.description = description;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
     @Override
     public String toString() {
         return "Service{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", price=" + price +
+                ", status='" + status + '\'' +
+                ", unit='" + unit + '\'' +
                 '}';
     }
 }

@@ -35,6 +35,10 @@ public class Bill {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_id", nullable = true)
+    private Customer customer;
+
     public Bill() {}
 
     public Bill(int id, int userId, Timestamp checkInDate, Timestamp checkOutDate, double totalAmount, String status, Timestamp createdAt) {
@@ -135,6 +139,14 @@ public class Bill {
         if (user != null) {
             this.userId = user.getId();
         }
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 
     @Override

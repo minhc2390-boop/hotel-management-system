@@ -1,4 +1,4 @@
-package com.hotel.filter;
+﻿package com.hotel.filter;
 
 import com.hotel.model.User;
 
@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-@WebFilter(filterName = "AuthenticationFilter", urlPatterns = {"/admin/*", "/rooms/manage", "/services/manage", "/bills/manage"})
+// @WebFilter(filterName = "AuthenticationFilter", urlPatterns = {"/admin/*", "/rooms/manage", "/services/manage", "/bills/manage"})
 public class AuthenticationFilter implements Filter {
 
     @Override

@@ -11,19 +11,19 @@ public class Equipment {
     @Column(name = "equipment_id")
     private int equipmentId;
 
-    @Column(name = "equipment_name", nullable = false, unique = true)
+    @Column(name = "equipment_name", nullable = false, unique = true, columnDefinition = "NVARCHAR(100)")
     private String equipmentName;
 
     @Column(name = "total_quantity", nullable = false)
     private int totalQuantity;
 
-    @Column(name = "unit")
+    @Column(name = "unit", columnDefinition = "NVARCHAR(20)")
     private String unit;
 
     @Column(name = "status")
     private String status; // Active, Maintenance, OutOfStock
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "NVARCHAR(500)")
     private String description;
 
     public Equipment() {}

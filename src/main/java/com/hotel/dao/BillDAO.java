@@ -11,23 +11,26 @@ public class BillDAO {
     public List<Bill> getAllBills() {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Bill b JOIN FETCH b.user ORDER BY b.id DESC";
+            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer ORDER BY b.id DESC";
             TypedQuery<Bill> query = em.createQuery(jpql, Bill.class);
             return query.getResultList();
         } catch (Exception e) {
             e.printStackTrace();
+            return java.util.Collections.emptyList();
         } finally {
-            em.close();
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
-        return null;
     }
 
-    public List<Bill> getBillsByUserId(int userId) {
+    public List<Bill> getBillsByUserId(int userId, String email) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Bill b JOIN FETCH b.user WHERE b.user.id = :userId ORDER BY b.id DESC";
+            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer WHERE b.user.id = :userId OR (b.customer.customerEmail = :email) ORDER BY b.id DESC";
             TypedQuery<Bill> query = em.createQuery(jpql, Bill.class);
             query.setParameter("userId", userId);
+            query.setParameter("email", email);
             return query.getResultList();
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,7 +43,7 @@ public class BillDAO {
     public Bill getBillById(int id) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Bill b JOIN FETCH b.user WHERE b.id = :id";
+            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer WHERE b.id = :id";
             TypedQuery<Bill> query = em.createQuery(jpql, Bill.class);
             query.setParameter("id", id);
             List<Bill> list = query.getResultList();

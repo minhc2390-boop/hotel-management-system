@@ -1,4 +1,4 @@
-package com.hotel.model;
+﻿package com.hotel.model;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -33,7 +33,24 @@ public class Booking {
     @Column(name = "status", nullable = false)
     private String status; // Pending, CheckedIn, CheckedOut, Cancelled
 
+    @Column(name = "room_price", nullable = false)
+    private double roomPrice;
+
+    @Column(name = "note")
+    private String note;
+
     public Booking() {}
+
+    public Booking(Customer customer, Room room, User createdBy, Timestamp checkInDate, Timestamp checkOutDate, String status, double roomPrice, String note) {
+        this.customer = customer;
+        this.room = room;
+        this.createdBy = createdBy;
+        this.checkInDate = checkInDate;
+        this.checkOutDate = checkOutDate;
+        this.status = status;
+        this.roomPrice = roomPrice;
+        this.note = note;
+    }
 
     public Booking(Customer customer, Room room, User createdBy, Timestamp checkInDate, Timestamp checkOutDate, String status) {
         this.customer = customer;
@@ -98,5 +115,21 @@ public class Booking {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public double getRoomPrice() {
+        return roomPrice;
+    }
+
+    public void setRoomPrice(double roomPrice) {
+        this.roomPrice = roomPrice;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 }

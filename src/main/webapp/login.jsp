@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%
   String activeTab = (String) request.getAttribute("activeTab");
   if (activeTab == null) {
@@ -202,10 +202,10 @@
     <div id="form-login" class="form-container <%= "login".equals(activeTab) ? "active" : "" %>">
       <form action="<%= request.getContextPath() %>/login" method="POST" autocomplete="on">
         <div class="form-group">
-          <label class="form-label" for="username">Tên đăng nhập</label>
+          <label class="form-label" for="email">Email hoặc Tên đăng nhập</label>
           <div class="input-icon-group">
-            <input class="form-control" type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required value="<%= request.getAttribute("username") != null ? request.getAttribute("username") : "" %>">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input class="form-control" type="text" id="email" name="email" placeholder="Nhập email hoặc tên đăng nhập" required value="<%= request.getAttribute("email") != null ? request.getAttribute("email") : "" %>">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
           </div>
         </div>
         <div class="form-group">

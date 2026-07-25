@@ -1,15 +1,16 @@
-package com.hotel.controller;
+﻿package com.hotel.controller;
 
 import com.hotel.dao.ServiceDAO;
 import com.hotel.model.Service;
 import com.hotel.model.User;
+import com.hotel.util.AuthUtil;
+import com.hotel.util.ParamUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
@@ -20,16 +21,16 @@ public class ServiceServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        String action = request.getParameter("action");
-        if (action == null) {
-            action = "list";
+        String action = ParamUtil.getString(request, "action", "list");
+
+        if (!AuthUtil.isAuthenticated(request)) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
-        HttpSession session = request.getSession(false);
-        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
-
-        // Check auth: only Admin/Receptionist can view/manage services list inside management area
-        if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        User currentUser = AuthUtil.getUser(request);
+        String role = currentUser.getRole();
+        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
@@ -46,14 +47,14 @@ public class ServiceServlet extends HttpServlet {
                 break;
                 
             case "edit":
-                int editId = Integer.parseInt(request.getParameter("id"));
+                int editId = ParamUtil.getInt(request, "id", 0);
                 Service existingService = serviceDAO.getServiceById(editId);
                 request.setAttribute("service", existingService);
                 request.getRequestDispatcher("/admin/service-form.jsp").forward(request, response);
                 break;
                 
             case "delete":
-                int deleteId = Integer.parseInt(request.getParameter("id"));
+                int deleteId = ParamUtil.getInt(request, "id", 0);
                 serviceDAO.deleteService(deleteId);
                 response.sendRedirect(request.getContextPath() + "/services?action=list");
                 break;
@@ -67,33 +68,40 @@ public class ServiceServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        request.setCharacterEncoding("UTF-8");
-        String action = request.getParameter("action");
+        String action = ParamUtil.getString(request, "action", "");
 
-        HttpSession session = request.getSession(false);
-        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
+        if (!AuthUtil.isAuthenticated(request)) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
 
-        if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        User currentUser = AuthUtil.getUser(request);
+        String role = currentUser.getRole();
+        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
 
         if ("insert".equals(action)) {
-            String name = request.getParameter("name");
-            double price = Double.parseDouble(request.getParameter("price"));
-            String description = request.getParameter("description");
+            String name = ParamUtil.getString(request, "name", "");
+            double price = ParamUtil.getDouble(request, "price", 0.0);
+            String description = ParamUtil.getString(request, "description", "");
+            String status = ParamUtil.getString(request, "status", "Active");
+            String unit = ParamUtil.getString(request, "unit", "Lượt");
             
-            Service service = new Service(name, price, description);
+            Service service = new Service(name, price, description, status, unit);
             serviceDAO.insertService(service);
             response.sendRedirect(request.getContextPath() + "/services?action=list");
             
         } else if ("update".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
-            String name = request.getParameter("name");
-            double price = Double.parseDouble(request.getParameter("price"));
-            String description = request.getParameter("description");
+            int id = ParamUtil.getInt(request, "id", 0);
+            String name = ParamUtil.getString(request, "name", "");
+            double price = ParamUtil.getDouble(request, "price", 0.0);
+            String description = ParamUtil.getString(request, "description", "");
+            String status = ParamUtil.getString(request, "status", "Active");
+            String unit = ParamUtil.getString(request, "unit", "Lượt");
             
-            Service service = new Service(id, name, price, description);
+            Service service = new Service(id, name, price, description, status, unit);
             serviceDAO.updateService(service);
             response.sendRedirect(request.getContextPath() + "/services?action=list");
         }

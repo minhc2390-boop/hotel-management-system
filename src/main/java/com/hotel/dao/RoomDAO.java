@@ -11,8 +11,7 @@ public class RoomDAO {
     public List<Room> getAllRooms() {
         EntityManager em = DBContext.getEntityManager();
         try {
-            // JOIN FETCH loads the RoomType relationship eagerly in one database call
-            String jpql = "SELECT r FROM Room r JOIN FETCH r.roomType ORDER BY r.roomNumber ASC";
+            String jpql = "SELECT r FROM Room r ORDER BY r.roomNumber ASC";
             TypedQuery<Room> query = em.createQuery(jpql, Room.class);
             return query.getResultList();
         } catch (Exception e) {
@@ -26,7 +25,7 @@ public class RoomDAO {
     public List<Room> getAvailableRooms() {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT r FROM Room r JOIN FETCH r.roomType WHERE r.status = 'Available' ORDER BY r.roomNumber ASC";
+            String jpql = "SELECT r FROM Room r WHERE r.status != 'Maintenance' ORDER BY r.roomNumber ASC";
             TypedQuery<Room> query = em.createQuery(jpql, Room.class);
             return query.getResultList();
         } catch (Exception e) {
@@ -40,7 +39,7 @@ public class RoomDAO {
     public Room getRoomById(int id) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT r FROM Room r JOIN FETCH r.roomType WHERE r.id = :id";
+            String jpql = "SELECT r FROM Room r WHERE r.id = :id";
             TypedQuery<Room> query = em.createQuery(jpql, Room.class);
             query.setParameter("id", id);
             List<Room> list = query.getResultList();

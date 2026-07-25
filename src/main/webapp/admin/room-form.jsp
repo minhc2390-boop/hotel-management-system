@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %><%@ page import="com.hotel.model.Room" %><%@ page import="com.hotel.model.RoomType" %><%@ page import="java.util.List" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %><%@ page import="com.hotel.model.Room" %><%@ page import="com.hotel.model.RoomType" %><%@ page import="java.util.List" %>
 <%
 HttpSession sess=request.getSession(false); User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null;if(currentUser==null||(!"Admin".equals(currentUser.getRole())&&!"Receptionist".equals(currentUser.getRole()))){response.sendRedirect(request.getContextPath()+"/home");return;} Room room=(Room)request.getAttribute("room"); List<RoomType> roomTypes=(List<RoomType>)request.getAttribute("roomTypes"); boolean isEdit=room!=null; String activeMenu="rooms";
 %>

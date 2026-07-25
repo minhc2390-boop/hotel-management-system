@@ -26,7 +26,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
-  font-family: 'Be Vietnam Pro', sans-serif;
+  font-family: 'Be Vietnam Pro', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: var(--text);
   background: var(--canvas);
   font-size: 14px;
@@ -239,7 +239,7 @@ select.form-control { appearance: auto; }
 .nav-link.danger { color: var(--danger); }
 .sidebar-collapsed { --sidebar-width: 78px; }
 .sidebar-collapsed .brand-name,
-.sidebar-collapsed .nav-link span,
+.sidebar-collapsed .nav-link span:not(.nav-icon),
 .sidebar-collapsed .nav-label { display: none; }
 .sidebar-collapsed .sidebar-head { justify-content: center; padding: 0; }
 .sidebar-collapsed .nav-link { justify-content: center; padding: 0; }
@@ -447,6 +447,7 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 
 body {
+  font-family: 'Be Vietnam Pro', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
   line-height: 1.58;
   text-rendering: optimizeLegibility;
@@ -754,4 +755,60 @@ textarea {
   .page-title { font-size: 24px; }
   th, td { font-size: 12px; }
 }
+
+/* ===== Web App Themes ===== */
+html[data-theme="dark"] {
+  --brand: #3b82f6;
+  --brand-dark: #2563eb;
+  --brand-soft: #1e293b;
+  --navy: #0f172a;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --line: #334155;
+  --canvas: #0f172a;
+  --surface: #1e293b;
+  --shadow: 0 8px 24px rgba(0, 0, 0, .3);
+}
+
+html[data-theme="forest"] {
+  --brand: #10b981;
+  --brand-dark: #059669;
+  --brand-soft: #ecfdf5;
+  --navy: #064e3b;
+  --text: #1f2937;
+  --muted: #4b5563;
+  --line: #d1fae5;
+  --canvas: #f0fdf4;
+  --surface: #ffffff;
+  --shadow: 0 8px 24px rgba(6, 78, 59, .06);
+}
+
+html[data-theme="sunset"] {
+  --brand: #f97316;
+  --brand-dark: #ea580c;
+  --brand-soft: #fff7ed;
+  --navy: #451a03;
+  --text: #1f2937;
+  --muted: #4b5563;
+  --line: #ffedd5;
+  --canvas: #fffaf0;
+  --surface: #ffffff;
+  --shadow: 0 8px 24px rgba(69, 26, 3, .06);
+}
+
+html[data-theme="cyberpunk"] {
+  --brand: #ff007f;
+  --brand-dark: #cc0066;
+  --brand-soft: #2a0820;
+  --navy: #0d0015;
+  --text: #00ffcc;
+  --muted: #ff00ff;
+  --line: #3d004d;
+  --canvas: #090011;
+  --surface: #120022;
+  --shadow: 0 8px 24px rgba(255, 0, 127, .2);
+}
+
+
+
 

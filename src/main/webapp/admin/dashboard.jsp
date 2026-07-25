@@ -83,14 +83,8 @@
       <div class="dashboard-grid">
         <section class="surface">
           <div class="surface-head"><div><h2 class="surface-title">Doanh thu 7 ngày gần đây</h2><p class="surface-subtitle">Biểu đồ thể hiện doanh thu thực tế từ backend.</p></div><a href="<%= request.getContextPath() %>/admin/profits.jsp" class="table-primary">Xem chi tiết</a></div>
-          <div class="chart-area">
-            <% for (int i = 0; i < 7; i++) { 
-                int height = (int) Math.round(dailyRev7[i] * 100.0 / maxDayRevenue7);
-            %>
-              <div class="chart-col" title="Ngày <%= dailyLabels7[i] %>: <%= money.format(dailyRev7[i]) %>">
-                <div class="chart-bar <%= i == 6 ? "primary" : "" %>" style="height:<%= height %>%"></div>
-              </div>
-            <% } %>
+          <div style="position: relative; height: 260px; width: 100%; padding: 10px 0;">
+              <canvas id="dashboardChart"></canvas>
           </div>
         </section>
         <section class="surface">
@@ -110,12 +104,72 @@
         <% if (recentBills != null && !recentBills.isEmpty()) { %>
         <div class="table-wrap"><table><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày tạo</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr></thead><tbody>
         <% int limit = Math.min(recentBills.size(), 5); for (int i=0;i<limit;i++){ Bill b=recentBills.get(i); %>
-          <tr><td class="table-primary">#<%= b.getId() %></td><td><span class="table-strong"><%= b.getUser().getFullName() %></span><br><span class="text-muted"><%= b.getUser().getEmail() %></span></td><td><%= dateTime.format(b.getCreatedAt()) %></td><td class="table-strong"><%= money.format(b.getTotalAmount()) %></td><td><% if("Paid".equals(b.getStatus())){%><span class="status success">Đã thanh toán</span><%}else if("Unpaid".equals(b.getStatus())){%><span class="status info">Chưa thanh toán</span><%}else{%><span class="status danger">Đã hủy</span><%}%></td><td><a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bills?action=detail&id=<%= b.getId() %>">›</a></td></tr>
+          <tr><td class="table-primary">#<%= b.getId() %></td><td><span class="table-strong"><%= b.getCustomer() != null ? b.getCustomer().getCustomerName() : (b.getUser() != null ? b.getUser().getFullName() : "N/A") %></span><br><span class="text-muted"><%= b.getCustomer() != null && b.getCustomer().getCustomerEmail() != null ? b.getCustomer().getCustomerEmail() : (b.getUser() != null ? b.getUser().getEmail() : "") %></span></td><td><%= dateTime.format(b.getCreatedAt()) %></td><td class="table-strong"><%= money.format(b.getTotalAmount()) %></td><td><% if("Paid".equals(b.getStatus())){%><span class="status success">Đã thanh toán</span><%}else if("Unpaid".equals(b.getStatus())){%><span class="status info">Chưa thanh toán</span><%}else{%><span class="status danger">Đã hủy</span><%}%></td><td><a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bills?action=detail&id=<%= b.getId() %>">›</a></td></tr>
         <% } %></tbody></table></div>
         <% } else { %><div class="empty"><strong>Chưa có đặt phòng gần đây</strong>Dữ liệu sẽ hiển thị khi hệ thống có giao dịch.</div><% } %>
       </section>
     </div></section>
   </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="<%= request.getContextPath() %>/js/app.js"></script>
+<script>
+  (function() {
+    const dailyLabels7 = [<%= String.join(",", java.util.Arrays.stream(dailyLabels7).map(s -> "'" + s + "'").toArray(String[]::new)) %>];
+    const dailyRevData7 = [<%= java.util.Arrays.stream(dailyRev7).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
+    
+    const ctx7 = document.getElementById('dashboardChart').getContext('2d');
+    new Chart(ctx7, {
+        type: 'line',
+        data: {
+            labels: dailyLabels7,
+            datasets: [{
+                label: 'Doanh thu',
+                data: dailyRevData7,
+                fill: true,
+                backgroundColor: 'rgba(23, 105, 224, 0.12)',
+                borderColor: '#1769e0',
+                borderWidth: 2.5,
+                tension: 0.35,
+                pointBackgroundColor: '#1769e0',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumSignificantDigits: 3 }).format(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+  })();
+</script>
 </body></html>

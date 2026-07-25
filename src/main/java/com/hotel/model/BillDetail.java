@@ -1,4 +1,4 @@
-package com.hotel.model;
+﻿package com.hotel.model;
 
 import javax.persistence.*;
 

@@ -1,4 +1,13 @@
 <%@ page pageEncoding="UTF-8" %>
+<style>
+  /* Fix lỗi biến mất icon khi thu gọn menu (chống cache trình duyệt) */
+  .sidebar-collapsed .nav-link span:not(.nav-icon) {
+      display: none !important;
+  }
+  .sidebar-collapsed .nav-link span.nav-icon {
+      display: inline-block !important;
+  }
+</style>
 <aside class="sidebar">
   <div class="sidebar-head">
     <div class="brand">
@@ -39,17 +48,9 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
         <span>Người dùng & Khách hàng</span>
       </a>
-      <a class="nav-link <%= "bookings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/bookings.jsp">
+      <a class="nav-link <%= "bookings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/bookings?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
         <span>Đặt phòng</span>
-      </a>
-      <a class="nav-link <%= "checkin".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/bookings.jsp?mode=checkin">
-        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/check-in.svg')" aria-hidden="true"></span>
-        <span>Nhận phòng</span>
-      </a>
-      <a class="nav-link <%= "checkout".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/payment.jsp">
-        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/check-out.svg')" aria-hidden="true"></span>
-        <span>Trả phòng</span>
       </a>
       <a class="nav-link <%= "services".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/services?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
@@ -69,13 +70,15 @@
       </a>
     </div>
 
+    <% if (currentUser != null && "Admin".equals(currentUser.getRole())) { %>
     <div class="nav-section">
       <div class="nav-label">Quản trị</div>
-      <a class="nav-link <%= "employees".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/employees.jsp">
+      <a class="nav-link <%= "employees".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/users?action=employees">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
         <span>Nhân viên</span>
       </a>
     </div>
+    <% } %>
   </div>
 
   <div class="sidebar-foot">
@@ -83,7 +86,7 @@
       <span class="nav-icon collapse-icon" aria-hidden="true">‹</span>
       <span>Thu gọn menu</span>
     </a>
-    <a class="nav-link" href="#">
+    <a class="nav-link <%= "settings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/settings.jsp">
       <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/settings.svg')" aria-hidden="true"></span>
       <span>Cài đặt</span>
     </a>
