@@ -114,6 +114,21 @@ public class BookingDAO {
         return false;
     }
 
+    public List<Booking> getBookingsByCustomerId(int customerId) {
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy WHERE b.customer.customerId = :customerId ORDER BY b.bookingId DESC";
+            TypedQuery<Booking> query = em.createQuery(jpql, Booking.class);
+            query.setParameter("customerId", customerId);
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+        return null;
+    }
+
     public boolean deleteBooking(int id) {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();

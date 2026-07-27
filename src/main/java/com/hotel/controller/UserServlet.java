@@ -1,7 +1,9 @@
 package com.hotel.controller;
 
 import com.hotel.dao.UserDAO;
+import com.hotel.dao.BookingDAO;
 import com.hotel.model.User;
+import com.hotel.model.Booking;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,6 +17,7 @@ import java.util.List;
 @WebServlet(name = "UserServlet", urlPatterns = {"/users"})
 public class UserServlet extends HttpServlet {
     private final UserDAO userDAO = new UserDAO();
+    private final BookingDAO bookingDAO = new BookingDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
@@ -33,6 +36,37 @@ public class UserServlet extends HttpServlet {
         }
 
         switch (action) {
+            case "guests": {
+                List<com.hotel.model.Customer> customers = new com.hotel.dao.CustomerDAO().getAllCustomers();
+                request.setAttribute("customers", customers);
+                request.getRequestDispatcher("/admin/guests.jsp").forward(request, response);
+                break;
+            }
+            case "guestDetail": {
+                int guestId = Integer.parseInt(request.getParameter("id"));
+                com.hotel.model.Customer guest = new com.hotel.dao.CustomerDAO().getCustomerById(guestId);
+                List<Booking> guestBookings = bookingDAO.getBookingsByCustomerId(guestId);
+                
+                double guestSpent = 0;
+                if (guestBookings != null) {
+                    for (Booking b : guestBookings) {
+                        if (!"Cancelled".equals(b.getStatus())) {
+                            long diffMs = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
+                            long days = diffMs / (1000 * 60 * 60 * 24);
+                            if (days <= 0) days = 1;
+                            guestSpent += b.getRoomPrice() * days;
+                        }
+                    }
+                }
+                int guestPoints = (int) (guestSpent / 100000);
+                
+                request.setAttribute("guest", guest);
+                request.setAttribute("bookings", guestBookings);
+                request.setAttribute("spent", guestSpent);
+                request.setAttribute("points", guestPoints);
+                request.getRequestDispatcher("/admin/guest-profile.jsp").forward(request, response);
+                break;
+            }
             case "list":
                 List<User> users = userDAO.getAllUsers();
                 request.setAttribute("users", users);

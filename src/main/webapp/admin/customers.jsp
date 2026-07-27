@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="java.util.List" %>
 <% 
@@ -14,6 +14,33 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Khách hàng & Nguời dùng - Nestora</title>
   <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
+  <style>
+    .tab-bar {
+      display: flex;
+      gap: 24px;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 24px;
+    }
+    .tab-item {
+      padding: 12px 4px;
+      font-weight: 600;
+      color: var(--muted);
+      position: relative;
+      cursor: pointer;
+    }
+    .tab-item.active {
+      color: var(--brand);
+    }
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--brand);
+    }
+  </style>
 </head>
 <body>
 <div class="admin-layout">
@@ -31,6 +58,12 @@
           <div class="page-actions">
             <a class="btn btn-primary" href="<%= request.getContextPath() %>/users?action=add">＋ Thêm mới người dùng</a>
           </div>
+        </div>
+
+        <!-- Tab chuyển đổi -->
+        <div class="tab-bar">
+          <a href="<%= request.getContextPath() %>/users?action=list" class="tab-item active">Tài khoản hệ thống</a>
+          <a href="<%= request.getContextPath() %>/users?action=guests" class="tab-item">Hồ sơ Khách lưu trú</a>
         </div>
 
         <section class="surface">
@@ -71,7 +104,7 @@
                       <% } else if ("Receptionist".equals(u.getRole())) { %>
                         <span class="status warning">Lễ tân</span>
                       <% } else { %>
-                        <span class="status info">Khách hàng</span>
+                        <span class="status info">Hội viên</span>
                       <% } %>
                     </td>
                     <td>

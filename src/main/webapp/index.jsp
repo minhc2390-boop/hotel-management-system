@@ -531,6 +531,7 @@
                 <a href="<%= request.getContextPath() %>/bookings?action=list">Trang quản trị</a>
             <% } else { %>
                 <a href="<%= request.getContextPath() %>/bookings?action=mybookings">Phòng đã đặt</a>
+                <a href="<%= request.getContextPath() %>/profile">Hồ sơ thành viên</a>
             <% } %>
             <a href="<%= request.getContextPath() %>/logout" class="nav-cta">Đăng xuất</a>
         <% } else { %>

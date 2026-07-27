@@ -68,12 +68,12 @@
                 <label class="form-label">Vai trò *</label>
                 <% if (currentUser != null && "Admin".equals(currentUser.getRole())) { %>
                   <select class="form-control" name="role" required>
-                    <option value="Customer" <%= isEdit && "Customer".equals(user.getRole()) ? "selected" : "" %>>Khách hàng (Customer)</option>
+                    <option value="Customer" <%= isEdit && "Customer".equals(user.getRole()) ? "selected" : "" %>>Hội viên (Member)</option>
                     <option value="Receptionist" <%= isEdit && "Receptionist".equals(user.getRole()) ? "selected" : "" %>>Lễ tân (Receptionist)</option>
                     <option value="Admin" <%= isEdit && "Admin".equals(user.getRole()) ? "selected" : "" %>>Quản trị viên (Admin)</option>
                   </select>
                 <% } else { %>
-                  <input class="form-control" type="text" readonly style="background:#f1f5f9;" value="<%= isEdit ? ("Receptionist".equals(user.getRole()) ? "Lễ tân (Receptionist)" : ("Admin".equals(user.getRole()) ? "Quản trị viên (Admin)" : "Khách hàng (Customer)")) : "Khách hàng (Customer)" %>">
+                  <input class="form-control" type="text" readonly style="background:#f1f5f9;" value="<%= isEdit ? ("Receptionist".equals(user.getRole()) ? "Lễ tân (Receptionist)" : ("Admin".equals(user.getRole()) ? "Quản trị viên (Admin)" : "Hội viên (Member)")) : "Hội viên (Member)" %>">
                   <input type="hidden" name="role" value="<%= isEdit ? user.getRole() : "Customer" %>">
                 <% } %>
               </div>
