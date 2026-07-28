@@ -17,6 +17,21 @@
   <title>Cài đặt hệ thống - Nestora</title>
   <link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css">
   <style>
+    /* Fix màu chữ tiêu đề tương phản trên nền tối cho toàn bộ các trang */
+    [data-theme="dark"] .page-title,
+    [data-theme="cyberpunk"] .page-title,
+    [data-theme="dark"] .surface-title,
+    [data-theme="cyberpunk"] .surface-title {
+      color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .page-desc,
+    [data-theme="cyberpunk"] .page-desc,
+    [data-theme="dark"] .breadcrumb,
+    [data-theme="cyberpunk"] .breadcrumb {
+      color: rgba(255, 255, 255, 0.7) !important;
+    }
+
     .settings-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -292,11 +307,9 @@
 <div class="toast-container" id="toast-container"></div>
 
 <script>
-  // Global variables to store current selected theme
   let currentTheme = 'light';
 
   document.addEventListener('DOMContentLoaded', function() {
-      // 1. Load settings from localStorage or set defaults
       const savedTheme = localStorage.getItem('nestora_theme') || 'light';
       currentTheme = savedTheme;
       selectTheme(savedTheme);
@@ -311,14 +324,12 @@
       document.getElementById('bank-name-input').value = localStorage.getItem('hotel_bank_name') || 'CONG TY NESTORA HOTEL';
   });
 
-  // Handle visual card select and apply theme immediately as temporary preview
   function selectTheme(themeName) {
       currentTheme = themeName;
       
-      // Update HTML attribute for instant preview
+      // Áp dụng ngay thuộc tính data-theme lên thẻ html/root
       document.documentElement.setAttribute('data-theme', themeName);
 
-      // Manage active card class
       document.querySelectorAll('.theme-card').forEach(card => {
           if (card.getAttribute('data-theme-val') === themeName) {
               card.classList.add('active');
@@ -329,7 +340,6 @@
   }
 
   function saveSettings() {
-      // Get input values
       const hotelName = document.getElementById('hotel-name-input').value.trim();
       const hotelAddress = document.getElementById('hotel-address-input').value.trim();
       const hotelPhone = document.getElementById('hotel-phone-input').value.trim();
@@ -339,7 +349,6 @@
       const bankAccount = document.getElementById('bank-account-input').value.trim();
       const bankName = document.getElementById('bank-name-input').value.trim().toUpperCase();
 
-      // Save to localStorage
       localStorage.setItem('nestora_theme', currentTheme);
       localStorage.setItem('hotel_name', hotelName);
       localStorage.setItem('hotel_address', hotelAddress);
@@ -350,7 +359,6 @@
       localStorage.setItem('hotel_bank_account', bankAccount);
       localStorage.setItem('hotel_bank_name', bankName);
 
-      // Dynamically update UI branding
       const brandNameStrong = document.querySelectorAll('.brand-name strong');
       if (brandNameStrong.length > 0) {
           brandNameStrong.forEach(el => el.innerText = hotelName.toUpperCase());
@@ -370,7 +378,6 @@
           localStorage.removeItem('hotel_bank_account');
           localStorage.removeItem('hotel_bank_name');
 
-          // Reload page to reapply default values
           window.location.reload();
       }
   }
@@ -382,12 +389,10 @@
       toast.innerHTML = `<span class="toast-icon">✓</span><span>${message}</span>`;
       container.appendChild(toast);
 
-      // Animation in
       setTimeout(() => {
           toast.classList.add('show');
       }, 50);
 
-      // Animation out & remove
       setTimeout(() => {
           toast.classList.remove('show');
           setTimeout(() => {
