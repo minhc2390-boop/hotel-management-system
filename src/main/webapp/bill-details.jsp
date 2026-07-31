@@ -74,35 +74,9 @@ if (roomNumber.isEmpty()) {
   }
 </style>
 </head>
-<body>
-	<header class="public-header">
-		<div class="public-brand">
-			<div class="brand-logo">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-					stroke-width="1.8">
-					<path d="M4 21V8l8-5 8 5v13" />
-					<path d="M8 21v-7h8v7" /></svg>
-			</div>
-			<div class="brand-name">
-				<strong>NESTORA</strong><small>HOTEL MANAGER</small>
-			</div>
-		</div>
-		<nav class="public-nav">
-			<a href="<%=request.getContextPath()%>/home">Trang chủ</a>
-			<%
-			if (admin) {
-			%><a href="<%=request.getContextPath()%>/bills?action=list">Hóa
-				đơn</a>
-			<%
-			} else {
-			%><a href="<%=request.getContextPath()%>/bills?action=mybills">Phòng
-				đã đặt</a>
-			<%
-			}
-			%><a href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
-		</nav>
-	</header>
-	<main class="public-content">
+<body class="client-body">
+	<%@ include file="WEB-INF/jspf/client-header.jspf" %>
+	<main class="client-main">
 		<div class="page-head">
 			<div>
 				<div class="breadcrumb">
@@ -296,6 +270,7 @@ if (roomNumber.isEmpty()) {
 			</aside>
 		</div>
 	</main>
+	<%@ include file="WEB-INF/jspf/client-footer.jspf" %>
 	<script>
 	  function handlePaymentMethodChange() {
 	      var select = document.getElementById('payment-method-select');

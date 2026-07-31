@@ -503,7 +503,7 @@
         }
     </style>
 </head>
-<body>
+<body class="client-body">
 
 <!-- Banner quảng cáo chạy ngang (Ticker) -->
 <div class="luxury-ticker">
@@ -514,32 +514,7 @@
     </div>
 </div>
 
-<header class="luxury-header">
-    <div class="luxury-brand">
-        <div class="brand-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
-        </div>
-        <div class="brand-name">
-            <strong>NESTORA</strong>
-            <small>HOTEL & RESORT</small>
-        </div>
-    </div>
-    <nav class="luxury-nav" style="display: flex; align-items: center; gap: 8px;">
-        <a href="<%= request.getContextPath() %>/home" class="active">Trang chủ</a>
-        <% if (currentUser != null) { %>
-            <% if ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole())) { %>
-                <a href="<%= request.getContextPath() %>/bookings?action=list">Trang quản trị</a>
-            <% } else { %>
-                <a href="<%= request.getContextPath() %>/bookings?action=mybookings">Phòng đã đặt</a>
-                <a href="<%= request.getContextPath() %>/profile">Hồ sơ thành viên</a>
-            <% } %>
-            <a href="<%= request.getContextPath() %>/logout" class="nav-cta">Đăng xuất</a>
-        <% } else { %>
-            <a href="<%= request.getContextPath() %>/login">Đăng nhập</a>
-            <a href="<%= request.getContextPath() %>/register" class="nav-cta">Đăng ký hội viên</a>
-        <% } %>
-    </nav>
-</header>
+<%@ include file="WEB-INF/jspf/client-header.jspf" %>
 
 <main class="public-content" style="max-width: 1200px; margin: 0 auto; padding: 24px 16px;">
     
@@ -718,15 +693,7 @@
 
 </main>
 
-<footer style="background: #0f172a; color: rgba(255, 255, 255, 0.6); padding: 48px 24px; text-align: center; font-size: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 40px;">
-    <div style="max-width: 1200px; margin: 0 auto;">
-        <div style="color: #fff; font-weight: 700; font-size: 16px; margin-bottom: 12px; letter-spacing: 0.05em;">NESTORA HOTEL & RESORT</div>
-        <p style="margin: 0 0 20px; line-height: 1.6;">Địa chỉ: Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam<br>Điện thoại: +84 (0) 258 3567 890 · Email: info@nestorahotel.com</p>
-        <div style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 20px; font-size: 12px;">
-            &copy; 2026 Nestora Hotel & Resort. Bảo lưu mọi quyền.
-        </div>
-    </div>
-</footer>
+<%@ include file="WEB-INF/jspf/client-footer.jspf" %>
 
 <script>
     // JS điều khiển Slideshow ảnh nền Hero
@@ -762,6 +729,5 @@
         slideTimer = setInterval(nextSlide, 5000);
     }
 </script>
-<script src="<%= request.getContextPath() %>/js/app.js"></script>
 </body>
 </html>

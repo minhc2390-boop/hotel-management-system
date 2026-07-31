@@ -6,13 +6,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Đăng ký thành viên - Nestora Hotel & Resort</title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
+    <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('nestora_theme') || 'light');</script>
     <style>
         /* Custom styling for luxury registration page */
         .register-container {
             min-height: 100vh;
             display: grid;
             grid-template-columns: minmax(450px, 45vw) 1fr;
-            background: #f4f7fb;
+            background: var(--canvas);
         }
         .register-visual {
             position: relative;
@@ -53,12 +54,12 @@
             align-items: center;
             justify-content: center;
             padding: 40px 24px;
-            background: #f4f7fb;
+            background: var(--canvas);
         }
         .register-card {
             width: min(100%, 500px);
-            background: #ffffff;
-            border: 1px solid rgba(220, 229, 241, 0.8);
+            background: var(--surface);
+            border: 1px solid var(--line);
             border-radius: 16px;
             padding: 40px;
             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
@@ -66,7 +67,7 @@
         .register-card h1 {
             font-size: 26px;
             font-weight: 800;
-            color: #0f172a;
+            color: var(--navy);
             margin: 0 0 8px;
         }
         .register-card > p {
@@ -106,12 +107,12 @@
         }
     </style>
 </head>
-<body>
+<body class="client-body">
 
 <div class="register-container">
     <!-- Cột bên trái hiển thị ảnh quảng bá sang trọng -->
     <div class="register-visual">
-        <div class="brand" style="position: relative; z-index: 2;">
+        <a class="brand" href="<%= request.getContextPath() %>/home" aria-label="Về trang chủ Nestora" style="position: relative; z-index: 2;">
             <div class="brand-logo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
             </div>
@@ -119,7 +120,7 @@
                 <strong style="color: #fff;">NESTORA</strong>
                 <small style="color: #c5a880; font-weight: 700; letter-spacing: 0.22em;">HOTEL & RESORT</small>
             </div>
-        </div>
+        </a>
         <div class="register-visual-content">
             <h2>Gia nhập thành viên Nestora Club</h2>
             <p>Đăng ký tài khoản trực tuyến ngay hôm nay để nhận các đặc quyền ưu đãi dành riêng cho hội viên, tích lũy điểm thưởng và hưởng mức giá tốt nhất khi đặt phòng trực tiếp tại website của chúng tôi.</p>
@@ -209,5 +210,6 @@
     </div>
 </div>
 
+<script src="<%= request.getContextPath() %>/js/app.js"></script>
 </body>
 </html>

@@ -56,6 +56,14 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
         <span>Dịch vụ</span>
       </a>
+      <a class="nav-link <%= "buffet".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/buffet?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
+        <span>Menu Buffet</span>
+      </a>
+      <a class="nav-link <%= "feedbacks".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/feedbacks?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
+        <span>Đánh giá & Góp ý</span>
+      </a>
     </div>
 
     <div class="nav-section">

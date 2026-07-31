@@ -199,23 +199,10 @@
         .badge-Cancelled { background: #fee2e2; color: #dc2626; }
     </style>
 </head>
-<body>
-<header class="public-header">
-    <div class="public-brand">
-        <div class="brand-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
-        </div>
-        <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
-    </div>
-    <nav class="public-nav">
-        <a href="<%= request.getContextPath() %>/home">Trang chủ</a>
-        <a href="<%= request.getContextPath() %>/bookings?action=mybookings">Phòng đã đặt</a>
-        <a class="active" href="<%= request.getContextPath() %>/profile">Hồ sơ thành viên</a>
-        <a href="<%= request.getContextPath() %>/logout">Đăng xuất</a>
-    </nav>
-</header>
+<body class="client-body">
+<%@ include file="WEB-INF/jspf/client-header.jspf" %>
 
-<main class="public-content" style="max-width: 1200px; margin: 0 auto; padding: 24px 16px;">
+<main class="client-main">
     
     <% if (request.getAttribute("error") != null) { %>
         <div class="alert alert-error" style="margin-top: 10px;"><%= request.getAttribute("error") %></div>
@@ -383,5 +370,6 @@
         <% } %>
     </section>
 </main>
+<%@ include file="WEB-INF/jspf/client-footer.jspf" %>
 </body>
 </html>

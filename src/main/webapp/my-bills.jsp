@@ -1,5 +1,92 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %><%@ page import="com.hotel.model.Bill" %><%@ page import="java.util.List" %><%@ page import="java.text.NumberFormat" %><%@ page import="java.text.SimpleDateFormat" %><%@ page import="java.util.Locale" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page import="com.hotel.model.User" %>
+<%@ page import="com.hotel.model.Bill" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.text.NumberFormat" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.util.Locale" %>
 <%
-HttpSession sess=request.getSession(false);User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null;if(currentUser==null){response.sendRedirect(request.getContextPath()+"/login");return;}List<Bill>bills=(List<Bill>)request.getAttribute("bills");NumberFormat money=NumberFormat.getCurrencyInstance(new Locale("vi","VN"));SimpleDateFormat dt=new SimpleDateFormat("dd/MM/yyyy HH:mm"),d=new SimpleDateFormat("dd/MM/yyyy");
+  HttpSession sess = request.getSession(false);
+  User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
+  if (currentUser == null) {
+    response.sendRedirect(request.getContextPath() + "/login");
+    return;
+  }
+  List<Bill> bills = (List<Bill>) request.getAttribute("bills");
+  NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+  SimpleDateFormat dateTime = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+  SimpleDateFormat date = new SimpleDateFormat("dd/MM/yyyy");
 %>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Phòng đã đặt - Nestora</title><link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css"></head><body><header class="public-header"><div class="public-brand"><div class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg></div><div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div></div><nav class="public-nav"><a href="<%=request.getContextPath()%>/home">Trang chủ</a><a class="active" href="<%=request.getContextPath()%>/bills?action=mybills">Phòng đã đặt</a><a href="<%=request.getContextPath()%>/logout">Đăng xuất</a></nav></header><main class="public-content"><div class="page-head"><div><h1 class="page-title">Đơn đặt phòng của bạn</h1><p class="page-desc">Theo dõi lịch sử lưu trú và thanh toán.</p></div></div><section class="surface"><%if(bills!=null&&!bills.isEmpty()){%><div class="table-wrap"><table><thead><tr><th>MÃ ĐƠN</th><th>NGÀY LẬP</th><th>NHẬN PHÒNG</th><th>TRẢ PHÒNG</th><th>TỔNG TIỀN</th><th>TRẠNG THÁI</th><th></th></tr></thead><tbody><%for(Bill b:bills){%><tr><td class="table-primary">#<%=b.getId()%></td><td><%=dt.format(b.getCreatedAt())%></td><td><%=d.format(b.getCheckInDate())%></td><td><%=b.getCheckOutDate()!=null?d.format(b.getCheckOutDate()):"-"%></td><td class="table-strong"><%=money.format(b.getTotalAmount())%></td><td><%if("Paid".equals(b.getStatus())){%><span class="status success">Đã thanh toán</span><%}else if("Unpaid".equals(b.getStatus())){%><span class="status info">Chưa thanh toán</span><%}else{%><span class="status danger">Đã hủy</span><%}%></td><td><a class="btn btn-outline" href="<%=request.getContextPath()%>/bills?action=detail&id=<%=b.getId()%>">Chi tiết</a></td></tr><%}%></tbody></table></div><%}else{%><div class="empty"><strong>Bạn chưa đặt phòng nào</strong><a class="btn btn-primary" style="margin-top:12px" href="<%=request.getContextPath()%>/home">Đặt phòng ngay</a></div><%}%></section></main></body></html>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hóa đơn của bạn - Nestora</title>
+  <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
+</head>
+<body class="client-body">
+<%@ include file="WEB-INF/jspf/client-header.jspf" %>
+
+<main class="client-main">
+  <div class="client-page-head">
+    <div>
+      <p class="client-eyebrow">Tài khoản của bạn</p>
+      <h1 class="client-page-title">Hóa đơn lưu trú</h1>
+      <p class="client-page-desc">Theo dõi lịch sử lưu trú, dịch vụ phát sinh và trạng thái thanh toán.</p>
+    </div>
+  </div>
+
+  <section class="client-surface">
+    <% if (bills != null && !bills.isEmpty()) { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+          <tr>
+            <th>MÃ HÓA ĐƠN</th>
+            <th>NGÀY LẬP</th>
+            <th>NHẬN PHÒNG</th>
+            <th>TRẢ PHÒNG</th>
+            <th>TỔNG TIỀN</th>
+            <th>TRẠNG THÁI</th>
+            <th>THAO TÁC</th>
+          </tr>
+          </thead>
+          <tbody>
+          <% for (Bill bill : bills) { %>
+            <tr>
+              <td class="table-primary">#HD<%= bill.getId() %></td>
+              <td><%= dateTime.format(bill.getCreatedAt()) %></td>
+              <td><%= date.format(bill.getCheckInDate()) %></td>
+              <td><%= bill.getCheckOutDate() != null ? date.format(bill.getCheckOutDate()) : "-" %></td>
+              <td class="table-strong"><%= money.format(bill.getTotalAmount()) %></td>
+              <td>
+                <% if ("Paid".equals(bill.getStatus())) { %>
+                  <span class="status success">Đã thanh toán</span>
+                <% } else if ("Unpaid".equals(bill.getStatus())) { %>
+                  <span class="status info">Chưa thanh toán</span>
+                <% } else { %>
+                  <span class="status danger">Đã hủy</span>
+                <% } %>
+              </td>
+              <td>
+                <a class="btn btn-outline" href="<%= request.getContextPath() %>/bills?action=detail&id=<%= bill.getId() %>">Chi tiết</a>
+              </td>
+            </tr>
+          <% } %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="client-empty">
+        <strong>Bạn chưa có hóa đơn nào</strong>
+        <span>Hóa đơn sẽ xuất hiện sau khi khách sạn thực hiện thủ tục trả phòng.</span><br>
+        <a class="btn btn-primary" style="margin-top:16px" href="<%= request.getContextPath() %>/home">Khám phá phòng</a>
+      </div>
+    <% } %>
+  </section>
+</main>
+
+<%@ include file="WEB-INF/jspf/client-footer.jspf" %>
+</body>
+</html>
