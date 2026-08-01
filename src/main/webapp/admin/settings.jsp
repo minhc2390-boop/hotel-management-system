@@ -315,9 +315,9 @@
       selectTheme(savedTheme);
 
       document.getElementById('hotel-name-input').value = localStorage.getItem('hotel_name') || 'Nestora';
-      document.getElementById('hotel-address-input').value = localStorage.getItem('hotel_address') || '123 Đường Láng, Đống Đa, Hà Nội';
-      document.getElementById('hotel-phone-input').value = localStorage.getItem('hotel_phone') || '0901234567';
-      document.getElementById('hotel-email-input').value = localStorage.getItem('hotel_email') || 'contact@nestorahotel.com';
+      document.getElementById('hotel-address-input').value = localStorage.getItem('hotel_address') || 'Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam';
+      document.getElementById('hotel-phone-input').value = localStorage.getItem('hotel_phone') || '+84 (0) 258 3567 890';
+      document.getElementById('hotel-email-input').value = localStorage.getItem('hotel_email') || 'info@nestorahotel.com';
 
       document.getElementById('bank-id-select').value = localStorage.getItem('hotel_bank_id') || 'MB';
       document.getElementById('bank-account-input').value = localStorage.getItem('hotel_bank_account') || '1903567890123';

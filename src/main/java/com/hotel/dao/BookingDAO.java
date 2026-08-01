@@ -1,10 +1,15 @@
 package com.hotel.dao;
 
 import com.hotel.model.Booking;
+import com.hotel.model.Room;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class BookingDAO {
 
@@ -57,15 +62,48 @@ public class BookingDAO {
     }
 
     public boolean insertBooking(Booking booking) {
+        return insertBookings(Collections.singletonList(booking));
+    }
+
+    /**
+     * Creates all requested bookings and marks their rooms as booked in one
+     * transaction. A pessimistic lock prevents two concurrent requests from
+     * reserving the same room.
+     */
+    public boolean insertBookings(List<Booking> bookings) {
+        if (bookings == null || bookings.isEmpty()) {
+            return false;
+        }
+
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            // Merge customer and user to ensure they are attached to the current persistence context
-            booking.setCustomer(em.merge(booking.getCustomer()));
-            booking.setCreatedBy(em.merge(booking.getCreatedBy()));
-            booking.setRoom(em.merge(booking.getRoom()));
-            em.persist(booking);
+            Set<Integer> roomIds = new HashSet<>();
+
+            for (Booking booking : bookings) {
+                if (booking == null || booking.getRoom() == null
+                        || booking.getCustomer() == null || booking.getCreatedBy() == null) {
+                    throw new IllegalArgumentException("Booking data is incomplete");
+                }
+
+                int roomId = booking.getRoom().getId();
+                if (roomId <= 0 || !roomIds.add(roomId)) {
+                    throw new IllegalArgumentException("Duplicate or invalid room id: " + roomId);
+                }
+
+                Room managedRoom = em.find(Room.class, roomId, LockModeType.PESSIMISTIC_WRITE);
+                if (managedRoom == null || !"Available".equalsIgnoreCase(managedRoom.getStatus())) {
+                    throw new IllegalStateException("Room is no longer available: " + roomId);
+                }
+
+                booking.setCustomer(em.merge(booking.getCustomer()));
+                booking.setCreatedBy(em.merge(booking.getCreatedBy()));
+                booking.setRoom(managedRoom);
+                managedRoom.setStatus("Booked");
+                em.persist(booking);
+            }
+
             tx.commit();
             return true;
         } catch (Exception e) {

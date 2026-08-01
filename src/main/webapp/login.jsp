@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%
   String activeTab = (String) request.getAttribute("activeTab");
   if (activeTab == null) {
@@ -13,8 +13,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tài khoản - Nestora Hotel Manager</title>
+  <title>Tài khoản thành viên - Nestora Hotel & Resort</title>
   <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('nestora_theme') || 'light');</script>
   <style>
     /* CSS override for login page */
     .login-page {
@@ -31,12 +32,12 @@
     
     .login-card {
       width: min(100%, 460px);
-      background: rgba(255, 255, 255, 0.96);
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       border-radius: 16px;
       box-shadow: 0 15px 35px rgba(23, 35, 60, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      border: 1px solid var(--line);
       padding: 35px 40px 30px;
       transition: all 0.3s ease;
     }
@@ -176,14 +177,14 @@
     }
   </style>
 </head>
-<body>
+<body class="client-body">
 <div class="login-page">
   <div class="login-card">
-    <a href="<%= request.getContextPath() %>/home" class="brand-center" style="text-decoration: none;">
+    <a class="brand-center" href="<%= request.getContextPath() %>/home" aria-label="Về trang chủ Nestora">
       <div class="brand-logo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7M8 10h.01M12 10h.01M16 10h.01"/></svg>
       </div>
-      <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
+      <div class="brand-name"><strong>NESTORA</strong><small>HOTEL &amp; RESORT</small></div>
     </a>
     
     <div class="login-tabs">
@@ -279,7 +280,7 @@
     </div>
 
     <div class="login-footer-card">
-      © 2026 Nestora Hotel · Nền tảng quản trị nội bộ
+      © 2026 Nestora Hotel &amp; Resort · Cổng thông tin khách hàng
     </div>
   </div>
 </div>

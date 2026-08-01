@@ -194,41 +194,17 @@
         @media print {
             body { background: #fff; }
             .receipt-card { border: none; box-shadow: none; margin: 0; max-width: 100%; }
-            .receipt-actions, .luxury-header { display: none !important; }
+            .receipt-actions, .client-header, .client-footer { display: none !important; }
         }
     </style>
 </head>
-<body>
-    <header class="luxury-header">
-        <a href="<%= request.getContextPath() %>/home" class="luxury-brand">
-            <div class="brand-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
-            </div>
-            <div class="brand-name">
-                <strong>NESTORA</strong>
-                <small>HOTEL & RESORT</small>
-            </div>
-        </a>
-        <nav class="luxury-nav" style="display: flex; align-items: center; gap: 8px;">
-            <a href="<%= request.getContextPath() %>/home">Trang chủ</a>
-            <% if (currentUser != null) { %>
-                <% if ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole())) { %>
-                    <a href="<%= request.getContextPath() %>/bookings?action=list">Trang quản trị</a>
-                <% } else { %>
-                    <a href="<%= request.getContextPath() %>/bookings?action=mybookings">Lịch sử đặt phòng</a>
-                    <a href="<%= request.getContextPath() %>/profile">Hồ sơ thành viên</a>
-                <% } %>
-                <a href="<%= request.getContextPath() %>/logout" class="nav-cta">Đăng xuất</a>
-            <% } else { %>
-                <a href="<%= request.getContextPath() %>/login" class="nav-cta">Đăng nhập</a>
-            <% } %>
-        </nav>
-    </header>
+<body class="client-body">
+    <%@ include file="WEB-INF/jspf/client-header.jspf" %>
 
     <main class="public-content">
         <div class="receipt-card">
             <div class="receipt-header">
-                <div class="logo">NESTORA HOTEL</div>
+                <a class="logo" href="<%= request.getContextPath() %>/home">NESTORA HOTEL</a>
                 <div class="title">Phiếu Xác Nhận Đặt Phòng</div>
             </div>
             <div class="receipt-body">
@@ -333,6 +309,6 @@
             </div>
         </div>
     </main>
-    <script src="<%= request.getContextPath() %>/js/app.js"></script>
+    <%@ include file="WEB-INF/jspf/client-footer.jspf" %>
 </body>
 </html>

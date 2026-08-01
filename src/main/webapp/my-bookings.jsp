@@ -1,7 +1,9 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Booking" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Locale" %>
@@ -13,6 +15,8 @@
         return;
     }
     List<Booking> bookings = (List<Booking>) request.getAttribute("bookings");
+    Set<Integer> reviewedBookingIds = (Set<Integer>) request.getAttribute("reviewedBookingIds");
+    if (reviewedBookingIds == null) reviewedBookingIds = Collections.emptySet();
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
     SimpleDateFormat d = new SimpleDateFormat("dd/MM/yyyy");
 %>
@@ -37,23 +41,17 @@
         .badge-Cancelled { background: #fee2e2; color: #dc2626; }
     </style>
 </head>
-<body>
-<header class="public-header">
-    <a href="<%= request.getContextPath() %>/home" class="public-brand">
-        <div class="brand-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
-        </div>
-        <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
-    </a>
-    <nav class="public-nav">
-        <a href="<%= request.getContextPath() %>/home">Trang chủ</a>
-        <a class="active" href="<%= request.getContextPath() %>/bookings?action=mybookings">Phòng đã đặt</a>
-        <a href="<%= request.getContextPath() %>/profile">Hồ sơ thành viên</a>
-        <a href="<%= request.getContextPath() %>/logout">Đăng xuất</a>
-    </nav>
-</header>
+<body class="client-body">
+<%@ include file="WEB-INF/jspf/client-header.jspf" %>
 
-<main class="public-content">
+<main class="client-main">
+    <% if ("success".equals(request.getParameter("feedback"))) { %>
+        <div class="alert alert-success">Cảm ơn bạn! Đánh giá đã được gửi thành công.</div>
+    <% } else if ("alreadySent".equals(request.getParameter("feedback"))) { %>
+        <div class="alert alert-error">Phiếu đặt phòng này đã được đánh giá hoặc không thể gửi lại.</div>
+    <% } else if ("notAllowed".equals(request.getParameter("feedback"))) { %>
+        <div class="alert alert-error">Bạn chỉ có thể đánh giá phiếu của mình sau khi đã trả phòng.</div>
+    <% } %>
     <div class="page-head">
         <div>
             <h1 class="page-title">Đơn đặt phòng của bạn</h1>
@@ -97,10 +95,14 @@
                         <span class="badge-status badge-<%= b.getStatus() %>"><%= statusText %></span>
                     </td>
                     <td>
-                        <div style="display: flex; gap: 8px;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                             <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=receipt&id=<%= b.getBookingId() %>">Xem phiếu</a>
                             <% if ("Pending".equals(b.getStatus()) || "Confirmed".equals(b.getStatus())) { %>
                                 <a class="btn btn-danger" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=cancel&id=<%= b.getBookingId() %>" onclick="return confirm('Bạn có chắc muốn hủy đặt phòng này?')">Hủy</a>
+                            <% } else if ("CheckedOut".equals(b.getStatus()) && reviewedBookingIds.contains(b.getBookingId())) { %>
+                                <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/feedbacks?action=view&bookingId=<%= b.getBookingId() %>">Xem đánh giá</a>
+                            <% } else if ("CheckedOut".equals(b.getStatus())) { %>
+                                <a class="btn btn-primary" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/feedbacks?action=add&bookingId=<%= b.getBookingId() %>">Đánh giá</a>
                             <% } %>
                         </div>
                     </td>
@@ -118,6 +120,6 @@
         <% } %>
     </section>
 </main>
-<script src="<%= request.getContextPath() %>/js/app.js"></script>
+<%@ include file="WEB-INF/jspf/client-footer.jspf" %>
 </body>
 </html>

@@ -2,6 +2,7 @@ package com.hotel.controller;
 
 import com.hotel.dao.BookingDAO;
 import com.hotel.dao.CustomerDAO;
+import com.hotel.dao.FeedbackDAO;
 import com.hotel.dao.RoomDAO;
 import com.hotel.model.Booking;
 import com.hotel.model.Customer;
@@ -23,8 +24,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @WebServlet(name = "BookingServlet", urlPatterns = {"/bookings"})
 public class BookingServlet extends HttpServlet {
@@ -34,6 +38,7 @@ public class BookingServlet extends HttpServlet {
     private final BillDAO billDAO = new BillDAO();
     private final BillDetailDAO billDetailDAO = new BillDetailDAO();
     private final UserDAO userDAO = new UserDAO();
+    private final FeedbackDAO feedbackDAO = new FeedbackDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
@@ -54,6 +59,8 @@ public class BookingServlet extends HttpServlet {
         if (currentUser != null && ("mybookings".equals(action) || ("list".equals(action) && "Customer".equals(currentUser.getRole())))) {
             List<Booking> myBookings = bookingDAO.getBookingsByUserId(currentUser.getId(), currentUser.getEmail());
             request.setAttribute("bookings", myBookings);
+            request.setAttribute("reviewedBookingIds",
+                    feedbackDAO.getReviewedBookingIdsForUser(currentUser.getId()));
             request.getRequestDispatcher("/my-bookings.jsp").forward(request, response);
             return;
         }
@@ -109,7 +116,7 @@ public class BookingServlet extends HttpServlet {
 
             case "add":
                 List<Customer> customers = customerDAO.getAllCustomers();
-                List<Room> availableRooms = roomDAO.getAvailableRooms();
+                List<Room> availableRooms = roomDAO.getAllRooms();
                 request.setAttribute("customers", customers);
                 request.setAttribute("rooms", availableRooms);
                 request.getRequestDispatcher("/admin/booking-form.jsp").forward(request, response);
@@ -229,7 +236,7 @@ public class BookingServlet extends HttpServlet {
         User currentUser = AuthUtil.getUser(request);
 
         if ("insert".equals(action)) {
-            int roomId = ParamUtil.getInt(request, "roomId", 0);
+            List<Integer> roomIds = getRequestedRoomIds(request);
             String checkInStr = ParamUtil.getString(request, "checkInDate", "");
             String checkOutStr = ParamUtil.getString(request, "checkOutDate", "");
             String note = ParamUtil.getString(request, "note", "");
@@ -241,14 +248,26 @@ public class BookingServlet extends HttpServlet {
             String customerCccd = ParamUtil.getString(request, "customerCccd", "");
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.setLenient(false);
             try {
                 Date checkInDate = sdf.parse(checkInStr);
                 Date checkOutDate = sdf.parse(checkOutStr);
 
-                Room room = roomDAO.getRoomById(roomId);
-                if (room == null) {
-                    response.sendRedirect(request.getContextPath() + "/home");
+                if (roomIds.isEmpty() || !checkOutDate.after(checkInDate)) {
+                    response.sendRedirect(request.getContextPath()
+                            + (currentUser != null ? "/bookings?action=add&error=invalidSelection" : "/home"));
                     return;
+                }
+
+                List<Room> selectedRooms = new ArrayList<>();
+                for (Integer roomId : roomIds) {
+                    Room room = roomDAO.getRoomById(roomId);
+                    if (room == null || !"Available".equalsIgnoreCase(room.getStatus())) {
+                        response.sendRedirect(request.getContextPath()
+                                + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home"));
+                        return;
+                    }
+                    selectedRooms.add(room);
                 }
 
                 Customer customer = null;
@@ -294,23 +313,40 @@ public class BookingServlet extends HttpServlet {
                     return;
                 }
 
-                Booking booking = new Booking(
-                        customer,
-                        room,
-                        creator,
-                        new Timestamp(checkInDate.getTime()),
-                        new Timestamp(checkOutDate.getTime()),
-                        status,
-                        room.getRoomType().getPricePerDay(),
-                        note
-                );
+                Timestamp checkInTimestamp = new Timestamp(checkInDate.getTime());
+                Timestamp checkOutTimestamp = new Timestamp(checkOutDate.getTime());
+                List<Booking> bookings = new ArrayList<>();
+                for (Room room : selectedRooms) {
+                    bookings.add(new Booking(
+                            customer,
+                            room,
+                            creator,
+                            checkInTimestamp,
+                            checkOutTimestamp,
+                            status,
+                            room.getRoomType().getPricePerDay(),
+                            note
+                    ));
+                }
 
-                boolean success = bookingDAO.insertBooking(booking);
+                boolean success = bookingDAO.insertBookings(bookings);
                 if (success) {
-                    roomDAO.updateRoomStatus(roomId, "Booked");
-                    response.sendRedirect(request.getContextPath() + "/bookings?action=receipt&id=" + booking.getBookingId());
+                    if (bookings.size() == 1) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/bookings?action=receipt&id=" + bookings.get(0).getBookingId());
+                    } else if (currentUser != null
+                            && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()))) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/bookings?action=list&createdCount=" + bookings.size());
+                    } else if (currentUser != null) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=mybookings");
+                    } else {
+                        response.sendRedirect(request.getContextPath()
+                                + "/bookings?action=receipt&id=" + bookings.get(0).getBookingId());
+                    }
                 } else {
-                    response.sendRedirect(request.getContextPath() + "/home");
+                    response.sendRedirect(request.getContextPath()
+                            + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home"));
                 }
 
             } catch (Exception e) {
@@ -379,5 +415,32 @@ public class BookingServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/bookings?action=list");
             }
         }
+    }
+
+    private List<Integer> getRequestedRoomIds(HttpServletRequest request) {
+        String[] rawValues = request.getParameterValues("roomIds");
+        if (rawValues == null || rawValues.length == 0) {
+            rawValues = request.getParameterValues("roomId");
+        }
+
+        Set<Integer> uniqueIds = new LinkedHashSet<>();
+        if (rawValues != null) {
+            for (String rawValue : rawValues) {
+                if (rawValue == null) {
+                    continue;
+                }
+                for (String part : rawValue.split(",")) {
+                    try {
+                        int roomId = Integer.parseInt(part.trim());
+                        if (roomId > 0) {
+                            uniqueIds.add(roomId);
+                        }
+                    } catch (NumberFormatException ignored) {
+                        // Invalid ids are discarded; an empty result is rejected by doPost.
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(uniqueIds);
     }
 }
