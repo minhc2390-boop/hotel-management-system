@@ -76,7 +76,7 @@ if (roomNumber.isEmpty()) {
 </head>
 <body>
 	<header class="public-header">
-		<div class="public-brand">
+		<a href="<%=request.getContextPath()%>/home" class="public-brand">
 			<div class="brand-logo">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 					stroke-width="1.8">
@@ -86,7 +86,7 @@ if (roomNumber.isEmpty()) {
 			<div class="brand-name">
 				<strong>NESTORA</strong><small>HOTEL MANAGER</small>
 			</div>
-		</div>
+		</a>
 		<nav class="public-nav">
 			<a href="<%=request.getContextPath()%>/home">Trang chủ</a>
 			<%
@@ -97,6 +97,7 @@ if (roomNumber.isEmpty()) {
 			} else {
 			%><a href="<%=request.getContextPath()%>/bills?action=mybills">Phòng
 				đã đặt</a>
+			<a href="<%=request.getContextPath()%>/profile">Hồ sơ thành viên</a>
 			<%
 			}
 			%><a href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
@@ -328,5 +329,6 @@ if (roomNumber.isEmpty()) {
 	      }
 	  }
 	</script>
+	<script src="<%=request.getContextPath()%>/js/app.js"></script>
 </body>
 </html>

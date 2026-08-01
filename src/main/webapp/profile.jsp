@@ -201,12 +201,12 @@
 </head>
 <body>
 <header class="public-header">
-    <div class="public-brand">
+    <a href="<%= request.getContextPath() %>/home" class="public-brand">
         <div class="brand-logo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
         </div>
         <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
-    </div>
+    </a>
     <nav class="public-nav">
         <a href="<%= request.getContextPath() %>/home">Trang chủ</a>
         <a href="<%= request.getContextPath() %>/bookings?action=mybookings">Phòng đã đặt</a>
@@ -383,5 +383,6 @@
         <% } %>
     </section>
 </main>
+<script src="<%= request.getContextPath() %>/js/app.js"></script>
 </body>
 </html>

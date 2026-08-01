@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%
   String activeTab = (String) request.getAttribute("activeTab");
   if (activeTab == null) {
@@ -179,12 +179,12 @@
 <body>
 <div class="login-page">
   <div class="login-card">
-    <div class="brand-center">
+    <a href="<%= request.getContextPath() %>/home" class="brand-center" style="text-decoration: none;">
       <div class="brand-logo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7M8 10h.01M12 10h.01M16 10h.01"/></svg>
       </div>
       <div class="brand-name"><strong>NESTORA</strong><small>HOTEL MANAGER</small></div>
-    </div>
+    </a>
     
     <div class="login-tabs">
       <button type="button" class="tab-btn <%= "login".equals(activeTab) ? "active" : "" %>" id="btn-login" onclick="switchTab('login')">Đăng nhập</button>
@@ -302,5 +302,6 @@
       switchTab(activeTab);
   });
 </script>
+<script src="<%= request.getContextPath() %>/js/app.js"></script>
 </body>
 </html>

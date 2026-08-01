@@ -200,7 +200,7 @@
 </head>
 <body>
     <header class="luxury-header">
-        <div class="luxury-brand">
+        <a href="<%= request.getContextPath() %>/home" class="luxury-brand">
             <div class="brand-logo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
             </div>
@@ -208,11 +208,16 @@
                 <strong>NESTORA</strong>
                 <small>HOTEL & RESORT</small>
             </div>
-        </div>
+        </a>
         <nav class="luxury-nav" style="display: flex; align-items: center; gap: 8px;">
             <a href="<%= request.getContextPath() %>/home">Trang chủ</a>
             <% if (currentUser != null) { %>
-                <a href="<%= request.getContextPath() %>/bookings?action=mybookings">Lịch sử đặt phòng</a>
+                <% if ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole())) { %>
+                    <a href="<%= request.getContextPath() %>/bookings?action=list">Trang quản trị</a>
+                <% } else { %>
+                    <a href="<%= request.getContextPath() %>/bookings?action=mybookings">Lịch sử đặt phòng</a>
+                    <a href="<%= request.getContextPath() %>/profile">Hồ sơ thành viên</a>
+                <% } %>
                 <a href="<%= request.getContextPath() %>/logout" class="nav-cta">Đăng xuất</a>
             <% } else { %>
                 <a href="<%= request.getContextPath() %>/login" class="nav-cta">Đăng nhập</a>
@@ -328,5 +333,6 @@
             </div>
         </div>
     </main>
+    <script src="<%= request.getContextPath() %>/js/app.js"></script>
 </body>
 </html>

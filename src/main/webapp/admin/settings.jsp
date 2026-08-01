@@ -199,7 +199,7 @@
                       <span style="background: #1e293b"></span>
                       <span style="background: #0f172a"></span>
                     </div>
-                    <span class="theme-title">Tối tối (Dark)</span>
+                    <span class="theme-title">Tối (Dark)</span>
                   </div>
 
                   <div class="theme-card" data-theme-val="forest" onclick="selectTheme('forest')">

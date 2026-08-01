@@ -111,7 +111,7 @@
 <div class="register-container">
     <!-- Cột bên trái hiển thị ảnh quảng bá sang trọng -->
     <div class="register-visual">
-        <div class="brand" style="position: relative; z-index: 2;">
+        <a href="<%= request.getContextPath() %>/home" class="brand" style="position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; text-decoration: none;">
             <div class="brand-logo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M8 21v-7h8v7"/></svg>
             </div>
@@ -119,7 +119,7 @@
                 <strong style="color: #fff;">NESTORA</strong>
                 <small style="color: #c5a880; font-weight: 700; letter-spacing: 0.22em;">HOTEL & RESORT</small>
             </div>
-        </div>
+        </a>
         <div class="register-visual-content">
             <h2>Gia nhập thành viên Nestora Club</h2>
             <p>Đăng ký tài khoản trực tuyến ngay hôm nay để nhận các đặc quyền ưu đãi dành riêng cho hội viên, tích lũy điểm thưởng và hưởng mức giá tốt nhất khi đặt phòng trực tiếp tại website của chúng tôi.</p>
@@ -208,6 +208,6 @@
         </div>
     </div>
 </div>
-
+<script src="<%= request.getContextPath() %>/js/app.js"></script>
 </body>
 </html>
