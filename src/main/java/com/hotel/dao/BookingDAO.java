@@ -17,6 +17,9 @@ import java.util.Set;
 
 public class BookingDAO {
 
+    /**
+     * Lấy toàn bộ danh sách đặt phòng trong hệ thống.
+     */
     public List<Booking> getAllBookings() {
         EntityManager em = DBContext.getEntityManager();
         try {
@@ -29,6 +32,83 @@ public class BookingDAO {
             em.close();
         }
         return null;
+    }
+
+    /**
+     * [RBAC Phân quyền Hệ thống]
+     * Lấy danh sách đặt phòng theo quyền hạn người dùng:
+     * - Admin: Xem toàn bộ lịch sử đặt phòng của tất cả nhân viên.
+     * - Staff/Receptionist: Chỉ xem danh sách các đơn do chính mình tạo (createdBy.id).
+     */
+    public List<Booking> getBookingsByRole(User user) {
+        if (user == null) {
+            return Collections.emptyList();
+        }
+
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            boolean isAdmin = "ADMIN".equalsIgnoreCase(user.getRole());
+
+            StringBuilder jpql = new StringBuilder(
+                "SELECT b FROM Booking b " +
+                "LEFT JOIN FETCH b.customer " +
+                "LEFT JOIN FETCH b.room r " +
+                "LEFT JOIN FETCH r.roomType " +
+                "LEFT JOIN FETCH b.createdBy "
+            );
+
+            if (!isAdmin) {
+                jpql.append("WHERE b.createdBy.id = :userId ");
+            }
+            jpql.append("ORDER BY b.bookingId DESC");
+
+            TypedQuery<Booking> query = em.createQuery(jpql.toString(), Booking.class);
+            if (!isAdmin) {
+                query.setParameter("userId", user.getId());
+            }
+
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * [Ràng buộc & Logic Đặt phòng - Khóa phòng]
+     * Kiểm tra phòng (roomId) có bị trùng lịch trong khoảng thời gian [checkIn, checkOut] hay không.
+     * Công thức: (CheckIn_Mới < CheckOut_Cũ) AND (CheckOut_Mới > CheckIn_Cũ)
+     * 
+     * @return true nếu phòng CÒN TRỐNG (Khả dụng), false nếu ĐÃ BỊ ĐẶT TRÙNG.
+     */
+    public boolean isRoomAvailable(int roomId, java.util.Date checkIn, java.util.Date checkOut) {
+        if (checkIn == null || checkOut == null || !checkOut.after(checkIn)) {
+            return false;
+        }
+
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT COUNT(b) FROM Booking b " +
+                          "WHERE b.room.id = :roomId " +
+                          "  AND b.status NOT IN ('Cancelled', 'CANCELLED', 'CheckedOut', 'CHECKED_OUT') " +
+                          "  AND :checkIn < b.checkOutDate " +
+                          "  AND :checkOut > b.checkInDate";
+
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            query.setParameter("roomId", roomId);
+            query.setParameter("checkIn", checkIn);
+            query.setParameter("checkOut", checkOut);
+
+            Long count = query.getSingleResult();
+            return count != null && count == 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+        return false;
     }
 
     public List<Booking> getBookingsByUserId(int userId, String email) {

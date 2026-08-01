@@ -108,7 +108,7 @@
                 </div>
 
                 <% if (request.getParameter("processed") != null) { %>
-                    <div class="alert alert-success">Đã nhận phòng thành công cho <%= request.getParameter("processed") %> phòng.</div>
+                    <div class="alert alert-success">Đã xử lý thành công cho <%= request.getParameter("processed") %> phòng.</div>
                 <% } else if ("noSelection".equals(request.getParameter("error"))) { %>
                     <div class="alert alert-error">Vui lòng chọn ít nhất một phòng.</div>
                 <% } else if ("bulkFailed".equals(request.getParameter("error"))) { %>
@@ -169,36 +169,44 @@
                                         else if ("CheckedIn".equals(b.getStatus())) statusText = "Đã nhận phòng";
                                         else if ("CheckedOut".equals(b.getStatus())) statusText = "Đã trả phòng";
                                         else if ("Cancelled".equals(b.getStatus())) statusText = "Đã hủy";
+                                        
                                         long stayMs = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
                                         long stayDays = stayMs / (1000L * 60 * 60 * 24);
                                         if (stayDays <= 0) stayDays = 1;
                                         double bookingTotal = stayDays * b.getRoomPrice();
+                                        
                                         boolean canBulkCheckIn = "Pending".equals(b.getStatus()) || "Confirmed".equals(b.getStatus());
                                         boolean canBulkCheckOut = "CheckedIn".equals(b.getStatus());
                                         boolean canBulkProcess = canBulkCheckIn || canBulkCheckOut;
                                         String bulkOperation = canBulkCheckOut ? "checkout" : (canBulkCheckIn ? "checkin" : "");
+                                        
+                                        int cId = (b.getCustomer() != null) ? b.getCustomer().getCustomerId() : 0;
+                                        String cName = (b.getCustomer() != null) ? b.getCustomer().getCustomerName() : "N/A";
+                                        String cPhone = (b.getCustomer() != null && b.getCustomer().getCustomerPhone() != null) ? b.getCustomer().getCustomerPhone() : "";
+                                        String rNum = (b.getRoom() != null) ? b.getRoom().getRoomNumber() : "N/A";
+                                        String rType = (b.getRoom() != null && b.getRoom().getRoomType() != null) ? b.getRoom().getRoomType().getName() : "";
                             %>
-                            <tr data-customer-id="<%= b.getCustomer().getCustomerId() %>">
+                            <tr data-customer-id="<%= cId %>">
                                 <% if (bulkModeAvailable) { %>
                                 <td class="bulk-selector-cell">
                                     <input class="booking-select" type="checkbox" name="bookingIds"
                                            value="<%= b.getBookingId() %>"
-                                           data-customer-id="<%= b.getCustomer().getCustomerId() %>"
+                                           data-customer-id="<%= cId %>"
                                            data-amount="<%= bookingTotal %>"
                                            data-operation="<%= bulkOperation %>"
                                            data-eligible="<%= canBulkProcess %>"
                                            <%= canBulkProcess ? "" : "disabled" %>
-                                           aria-label="Chọn phòng <%= b.getRoom().getRoomNumber() %>">
+                                           aria-label="Chọn phòng <%= rNum %>">
                                 </td>
                                 <% } %>
                                 <td class="table-primary">#DP<%= b.getBookingId() %></td>
                                 <td>
-                                    <div class="table-strong customer-name"><%= b.getCustomer().getCustomerName() %></div>
-                                    <div style="font-size:11px; color:var(--muted);"><%= b.getCustomer().getCustomerPhone() %></div>
+                                    <div class="table-strong customer-name"><%= cName %></div>
+                                    <div style="font-size:11px; color:var(--muted);"><%= cPhone %></div>
                                 </td>
                                 <td>
-                                    <div class="table-strong">P.<%= b.getRoom().getRoomNumber() %></div>
-                                    <div style="font-size:11px; color:var(--muted);"><%= b.getRoom().getRoomType().getName() %></div>
+                                    <div class="table-strong">P.<%= rNum %></div>
+                                    <div style="font-size:11px; color:var(--muted);"><%= rType %></div>
                                 </td>
                                 <td class="table-strong text-primary"><%= money.format(b.getRoomPrice()) %></td>
                                 <td><%= sdf.format(b.getCheckInDate()) %></td>
@@ -208,22 +216,18 @@
                                 </td>
                                 <td>
                                     <div class="table-actions">
-                                        <!-- Xem phiếu đặt phòng -->
                                         <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=receipt&id=<%= b.getBookingId() %>">📄 Phiếu</a>
                                         
-                                        <!-- Cập nhật trạng thái nghiệp vụ -->
                                         <% if ("Pending".equals(b.getStatus()) || "Confirmed".equals(b.getStatus())) { %>
                                             <a class="btn btn-primary" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=checkin&id=<%= b.getBookingId() %>">Nhận phòng</a>
                                         <% } else if ("CheckedIn".equals(b.getStatus())) { %>
                                             <a class="btn btn-success" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=checkout&id=<%= b.getBookingId() %>">Trả phòng</a>
                                         <% } %>
 
-                                        <!-- Hủy phòng nếu chưa nhận phòng và chưa hủy -->
                                         <% if (!"CheckedOut".equals(b.getStatus()) && !"Cancelled".equals(b.getStatus())) { %>
                                             <a class="btn btn-danger" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=cancel&id=<%= b.getBookingId() %>" onclick="return confirm('Bạn có chắc muốn hủy đặt phòng này?')">Hủy</a>
                                         <% } %>
 
-                                        <!-- Sửa và Xóa -->
                                         <a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bookings?action=edit&id=<%= b.getBookingId() %>">✎</a>
                                         <a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bookings?action=delete&id=<%= b.getBookingId() %>" onclick="return confirm('Xóa lịch sử đặt phòng này?')">×</a>
                                     </div>
@@ -256,7 +260,7 @@
         const submitButton = document.getElementById('submit-bulk-action');
         const selectSameButton = document.getElementById('select-same-customer');
         const form = document.getElementById('bulk-booking-form');
-        const actionInput = form.querySelector('input[name="action"]');
+        const actionInput = form ? form.querySelector('input[name="action"]') : null;
         const checkboxes = Array.from(document.querySelectorAll('.booking-select'));
         const countLabel = document.getElementById('bulk-selected-count');
         const customerLabel = document.getElementById('bulk-selected-customer');
@@ -266,7 +270,8 @@
             checkboxes.forEach(function (checkbox) {
                 checkbox.checked = false;
                 checkbox.disabled = false;
-                checkbox.closest('tr').classList.remove('selection-disabled', 'selection-selected');
+                var row = checkbox.closest('tr');
+                if (row) row.classList.remove('selection-disabled', 'selection-selected');
             });
             refreshSelection();
         }
@@ -285,69 +290,87 @@
                 );
                 checkbox.disabled = unavailable || Boolean(incompatible);
                 const row = checkbox.closest('tr');
-                row.classList.toggle('selection-disabled', unavailable || Boolean(incompatible));
-                row.classList.toggle('selection-selected', checkbox.checked);
+                if (row) {
+                    row.classList.toggle('selection-disabled', unavailable || Boolean(incompatible));
+                    row.classList.toggle('selection-selected', checkbox.checked);
+                }
                 if (checkbox.checked) total += Number(checkbox.dataset.amount || 0);
             });
 
-            countLabel.textContent = selected.length + ' phòng';
-            customerLabel.textContent = selected.length
-                ? selected[0].closest('tr').querySelector('.customer-name').textContent.trim()
-                : 'Chưa chọn';
-            if (lockedOperation === 'checkout') {
-                totalLabel.textContent = new Intl.NumberFormat('vi-VN', {
-                    style: 'currency', currency: 'VND', maximumFractionDigits: 0
-                }).format(total);
-            } else {
-                totalLabel.textContent = '—';
+            if (countLabel) countLabel.textContent = selected.length + ' phòng';
+            if (customerLabel) {
+                customerLabel.textContent = selected.length
+                    ? selected[0].closest('tr').querySelector('.customer-name').textContent.trim()
+                    : 'Chưa chọn';
             }
-            actionInput.value = lockedOperation === 'checkout' ? 'bulkCheckout' : 'bulkCheckin';
-            submitButton.textContent = lockedOperation === 'checkout'
-                ? 'Trả phòng & tạo hóa đơn'
-                : (lockedOperation === 'checkin' ? 'Xác nhận nhận phòng' : 'Chọn phòng để xử lý');
-            submitButton.classList.toggle('btn-success', lockedOperation === 'checkout');
-            submitButton.classList.toggle('btn-primary', lockedOperation !== 'checkout');
-            submitButton.disabled = selected.length === 0;
-            selectSameButton.disabled = selected.length === 0;
+            if (totalLabel) {
+                if (lockedOperation === 'checkout') {
+                    totalLabel.textContent = new Intl.NumberFormat('vi-VN', {
+                        style: 'currency', currency: 'VND', maximumFractionDigits: 0
+                    }).format(total);
+                } else {
+                    totalLabel.textContent = '—';
+                }
+            }
+            if (actionInput) {
+                actionInput.value = lockedOperation === 'checkout' ? 'bulkCheckout' : 'bulkCheckin';
+            }
+            if (submitButton) {
+                submitButton.textContent = lockedOperation === 'checkout'
+                    ? 'Trả phòng & tạo hóa đơn'
+                    : (lockedOperation === 'checkin' ? 'Xác nhận nhận phòng' : 'Chọn phòng để xử lý');
+                submitButton.classList.toggle('btn-success', lockedOperation === 'checkout');
+                submitButton.classList.toggle('btn-primary', lockedOperation !== 'checkout');
+                submitButton.disabled = selected.length === 0;
+            }
+            if (selectSameButton) selectSameButton.disabled = selected.length === 0;
         }
 
-        enableButton.addEventListener('click', function () {
-            surface.classList.add('bulk-mode-active');
-            enableButton.disabled = true;
-            refreshSelection();
-        });
-        cancelButton.addEventListener('click', function () {
-            resetSelection();
-            surface.classList.remove('bulk-mode-active');
-            enableButton.disabled = false;
-        });
-        selectSameButton.addEventListener('click', function () {
-            const firstSelected = checkboxes.find(function (checkbox) { return checkbox.checked; });
-            if (!firstSelected) return;
-            checkboxes.forEach(function (checkbox) {
-                if (checkbox.dataset.customerId === firstSelected.dataset.customerId
-                        && checkbox.dataset.operation === firstSelected.dataset.operation
-                        && checkbox.dataset.eligible === 'true') {
-                    checkbox.checked = true;
-                }
+        if (enableButton) {
+            enableButton.addEventListener('click', function () {
+                if (surface) surface.classList.add('bulk-mode-active');
+                enableButton.disabled = true;
+                refreshSelection();
             });
-            refreshSelection();
-        });
+        }
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function () {
+                resetSelection();
+                if (surface) surface.classList.remove('bulk-mode-active');
+                if (enableButton) enableButton.disabled = false;
+            });
+        }
+        if (selectSameButton) {
+            selectSameButton.addEventListener('click', function () {
+                const firstSelected = checkboxes.find(function (checkbox) { return checkbox.checked; });
+                if (!firstSelected) return;
+                checkboxes.forEach(function (checkbox) {
+                    if (checkbox.dataset.customerId === firstSelected.dataset.customerId
+                            && checkbox.dataset.operation === firstSelected.dataset.operation
+                            && checkbox.dataset.eligible === 'true') {
+                        checkbox.checked = true;
+                    }
+                });
+                refreshSelection();
+            });
+        }
         checkboxes.forEach(function (checkbox) {
             checkbox.addEventListener('change', refreshSelection);
         });
-        form.addEventListener('submit', function (event) {
-            const selectedCount = checkboxes.filter(function (checkbox) { return checkbox.checked; }).length;
-            if (!selectedCount) {
-                event.preventDefault();
-                return;
-            }
-            const isCheckout = actionInput.value === 'bulkCheckout';
-            const message = isCheckout
-                ? 'Xác nhận trả ' + selectedCount + ' phòng và tạo một hóa đơn tổng?'
-                : 'Xác nhận nhận ' + selectedCount + ' phòng cho khách hàng này?';
-            if (!window.confirm(message)) event.preventDefault();
-        });
+        if (form) {
+            form.addEventListener('submit', function (event) {
+                const selectedCount = checkboxes.filter(function (checkbox) { return checkbox.checked; }).length;
+                if (!selectedCount) {
+                    event.preventDefault();
+                    return;
+                }
+                const isCheckout = actionInput && actionInput.value === 'bulkCheckout';
+                const message = isCheckout
+                    ? 'Xác nhận trả ' + selectedCount + ' phòng và tạo một hóa đơn tổng?'
+                    : 'Xác nhận nhận ' + selectedCount + ' phòng cho khách hàng này?';
+                if (!window.confirm(message)) event.preventDefault();
+            });
+        }
     })();
 </script>
 <% } %>
