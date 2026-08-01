@@ -10,11 +10,7 @@ import com.hotel.model.Room;
 import com.hotel.model.User;
 import com.hotel.util.AuthUtil;
 import com.hotel.util.ParamUtil;
-import com.hotel.dao.BillDAO;
-import com.hotel.dao.BillDetailDAO;
 import com.hotel.dao.UserDAO;
-import com.hotel.model.Bill;
-import com.hotel.model.BillDetail;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -35,8 +31,6 @@ public class BookingServlet extends HttpServlet {
     private final BookingDAO bookingDAO = new BookingDAO();
     private final CustomerDAO customerDAO = new CustomerDAO();
     private final RoomDAO roomDAO = new RoomDAO();
-    private final BillDAO billDAO = new BillDAO();
-    private final BillDetailDAO billDetailDAO = new BillDetailDAO();
     private final UserDAO userDAO = new UserDAO();
     private final FeedbackDAO feedbackDAO = new FeedbackDAO();
 
@@ -143,61 +137,20 @@ public class BookingServlet extends HttpServlet {
 
             case "checkin":
                 int checkinId = ParamUtil.getInt(request, "id", 0);
-                Booking checkinBooking = bookingDAO.getBookingById(checkinId);
-                if (checkinBooking != null) {
-                    bookingDAO.updateBookingStatus(checkinId, "CheckedIn");
-                    roomDAO.updateRoomStatus(checkinBooking.getRoom().getId(), "Occupied");
-                }
-                response.sendRedirect(request.getContextPath() + "/bookings?action=list");
+                bookingDAO.checkInBookings(java.util.Collections.singletonList(checkinId));
+                response.sendRedirect(request.getContextPath() + "/bookings?action=list&mode=checkin");
                 break;
 
             case "checkout":
                 int checkoutId = ParamUtil.getInt(request, "id", 0);
-                Booking checkoutBooking = bookingDAO.getBookingById(checkoutId);
-                if (checkoutBooking != null) {
-                    // 1. Tạo Hóa đơn (Bill) mới từ thông tin Booking
-                    Bill bill = new Bill();
-                    
-                    User billCreator = checkoutBooking.getCreatedBy();
-                    if (billCreator == null) {
-                        billCreator = userDAO.getUserById(1); // Mặc định gán admin nếu đặt phòng cũ không có người tạo
-                    }
-                    bill.setUser(billCreator);
-                    bill.setCustomer(checkoutBooking.getCustomer()); // Lưu thông tin khách hàng lưu trú thực tế vào hóa đơn
-                    bill.setCheckInDate(checkoutBooking.getCheckInDate());
-                    bill.setCheckOutDate(checkoutBooking.getCheckOutDate());
-                    
-                    // Tính số ngày lưu trú thực tế
-                    long diffMs = checkoutBooking.getCheckOutDate().getTime() - checkoutBooking.getCheckInDate().getTime();
-                    long days = diffMs / (1000 * 60 * 60 * 24);
-                    if (days <= 0) days = 1;
-                    
-                    double totalRoomCharge = days * checkoutBooking.getRoomPrice();
-                    bill.setTotalAmount(totalRoomCharge);
-                    bill.setStatus("Unpaid");
-                    
-                    int billId = billDAO.insertBill(bill);
-                    if (billId > 0) {
-                        // 2. Tạo Chi tiết hóa đơn (BillDetail) tiền phòng
-                        BillDetail roomChargeDetail = new BillDetail();
-                        roomChargeDetail.setBillId(billId);
-                        roomChargeDetail.setRoom(checkoutBooking.getRoom());
-                        roomChargeDetail.setQuantity((int) days);
-                        roomChargeDetail.setPrice(checkoutBooking.getRoomPrice());
-                        billDetailDAO.insertBillDetail(roomChargeDetail);
-                    }
-                    
-                    // 3. Cập nhật trạng thái Booking và Phòng
-                    bookingDAO.updateBookingStatus(checkoutId, "CheckedOut");
-                    roomDAO.updateRoomStatus(checkoutBooking.getRoom().getId(), "Available");
-                    
-                    if (billId > 0) {
-                        // Chuyển hướng thẳng tới trang hóa đơn chi tiết
-                        response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId);
-                        return;
-                    }
+                int singleBillId = bookingDAO.checkOutBookings(
+                        java.util.Collections.singletonList(checkoutId), currentUser.getId());
+                if (singleBillId > 0) {
+                    response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + singleBillId);
+                    return;
                 }
-                response.sendRedirect(request.getContextPath() + "/bookings?action=list");
+                response.sendRedirect(request.getContextPath()
+                        + "/bookings?action=list&mode=checkout&error=bulkFailed");
                 break;
 
             case "cancel":
@@ -234,6 +187,39 @@ public class BookingServlet extends HttpServlet {
         }
 
         User currentUser = AuthUtil.getUser(request);
+
+        if ("bulkCheckin".equals(action) || "bulkCheckout".equals(action)) {
+            if (currentUser == null || (!"Admin".equals(currentUser.getRole())
+                    && !"Receptionist".equals(currentUser.getRole()))) {
+                response.sendRedirect(request.getContextPath() + "/home");
+                return;
+            }
+
+            List<Integer> bookingIds = getRequestedBookingIds(request);
+            String mode = "bulkCheckout".equals(action) ? "checkout" : "checkin";
+            if (bookingIds.isEmpty()) {
+                response.sendRedirect(request.getContextPath()
+                        + "/bookings?action=list&mode=" + mode + "&error=noSelection");
+                return;
+            }
+
+            if ("bulkCheckin".equals(action)) {
+                boolean success = bookingDAO.checkInBookings(bookingIds);
+                response.sendRedirect(request.getContextPath()
+                        + "/bookings?action=list&mode=checkin&"
+                        + (success ? "processed=" + bookingIds.size() : "error=bulkFailed"));
+                return;
+            }
+
+            int billId = bookingDAO.checkOutBookings(bookingIds, currentUser.getId());
+            if (billId > 0) {
+                response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId);
+            } else {
+                response.sendRedirect(request.getContextPath()
+                        + "/bookings?action=list&mode=checkout&error=bulkFailed");
+            }
+            return;
+        }
 
         if ("insert".equals(action)) {
             List<Integer> roomIds = getRequestedRoomIds(request);
@@ -437,6 +423,25 @@ public class BookingServlet extends HttpServlet {
                         }
                     } catch (NumberFormatException ignored) {
                         // Invalid ids are discarded; an empty result is rejected by doPost.
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(uniqueIds);
+    }
+
+    private List<Integer> getRequestedBookingIds(HttpServletRequest request) {
+        String[] rawValues = request.getParameterValues("bookingIds");
+        Set<Integer> uniqueIds = new LinkedHashSet<>();
+        if (rawValues != null) {
+            for (String rawValue : rawValues) {
+                if (rawValue == null) continue;
+                for (String part : rawValue.split(",")) {
+                    try {
+                        int bookingId = Integer.parseInt(part.trim());
+                        if (bookingId > 0) uniqueIds.add(bookingId);
+                    } catch (NumberFormatException ignored) {
+                        // Invalid booking ids are ignored and rejected if none remain.
                     }
                 }
             }
