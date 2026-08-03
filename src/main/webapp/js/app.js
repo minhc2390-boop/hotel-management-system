@@ -33,6 +33,13 @@
     });
   }
 
+  // Load and apply sidebar collapsed state from localStorage
+  const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  if (sidebarCollapsed) {
+    document.documentElement.classList.add('sidebar-collapsed');
+    document.documentElement.classList.add('collapsed');
+  }
+
   if (mobileToggle && sidebar) {
     mobileToggle.addEventListener('click', function () {
       sidebar.classList.toggle('open');
@@ -42,7 +49,9 @@
   if (collapseToggle) {
     collapseToggle.addEventListener('click', function (event) {
       event.preventDefault();
-      document.documentElement.classList.toggle('sidebar-collapsed');
+      const isNowCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+      document.documentElement.classList.toggle('collapsed', isNowCollapsed);
+      localStorage.setItem('sidebarCollapsed', isNowCollapsed ? 'true' : 'false');
     });
   }
 

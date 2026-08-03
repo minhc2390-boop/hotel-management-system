@@ -1,12 +1,10 @@
-﻿package com.hotel.filter;
+package com.hotel.filter;
 
 import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@WebFilter(filterName = "Utf8Filter", urlPatterns = "/*")
 public class Utf8Filter implements Filter {
 
     @Override
@@ -37,3 +35,4 @@ public class Utf8Filter implements Filter {
     public void destroy() {
     }
 }
+

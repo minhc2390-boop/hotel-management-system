@@ -53,6 +53,8 @@
     <a class="<%= clientHeaderBuffet ? "active" : "" %>"
        <%= clientHeaderBuffet ? "aria-current=\"page\"" : "" %>
        href="<%= request.getContextPath() %>/buffet">Menu Buffet</a>
+    <a class="<%= clientHeaderPath.contains("/laundry") ? "active" : "" %>"
+       href="<%= request.getContextPath() %>/laundry?action=clientBook">Dịch vụ giặt ủi</a>
 
     <% if (clientHeaderUser != null && !clientHeaderManager) { %>
       <a class="<%= clientHeaderBookings ? "active" : "" %>"
