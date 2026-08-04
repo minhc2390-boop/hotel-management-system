@@ -166,6 +166,49 @@
         .form-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
         .btn-large { height: 48px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
 
+        .btn-disabled-style {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            filter: grayscale(80%);
+            box-shadow: none !important;
+            background: #94a3b8 !important;
+            border-color: #94a3b8 !important;
+            transition: all 0.3s ease;
+        }
+        .btn-active-style {
+            opacity: 1 !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            filter: none !important;
+            background: var(--brand) !important;
+            border-color: var(--brand) !important;
+            box-shadow: 0 6px 20px rgba(23, 105, 224, 0.45) !important;
+            animation: pulseGlow 2s infinite ease-in-out;
+            transition: all 0.3s ease;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(23, 105, 224, 0.5); }
+            70% { box-shadow: 0 0 0 12px rgba(23, 105, 224, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(23, 105, 224, 0); }
+        }
+        .transfer-confirm-card {
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1.5px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .transfer-confirm-card.active {
+            border-color: #16a34a;
+            background: #f0fdf4;
+        }
+
         @media (max-width: 900px) { .booking-layout { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -226,7 +269,7 @@
             <h2 class="form-card-title">Chi tiết Đặt phòng</h2>
             <p class="form-card-desc">Quý khách thực hiện đặt chỗ trực tuyến nhanh chóng.</p>
 
-            <form action="<%= request.getContextPath() %>/bookings" method="post" id="bookingForm">
+            <form action="<%= request.getContextPath() %>/bookings" method="post" id="bookingForm" onsubmit="return validateBookingSubmission()">
                 <input type="hidden" name="action" value="insert">
                 <input type="hidden" name="roomId" value="<%= room.getId() %>">
 
@@ -316,11 +359,21 @@
                         Số TK: <strong>1903567890123</strong><br>
                         Chủ TK: <strong>CONG TY NESTORA HOTEL</strong>
                     </div>
+
+                    <div id="transferConfirmCard" class="transfer-confirm-card">
+                        <input type="checkbox" id="transferConfirmed" onchange="toggleSubmitButton()" style="width: 20px; height: 20px; cursor: pointer; accent-color: #16a34a;">
+                        <label for="transferConfirmed" style="font-weight: 700; color: var(--luxury-navy); cursor: pointer; margin: 0; font-size: 14px; user-select: none;">
+                            Tôi đã chuyển khoản cọc thành công
+                        </label>
+                    </div>
+                    <p id="transferNotice" style="margin: 10px 0 0; font-size: 13px; color: #dc2626; font-weight: 600; text-align: center;">
+                        * Vui lòng chuyển khoản cọc 20% và tích chọn "Tôi đã chuyển khoản cọc thành công" để kích hoạt nút Xác nhận đặt ngay.
+                    </p>
                 </div>
 
                 <div class="form-actions">
                     <a class="btn btn-outline btn-large" href="<%= request.getContextPath() %>/home">Quay lại</a>
-                    <button class="btn btn-primary btn-large" type="submit">Xác nhận đặt ngay</button>
+                    <button class="btn btn-primary btn-large btn-disabled-style" type="submit" id="btnSubmitBooking" disabled>Xác nhận đặt ngay</button>
                 </div>
             </form>
         </section>
@@ -339,6 +392,44 @@
     const depositEl = document.getElementById('estimatedDeposit');
     const errorEl = document.getElementById('dateError');
     const qrContainer = document.getElementById('transfer-qr-container');
+    const btnSubmit = document.getElementById('btnSubmitBooking');
+    const transferCheck = document.getElementById('transferConfirmed');
+    const transferCard = document.getElementById('transferConfirmCard');
+    const transferNotice = document.getElementById('transferNotice');
+
+    function toggleSubmitButton() {
+        let checkInVal = checkInInput.value;
+        let checkOutVal = checkOutInput.value;
+        let isDateValid = checkInVal && checkOutVal && (new Date(checkOutVal) > new Date(checkInVal));
+
+        if (transferCheck && transferCheck.checked && isDateValid) {
+            btnSubmit.disabled = false;
+            btnSubmit.classList.remove('btn-disabled-style');
+            btnSubmit.classList.add('btn-active-style');
+            if (transferCard) transferCard.classList.add('active');
+            if (transferNotice) {
+                transferNotice.textContent = '✓ Đã xác nhận chuyển khoản cọc. Quý khách có thể nhấn "Xác nhận đặt ngay" để hoàn thành đặt phòng!';
+                transferNotice.style.color = '#16a34a';
+            }
+        } else {
+            btnSubmit.disabled = true;
+            btnSubmit.classList.remove('btn-active-style');
+            btnSubmit.classList.add('btn-disabled-style');
+            if (transferCard) transferCard.classList.remove('active');
+            if (transferNotice) {
+                transferNotice.textContent = '* Vui lòng chuyển khoản cọc 20% và tích chọn "Tôi đã chuyển khoản cọc thành công" để kích hoạt nút Xác nhận đặt ngay.';
+                transferNotice.style.color = '#dc2626';
+            }
+        }
+    }
+
+    function validateBookingSubmission() {
+        if (!transferCheck || !transferCheck.checked) {
+            alert('Quý khách vui lòng chuyển khoản cọc và tích chọn "Tôi đã chuyển khoản cọc thành công" trước khi xác nhận đặt phòng.');
+            return false;
+        }
+        return true;
+    }
 
     function calculateBooking() {
         let checkInVal = checkInInput.value;
@@ -350,6 +441,8 @@
             totalEl.textContent = '0 ₫';
             depositEl.textContent = '0 ₫';
             qrContainer.style.display = 'none';
+            if (transferCheck) transferCheck.checked = false;
+            toggleSubmitButton();
             return;
         }
 
@@ -361,6 +454,8 @@
             totalEl.textContent = '0 ₫';
             depositEl.textContent = '0 ₫';
             qrContainer.style.display = 'none';
+            if (transferCheck) transferCheck.checked = false;
+            toggleSubmitButton();
             return;
         }
 
@@ -392,6 +487,7 @@
 
         document.getElementById('vietqr-image').src = qrUrl;
         qrContainer.style.display = 'block';
+        toggleSubmitButton();
     }
 </script>
 </body>
