@@ -47,7 +47,8 @@ public class ProfileServlet extends HttpServlet {
             if (bookings != null) {
                 totalBookings = bookings.size();
                 for (Booking b : bookings) {
-                    if (!"Cancelled".equals(b.getStatus())) {
+                    // 🎯 ĐÃ SỬA: Chỉ cộng tiền khi đơn ở trạng thái "CheckedOut" (Đã trả phòng)
+                    if ("CheckedOut".equals(b.getStatus())) {
                         long diffMs = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
                         long days = diffMs / (1000 * 60 * 60 * 24);
                         if (days <= 0) days = 1;

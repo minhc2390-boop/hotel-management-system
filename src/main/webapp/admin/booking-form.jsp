@@ -29,8 +29,10 @@
         if (booking.getCheckInDate() != null) checkInVal = sdf.format(booking.getCheckInDate());
         if (booking.getCheckOutDate() != null) checkOutVal = sdf.format(booking.getCheckOutDate());
         if (booking.getNote() != null) noteVal = booking.getNote();
-        if (booking.getCustomer().getCustomerPhone() != null) phoneVal = booking.getCustomer().getCustomerPhone();
-        if (booking.getCustomer().getCustomerCccd() != null) cccdVal = booking.getCustomer().getCustomerCccd();
+        if (booking.getCustomer() != null) {
+            if (booking.getCustomer().getCustomerPhone() != null) phoneVal = booking.getCustomer().getCustomerPhone();
+            if (booking.getCustomer().getCustomerCccd() != null) cccdVal = booking.getCustomer().getCustomerCccd();
+        }
     }
 %>
 <!DOCTYPE html>
@@ -41,7 +43,6 @@
     <title><%= isEdit ? "Cập nhật đặt phòng" : "Tạo phiếu đặt phòng" %> - Nestora</title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
     <style>
-        /* Custom styling to make the booking form premium and beautiful */
         .form-section-card {
             border: 1px solid var(--line);
             border-radius: 12px;
@@ -107,7 +108,7 @@
             animation: fadeIn 0.35s ease-out;
         }
         .booking-room-picker[hidden] {
-            display: none;
+            display: none !important;
         }
         .booking-room-picker-head {
             display: flex;
@@ -255,17 +256,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
         @media (max-width: 760px) {
-            .booking-room-picker-head {
-                flex-direction: column;
-            }
-            .booking-room-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+            .booking-room-picker-head { flex-direction: column; }
+            .booking-room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 460px) {
-            .booking-room-grid {
-                grid-template-columns: 1fr;
-            }
+            .booking-room-grid { grid-template-columns: 1fr; }
         }
     </style>
     <script>
@@ -275,20 +270,20 @@
             var nameField = document.getElementById("customerName");
             var emailField = document.getElementById("customerEmail");
             
-            if (select.value === "0") {
-                newCustSection.style.display = "block";
-                nameField.required = true;
-                emailField.required = false;
-            } else {
-                newCustSection.style.display = "none";
-                nameField.required = false;
-                emailField.required = false;
+            if (select && select.value === "0") {
+                if (newCustSection) newCustSection.style.display = "block";
+                if (nameField) nameField.required = true;
+                if (emailField) emailField.required = false;
+            } else if (select) {
+                if (newCustSection) newCustSection.style.display = "none";
+                if (nameField) nameField.required = false;
+                if (emailField) emailField.required = false;
                 
                 var selectedOption = select.options[select.selectedIndex];
                 var phone = selectedOption.getAttribute("data-phone");
                 var cccd = selectedOption.getAttribute("data-cccd");
-                document.getElementById("customerPhone").value = phone || "";
-                document.getElementById("customerCccd").value = cccd || "";
+                if (document.getElementById("customerPhone")) document.getElementById("customerPhone").value = phone || "";
+                if (document.getElementById("customerCccd")) document.getElementById("customerCccd").value = cccd || "";
             }
         }
     </script>
@@ -322,7 +317,6 @@
                                 Thông tin Khách hàng & Liên hệ
                             </h3>
                             <div class="form-grid">
-                                <!-- Chọn khách hàng -->
                                 <div class="form-group">
                                     <label class="form-label" for="customerId">Khách hàng lưu trú <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
@@ -333,7 +327,7 @@
                                             <%
                                                 if (customers != null) {
                                                     for (Customer c : customers) {
-                                                        boolean selected = isEdit && booking.getCustomer().getCustomerId() == c.getCustomerId();
+                                                        boolean selected = isEdit && booking.getCustomer() != null && booking.getCustomer().getCustomerId() == c.getCustomerId();
                                             %>
                                             <option value="<%= c.getCustomerId() %>" <%= selected ? "selected" : "" %>
                                                     data-phone="<%= c.getCustomerPhone() != null ? c.getCustomerPhone() : "" %>"
@@ -349,7 +343,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Số điện thoại -->
                                 <div class="form-group">
                                     <label class="form-label" for="customerPhone">Số điện thoại liên hệ <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
@@ -358,7 +351,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Căn cước công dân -->
                                 <div class="form-group">
                                     <label class="form-label" for="customerCccd">Số Căn cước công dân (CCCD) <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
@@ -368,7 +360,6 @@
                                 </div>
                             </div>
 
-                            <!-- Phần thông tin khách hàng mới (Hiện/Ẩn động) -->
                             <div id="newCustomerSection" class="animated-section" style="margin-top: 15px; display: <%= isEdit ? "none" : "block" %>;">
                                 <div style="font-size: 13px; font-weight: 700; color: var(--brand); margin-bottom: 12px; text-transform: uppercase;">Thông tin khách hàng mới</div>
                                 <div class="form-grid">
@@ -397,7 +388,6 @@
                                 Chọn Phòng & Lịch trình lưu trú
                             </h3>
                             <div class="form-grid booking-date-grid">
-                                <!-- Ngày nhận phòng -->
                                 <div class="form-group">
                                     <label class="form-label" for="checkInDate">Ngày nhận phòng <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
@@ -406,7 +396,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Ngày trả phòng -->
                                 <div class="form-group">
                                     <label class="form-label" for="checkOutDate">Ngày trả phòng <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
@@ -416,7 +405,6 @@
                                 </div>
 
                                 <% if (isEdit) { %>
-                                <!-- Trạng thái -->
                                 <div class="form-group">
                                     <label class="form-label" for="status">Trạng thái đặt phòng <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
@@ -519,7 +507,6 @@
                             </div>
                         </div>
 
-                        <!-- Các nút hành động -->
                         <div class="form-actions" style="margin-top: 10px;">
                             <a class="btn btn-outline" style="min-height: 44px; padding: 0 24px;" href="<%= request.getContextPath() %>/bookings?action=list">Quay lại</a>
                             <button class="btn btn-primary" style="min-height: 44px; padding: 0 30px;" type="submit">Lưu đặt phòng</button>
@@ -560,20 +547,22 @@
         function syncSelectedRoomInputs() {
             var selectedCards = getSelectedCards();
             if (isEditMode) {
-                roomInput.value = selectedCards.length
-                        ? selectedCards[0].getAttribute("data-room-id")
-                        : "";
+                if (roomInput) {
+                    roomInput.value = selectedCards.length ? selectedCards[0].getAttribute("data-room-id") : "";
+                }
                 return;
             }
 
-            selectedRoomInputs.innerHTML = "";
-            selectedCards.forEach(function(card) {
-                var input = document.createElement("input");
-                input.type = "hidden";
-                input.name = "roomIds";
-                input.value = card.getAttribute("data-room-id");
-                selectedRoomInputs.appendChild(input);
-            });
+            if (selectedRoomInputs) {
+                selectedRoomInputs.innerHTML = "";
+                selectedCards.forEach(function(card) {
+                    var input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "roomIds";
+                    input.value = card.getAttribute("data-room-id");
+                    selectedRoomInputs.appendChild(input);
+                });
+            }
         }
 
         function updateSelectionMessage() {
@@ -586,8 +575,7 @@
             var roomNumbers = selectedCards.map(function(card) {
                 return card.getAttribute("data-room-number");
             });
-            selectionError.textContent = "Đã chọn " + selectedCards.length
-                    + " phòng: " + roomNumbers.join(", ") + ".";
+            selectionError.textContent = "Đã chọn " + selectedCards.length + " phòng: " + roomNumbers.join(", ") + ".";
             selectionError.style.color = "var(--brand)";
         }
 
@@ -613,7 +601,13 @@
                 return false;
             }
 
-            if (checkOut <= checkIn) {
+            // Ép kiểu Date chuẩn để so sánh chính xác tuyệt đối
+            var dIn = new Date(checkIn);
+            var dOut = new Date(checkOut);
+            dIn.setHours(0,0,0,0);
+            dOut.setHours(0,0,0,0);
+
+            if (dOut <= dIn) {
                 roomPicker.hidden = true;
                 checkOutInput.setCustomValidity("Ngày trả phòng phải sau ngày nhận phòng.");
                 checkOutInput.reportValidity();
@@ -655,19 +649,21 @@
             showRoomPicker(true);
         });
 
-        form.addEventListener("submit", function(event) {
-            selectionError.style.color = "var(--danger)";
-            if (!showRoomPicker(false)) {
-                event.preventDefault();
-                return;
-            }
-            syncSelectedRoomInputs();
-            if (!getSelectedCards().length) {
-                event.preventDefault();
-                selectionError.textContent = "Vui lòng chọn ít nhất một phòng khả dụng trước khi lưu đặt phòng.";
-                roomPicker.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-        });
+        if (form) {
+            form.addEventListener("submit", function(event) {
+                selectionError.style.color = "var(--danger)";
+                if (!showRoomPicker(false)) {
+                    event.preventDefault();
+                    return;
+                }
+                syncSelectedRoomInputs();
+                if (!getSelectedCards().length) {
+                    event.preventDefault();
+                    selectionError.textContent = "Vui lòng chọn ít nhất một phòng khả dụng trước khi lưu đặt phòng.";
+                    roomPicker.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            });
+        }
 
         syncSelectedRoomInputs();
         updateSelectionMessage();

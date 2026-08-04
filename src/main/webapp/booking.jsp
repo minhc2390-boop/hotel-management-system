@@ -28,63 +28,6 @@
             --luxury-slate: #1e293b;
         }
 
-        /* Header kính mờ đồng bộ */
-        .luxury-header {
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 clamp(24px, 5vw, 80px);
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(220, 229, 241, 0.7);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .luxury-brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .luxury-brand .brand-logo {
-            background: linear-gradient(135deg, var(--luxury-navy), var(--brand));
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-        }
-        .luxury-brand .brand-name strong {
-            color: var(--luxury-navy);
-            font-size: 21px;
-            letter-spacing: 0.05em;
-        }
-        .luxury-brand .brand-name small {
-            color: var(--accent-gold-dark);
-            font-weight: 700;
-            letter-spacing: 0.26em;
-        }
-        .luxury-nav a {
-            padding: 10px 18px;
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.25s ease;
-        }
-        .luxury-nav a:hover {
-            color: var(--brand);
-            background: var(--brand-soft);
-        }
-        .luxury-nav a.nav-cta {
-            background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(23, 105, 224, 0.2);
-        }
-        .luxury-nav a.nav-cta:hover {
-            background: var(--luxury-navy);
-            transform: translateY(-1px);
-        }
-
-        /* Layout Xác Nhận Đặt Phòng */
         .booking-layout {
             display: grid;
             grid-template-columns: 1.1fr 1fr;
@@ -122,11 +65,8 @@
             padding: 5px 12px;
             border-radius: 4px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
-        .summary-body {
-            padding: 30px;
-        }
+        .summary-body { padding: 30px; }
         .summary-title-wrap {
             border-bottom: 1px dashed var(--line);
             padding-bottom: 20px;
@@ -137,7 +77,6 @@
             font-weight: 700;
             color: var(--accent-gold-dark);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
             margin-bottom: 4px;
             display: block;
         }
@@ -158,20 +97,10 @@
             align-items: center;
             font-size: 14px;
         }
-        .summary-line span {
-            color: var(--muted);
-        }
-        .summary-line strong {
-            color: var(--luxury-navy);
-            font-weight: 700;
-        }
-        .summary-line strong.price {
-            font-size: 18px;
-            color: var(--brand);
-            font-weight: 800;
-        }
+        .summary-line span { color: var(--muted); }
+        .summary-line strong { color: var(--luxury-navy); font-weight: 700; }
+        .summary-line strong.price { font-size: 18px; color: var(--brand); font-weight: 800; }
 
-        /* Form Đặt Phòng bên phải */
         .form-card {
             background: #ffffff;
             border: 1px solid rgba(220, 229, 241, 0.8);
@@ -180,77 +109,64 @@
             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
             height: fit-content;
         }
-        .form-card-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--luxury-navy);
-            margin: 0 0 6px;
-        }
-        .form-card-desc {
-            font-size: 13px;
-            color: var(--muted);
-            margin: 0 0 24px;
-        }
-        .input-icon-group {
-            position: relative;
-        }
-        .input-icon-group .form-control {
-            padding-left: 42px;
-        }
+        .form-card-title { font-size: 20px; font-weight: 800; color: var(--luxury-navy); margin: 0 0 6px; }
+        .form-card-desc { font-size: 13px; color: var(--muted); margin: 0 0 24px; }
+        
+        .input-icon-group { position: relative; }
+        .input-icon-group .form-control { padding-left: 42px; }
         .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
-            color: var(--muted);
-            pointer-events: none;
-            transition: color 0.2s;
-        }
-        .form-control:focus + .input-icon {
-            color: var(--brand);
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%); width: 18px; height: 18px;
+            color: var(--muted); pointer-events: none;
         }
 
         .total-payment-box {
             background: var(--brand-soft);
             border-radius: 10px;
             padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 24px;
-            margin-bottom: 24px;
+            margin-top: 20px;
+            margin-bottom: 20px;
             border: 1px dashed rgba(23, 105, 224, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
-        .total-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--luxury-navy);
-        }
-        .total-amount {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--brand);
-        }
+        .payment-row { display: flex; justify-content: space-between; align-items: center; }
+        .total-amount { font-size: 16px; font-weight: 700; color: var(--luxury-navy); }
+        .deposit-row { border-top: 1px dashed rgba(23, 105, 224, 0.2); padding-top: 6px; }
+        .deposit-amount { font-size: 20px; font-weight: 800; color: #dc2626; }
 
-        .form-actions {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 12px;
+        /* KHUNG VIETQR THANH TOÁN CỌC */
+        #transfer-qr-container {
+            display: none; /* Mặc định ẩn, khi chọn đủ ngày mới hiện */
+            margin-top: 18px;
+            margin-bottom: 24px;
+            border: 1px dashed var(--brand);
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            background: var(--brand-soft);
+            animation: qrFadeIn 0.35s ease;
         }
-        .btn-large {
-            height: 48px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
+        @keyframes qrFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .qr-wrapper {
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(23,105,224,0.08);
+            margin-bottom: 10px;
+        }
+        .qr-bank-details { font-size: 12px; color: var(--luxury-navy); line-height: 1.5; }
+        .qr-bank-details strong { color: var(--brand-dark); }
 
-        @media (max-width: 900px) {
-            .booking-layout { grid-template-columns: 1fr; }
-        }
+        .form-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+        .btn-large { height: 48px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+
+        @media (max-width: 900px) { .booking-layout { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body class="client-body">
@@ -262,7 +178,7 @@
     <div class="page-head" style="margin-bottom: 24px;">
         <div class="breadcrumb">Trang chủ / Phòng nghỉ / Đặt phòng</div>
         <h1 class="page-title">Xác nhận Đặt phòng</h1>
-        <p class="page-desc">Quý khách vui lòng kiểm tra thông tin và chọn thời gian lưu trú bên dưới.</p>
+        <p class="page-desc">Quý khách vui lòng chọn thời gian lưu trú và quét mã QR chuyển khoản cọc 20% bên dưới.</p>
     </div>
 
     <div class="booking-layout">
@@ -305,7 +221,7 @@
             </div>
         </section>
 
-        <!-- Cột bên phải: Form đặt phòng -->
+        <!-- Cột bên phải: Form đặt phòng & QR Cọc -->
         <section class="form-card">
             <h2 class="form-card-title">Chi tiết Đặt phòng</h2>
             <p class="form-card-desc">Quý khách thực hiện đặt chỗ trực tuyến nhanh chóng.</p>
@@ -316,7 +232,6 @@
 
                 <div class="form-grid" style="grid-template-columns: 1fr;">
                     <% if (currentUser == null) { %>
-                    <!-- Họ và tên (chỉ hiển thị khi chưa đăng nhập) -->
                     <div class="form-group">
                         <label class="form-label" for="customerName">Họ và tên của bạn *</label>
                         <div class="input-icon-group">
@@ -325,7 +240,6 @@
                         </div>
                     </div>
 
-                    <!-- Địa chỉ Email (chỉ hiển thị khi chưa đăng nhập) -->
                     <div class="form-group">
                         <label class="form-label" for="customerEmail">Địa chỉ Email</label>
                         <div class="input-icon-group">
@@ -335,25 +249,23 @@
                     </div>
                     <% } %>
 
-                    <!-- Ngày nhận phòng -->
+                    <!-- Thời gian nhận/trả phòng KHÔNG SET MẶC ĐỊNH -->
                     <div class="form-group">
-                        <label class="form-label" for="checkInDate">Ngày nhận phòng *</label>
+                        <label class="form-label" for="checkInDate">Thời gian nhận phòng *</label>
                         <div class="input-icon-group">
-                            <input class="form-control" type="date" id="checkInDate" name="checkInDate" required>
+                            <input class="form-control" type="datetime-local" id="checkInDate" name="checkInDate" required onchange="calculateBooking()">
                             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
                     </div>
 
-                    <!-- Ngày trả phòng -->
                     <div class="form-group">
-                        <label class="form-label" for="checkOutDate">Ngày trả phòng *</label>
+                        <label class="form-label" for="checkOutDate">Thời gian trả phòng *</label>
                         <div class="input-icon-group">
-                            <input class="form-control" type="date" id="checkOutDate" name="checkOutDate" required>
+                            <input class="form-control" type="datetime-local" id="checkOutDate" name="checkOutDate" required onchange="calculateBooking()">
                             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
                     </div>
 
-                    <!-- Số điện thoại -->
                     <div class="form-group">
                         <label class="form-label" for="customerPhone">Số điện thoại liên hệ *</label>
                         <div class="input-icon-group">
@@ -362,7 +274,6 @@
                         </div>
                     </div>
 
-                    <!-- CCCD -->
                     <div class="form-group">
                         <label class="form-label" for="customerCccd">Số Căn cước công dân (CCCD) *</label>
                         <div class="input-icon-group">
@@ -371,22 +282,40 @@
                         </div>
                     </div>
 
-                    <!-- Ghi chú -->
                     <div class="form-group">
                         <label class="form-label" for="note">Yêu cầu đặc biệt (Ghi chú)</label>
                         <textarea class="form-control" id="note" name="note" rows="3" placeholder="Ví dụ: Giường phụ, check-in sớm, tầng cao..."></textarea>
                     </div>
                 </div>
 
-                <!-- Báo lỗi ngày -->
+                <!-- Báo lỗi thời gian -->
                 <div id="dateError" class="alert alert-error hidden" style="margin-top: 14px;">
-                    Ngày trả phòng phải sau ngày nhận phòng tối thiểu 1 ngày.
+                    Thời gian trả phòng phải sau thời gian nhận phòng!
                 </div>
 
-                <!-- Tạm tính tiền phòng -->
+                <!-- Tạm tính tiền phòng & Tiền cọc 20% -->
                 <div class="total-payment-box">
-                    <span class="total-label">Tổng tạm tính (Tiền phòng):</span>
-                    <strong id="estimatedTotal" class="total-amount"><%= money.format(room.getRoomType().getPricePerDay()) %></strong>
+                    <div class="payment-row">
+                        <span class="total-label">Tổng tiền phòng ước tính:</span>
+                        <strong id="estimatedTotal" class="total-amount">0 ₫</strong>
+                    </div>
+                    <div class="payment-row deposit-row">
+                        <span class="deposit-label" style="color: #dc2626; font-weight: 700;">Tiền cọc giữ chỗ (20%):</span>
+                        <strong id="estimatedDeposit" class="deposit-amount">0 ₫</strong>
+                    </div>
+                </div>
+
+                <!-- KHUNG HIỂN THỊ VIETQR TỰ ĐỘNG CHUẨN ĐÚNG THEO PAYMENT.JSP -->
+                <div id="transfer-qr-container">
+                    <span class="form-label" style="color: var(--brand); font-weight: 700; margin-bottom: 10px; display: block;">MÃ QR THANH TOÁN CỌC (VIETQR)</span>
+                    <div class="qr-wrapper">
+                        <img id="vietqr-image" src="" alt="VietQR Payment Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+                    </div>
+                    <div class="qr-bank-details">
+                        Ngân hàng: <strong>MB Bank (Quân Đội)</strong><br>
+                        Số TK: <strong>1903567890123</strong><br>
+                        Chủ TK: <strong>CONG TY NESTORA HOTEL</strong>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -402,54 +331,68 @@
 
 <script>
     const pricePerDay = <%= room.getRoomType().getPricePerDay() %>;
+    const roomNo = '<%= room.getRoomNumber() %>';
+
     const checkInInput = document.getElementById('checkInDate');
     const checkOutInput = document.getElementById('checkOutDate');
     const totalEl = document.getElementById('estimatedTotal');
+    const depositEl = document.getElementById('estimatedDeposit');
     const errorEl = document.getElementById('dateError');
+    const qrContainer = document.getElementById('transfer-qr-container');
 
-    const formatDateStr = d => d.toISOString().slice(0, 10);
+    function calculateBooking() {
+        let checkInVal = checkInInput.value;
+        let checkOutVal = checkOutInput.value;
 
-    // Mặc định ngày nhận là hôm nay, ngày trả là ngày mai
-    let today = new Date();
-    let tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    checkInInput.value = formatDateStr(today);
-    checkInInput.min = formatDateStr(today);
-    checkOutInput.value = formatDateStr(tomorrow);
-    checkOutInput.min = formatDateStr(tomorrow);
-
-    function calculateTotal() {
-        let checkInDate = new Date(checkInInput.value);
-        let checkOutDate = new Date(checkOutInput.value);
-        let timeDiff = checkOutDate - checkInDate;
-        let days = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-        if (days <= 0 || isNaN(days)) {
-            errorEl.classList.remove('hidden');
-            totalEl.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(0);
+        // Nếu chưa chọn đủ 2 ngày thì không làm gì hết và ẩn QR
+        if (!checkInVal || !checkOutVal) {
+            errorEl.classList.add('hidden');
+            totalEl.textContent = '0 ₫';
+            depositEl.textContent = '0 ₫';
+            qrContainer.style.display = 'none';
             return;
         }
-        
-        errorEl.classList.add('hidden');
-        let total = days * pricePerDay;
-        totalEl.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total) + ' (' + days + ' đêm)';
-    }
 
-    checkInInput.addEventListener('change', () => {
-        let checkInDate = new Date(checkInInput.value);
-        let minCheckOut = new Date(checkInDate);
-        minCheckOut.setDate(minCheckOut.getDate() + 1);
-        
-        checkOutInput.min = formatDateStr(minCheckOut);
-        
-        if (new Date(checkOutInput.value) <= checkInDate) {
-            checkOutInput.value = formatDateStr(minCheckOut);
+        let checkInDate = new Date(checkInVal);
+        let checkOutDate = new Date(checkOutVal);
+
+        if (isNaN(checkInDate) || isNaN(checkOutDate) || checkOutDate <= checkInDate) {
+            errorEl.classList.remove('hidden');
+            totalEl.textContent = '0 ₫';
+            depositEl.textContent = '0 ₫';
+            qrContainer.style.display = 'none';
+            return;
         }
-        calculateTotal();
-    });
 
-    checkOutInput.addEventListener('change', calculateTotal);
+        errorEl.classList.add('hidden');
+
+        // Tính số đêm
+        let diffMs = checkOutDate - checkInDate;
+        let days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        if (days <= 0) days = 1;
+
+        let total = days * pricePerDay;
+        let deposit = Math.round(total * 0.20); // Cọc 20%
+
+        let fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+        totalEl.textContent = fmt.format(total) + ' (' + days + ' đêm)';
+        depositEl.textContent = fmt.format(deposit);
+
+        // --- CẤU HÌNH TẠO MÃ VIETQR DỰA TRÊN PAYMENT.JSP ---
+        var bankId = 'MB';
+        var accountNo = '1903567890123';
+        var accountName = 'CONG TY NESTORA HOTEL';
+        var template = 'qr_only';
+        var addInfoText = 'Nestora P' + roomNo + ' Coc 20%';
+
+        var qrUrl = 'https://img.vietqr.io/image/' + bankId + '-' + accountNo + '-' + template + '.png'
+                  + '?amount=' + deposit 
+                  + '&addInfo=' + encodeURIComponent(addInfoText) 
+                  + '&accountName=' + encodeURIComponent(accountName);
+
+        document.getElementById('vietqr-image').src = qrUrl;
+        qrContainer.style.display = 'block';
+    }
 </script>
 </body>
 </html>
