@@ -26,14 +26,44 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
-  font-family: 'Be Vietnam Pro', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, 'Be Vietnam Pro', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: var(--text);
   background: var(--canvas);
   font-size: 14px;
   line-height: 1.55;
 }
 a { color: inherit; text-decoration: none; }
-button, input, select, textarea { font: inherit; }
+button, input, select, textarea { font-family: 'Segoe UI', system-ui, -apple-system, 'Be Vietnam Pro', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: inherit; }
+
+/* Global Badges for Modules (Laundry, Notifications, etc.) */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 12px;
+  text-align: center;
+}
+.badge-success {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+.badge-warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+}
+.badge-info {
+  color: #0c5460;
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+}
+.badge-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
 button { cursor: pointer; }
 img, svg { display: block; }
 

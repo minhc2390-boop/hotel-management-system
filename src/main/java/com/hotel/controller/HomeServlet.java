@@ -1,5 +1,7 @@
-﻿package com.hotel.controller;
+package com.hotel.controller;
 
+import com.hotel.dao.NotificationDAO;
+import com.hotel.model.HotelNotification;
 import com.hotel.dao.RoomDAO;
 import com.hotel.dao.RoomTypeDAO;
 import com.hotel.dao.ServiceDAO;
@@ -27,6 +29,7 @@ public class HomeServlet extends HttpServlet {
     private final ServiceDAO serviceDAO = new ServiceDAO();
     private final UserDAO userDAO = new UserDAO();
     private final BillDAO billDAO = new BillDAO();
+    private final NotificationDAO notificationDAO = new NotificationDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
@@ -40,12 +43,14 @@ public class HomeServlet extends HttpServlet {
             List<User> users = userDAO.getAllUsers();
             List<Bill> bills = billDAO.getAllBills();
             List<Service> services = serviceDAO.getAllServices();
+            List<HotelNotification> latestNotifications = notificationDAO.getTop5Newest();
             
             //chống null khi login
             if (rooms == null) rooms = java.util.Collections.emptyList();
             if (users == null) users = java.util.Collections.emptyList();
             if (bills == null) bills = java.util.Collections.emptyList();
             if (services == null) services = java.util.Collections.emptyList();
+            if (latestNotifications == null) latestNotifications = java.util.Collections.emptyList();
             
             long availableCount = rooms.stream().filter(r -> "Available".equals(r.getStatus())).count();
             long bookedCount = rooms.stream().filter(r -> "Booked".equals(r.getStatus())).count();
@@ -61,6 +66,7 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("totalRevenue", totalRevenue);
             request.setAttribute("rooms", rooms);
             request.setAttribute("bills", bills);
+            request.setAttribute("latestNotifications", latestNotifications);
             
             request.getRequestDispatcher("/admin/dashboard.jsp").forward(request, response);
         } else {

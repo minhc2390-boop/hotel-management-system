@@ -156,6 +156,19 @@
       border-color: var(--brand);
       outline: none;
     }
+    .content-inner p,
+.content-inner li,
+.surface p,
+.surface li,
+.settings-page p,
+.settings-card p,
+.setting-desc {
+    text-indent: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    line-height: 1.6;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
   </style>
 </head>
 <body>

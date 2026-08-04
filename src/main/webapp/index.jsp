@@ -685,6 +685,9 @@
                         </h4>
                         <div class="service-luxury-price">Giá: <%= money.format(s.getPrice()) %> / <%= s.getUnit() != null ? s.getUnit() : "Lượt" %></div>
                         <p class="service-luxury-desc"><%= s.getDescription() != null ? s.getDescription() : "Dịch vụ chất lượng cao phục vụ tại chỗ." %></p>
+                        <% if (sName.contains("giặt") || sName.contains("laundry")) { %>
+                            <a href="<%= request.getContextPath() %>/laundry?action=clientBook" class="btn btn-primary" style="margin-top: 14px; width: 100%; display: inline-block; text-align: center; padding: 10px 16px; font-weight: 600;">🧺 Tạo đơn giặt ủi ngay</a>
+                        <% } %>
                     </div>
                 <% } %>
             </div>

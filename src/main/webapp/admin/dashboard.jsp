@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Bill" %>
+<%@ page import="com.hotel.model.HotelNotification" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.text.SimpleDateFormat" %>
@@ -26,6 +27,7 @@
   int totalBills = totalBillsObj != null ? totalBillsObj : 0;
   double totalRevenue = revenueObj != null ? revenueObj : 0;
   List<Bill> recentBills = (List<Bill>) request.getAttribute("bills");
+  List<HotelNotification> latestNotifications = (List<HotelNotification>) request.getAttribute("latestNotifications");
   NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi","VN"));
   SimpleDateFormat dateTime = new SimpleDateFormat("dd/MM/yyyy HH:mm");
   String activeMenu = "dashboard";
@@ -107,6 +109,40 @@
           <tr><td class="table-primary">#<%= b.getId() %></td><td><span class="table-strong"><%= b.getCustomer() != null ? b.getCustomer().getCustomerName() : (b.getUser() != null ? b.getUser().getFullName() : "N/A") %></span><br><span class="text-muted"><%= b.getCustomer() != null && b.getCustomer().getCustomerEmail() != null ? b.getCustomer().getCustomerEmail() : (b.getUser() != null ? b.getUser().getEmail() : "") %></span></td><td><%= dateTime.format(b.getCreatedAt()) %></td><td class="table-strong"><%= money.format(b.getTotalAmount()) %></td><td><% if("Paid".equals(b.getStatus())){%><span class="status success">Đã thanh toán</span><%}else if("Unpaid".equals(b.getStatus())){%><span class="status info">Chưa thanh toán</span><%}else{%><span class="status danger">Đã hủy</span><%}%></td><td><a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bills?action=detail&id=<%= b.getId() %>">›</a></td></tr>
         <% } %></tbody></table></div>
         <% } else { %><div class="empty"><strong>Chưa có đặt phòng gần đây</strong>Dữ liệu sẽ hiển thị khi hệ thống có giao dịch.</div><% } %>
+      </section>
+
+      <!-- Box: Thông báo mới nhất (Requirements 2) -->
+      <section class="surface" style="margin-top:18px">
+        <div class="surface-head">
+          <div>
+            <h2 class="surface-title">🔔 Thông báo mới nhất</h2>
+            <p class="surface-subtitle">5 thông báo hệ thống và tin tức mới phát hành</p>
+          </div>
+          <a class="table-primary" href="<%= request.getContextPath() %>/admin/notifications?action=list">Xem tất cả thông báo</a>
+        </div>
+        <% if (latestNotifications != null && !latestNotifications.isEmpty()) { %>
+        <ul class="mini-list" style="padding: 0; list-style: none;">
+          <% for (HotelNotification n : latestNotifications) {
+               String typeClass = "info";
+               if ("WARNING".equalsIgnoreCase(n.getType())) typeClass = "warning";
+               else if ("SUCCESS".equalsIgnoreCase(n.getType())) typeClass = "success";
+               else if ("ERROR".equalsIgnoreCase(n.getType())) typeClass = "danger";
+          %>
+          <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line);">
+            <div style="flex: 1; padding-right: 15px;">
+              <strong style="font-size: 14px; color: var(--text);"><%= n.getTitle() %></strong>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><%= n.getContent() %></div>
+            </div>
+            <div style="text-align: right; white-space: nowrap;">
+              <span class="status <%= typeClass %>"><%= n.getType() %></span>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 4px;"><%= n.getCreatedAt() != null ? dateTime.format(java.sql.Timestamp.valueOf(n.getCreatedAt())) : "" %></div>
+            </div>
+          </li>
+          <% } %>
+        </ul>
+        <% } else { %>
+          <div class="empty"><strong>Chưa có thông báo mới</strong>Danh sách thông báo sẽ hiển thị khi hệ thống có tin mới.</div>
+        <% } %>
       </section>
     </div></section>
   </main>

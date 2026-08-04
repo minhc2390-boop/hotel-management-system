@@ -1,4 +1,12 @@
 <%@ page pageEncoding="UTF-8" %>
+<script>
+  (function() {
+    if (localStorage.getItem("sidebarCollapsed") === "true") {
+      document.documentElement.classList.add("sidebar-collapsed");
+      document.documentElement.classList.add("collapsed");
+    }
+  })();
+</script>
 <style>
   /* Fix lỗi biến mất icon khi thu gọn menu (chống cache trình duyệt) */
   .sidebar-collapsed .nav-link span:not(.nav-icon) {
@@ -56,9 +64,17 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
         <span>Dịch vụ</span>
       </a>
+      <a class="nav-link <%= "laundry".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/laundry?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
+        <span>Dịch vụ Giặt ủi</span>
+      </a>
       <a class="nav-link <%= "buffet".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/buffet?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
         <span>Menu Buffet</span>
+      </a>
+      <a class="nav-link <%= "notifications".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/notifications?action=list">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
+        <span>Thông báo</span>
       </a>
       <a class="nav-link <%= "feedbacks".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/feedbacks?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
