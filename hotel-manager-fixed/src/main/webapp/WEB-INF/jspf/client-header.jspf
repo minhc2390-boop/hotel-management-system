@@ -1,0 +1,78 @@
+<%@ page pageEncoding="UTF-8" %>
+<%@ page import="com.hotel.model.User" %>
+<%
+  HttpSession clientHeaderSession = request.getSession(false);
+  User clientHeaderUser = clientHeaderSession != null
+          ? (User) clientHeaderSession.getAttribute("currentUser") : null;
+  String clientHeaderPath = request.getRequestURI();
+  String clientHeaderAction = request.getParameter("action");
+  boolean clientHeaderHome = clientHeaderPath.endsWith("/home")
+          || clientHeaderPath.endsWith("/index")
+          || clientHeaderPath.endsWith("/index.jsp");
+  boolean clientHeaderBookings = clientHeaderPath.contains("/bookings")
+          || clientHeaderPath.endsWith("/my-bookings.jsp")
+          || clientHeaderPath.endsWith("/booking-receipt.jsp")
+          || clientHeaderPath.endsWith("/booking.jsp");
+  boolean clientHeaderBills = clientHeaderPath.contains("/bills")
+          || clientHeaderPath.endsWith("/my-bills.jsp")
+          || clientHeaderPath.endsWith("/bill-details.jsp");
+  boolean clientHeaderBuffet = clientHeaderPath.contains("/buffet");
+  boolean clientHeaderProfile = clientHeaderPath.contains("/profile");
+  boolean clientHeaderManager = clientHeaderUser != null
+          && ("Admin".equalsIgnoreCase(clientHeaderUser.getRole())
+          || "Receptionist".equalsIgnoreCase(clientHeaderUser.getRole()));
+%>
+<script>
+  (function () {
+    document.documentElement.setAttribute("data-theme", localStorage.getItem("nestora_theme") || "light");
+  })();
+</script>
+<header class="client-header">
+  <a class="client-brand" href="<%= request.getContextPath() %>/home" aria-label="Nestora - Về trang chủ">
+    <span class="client-brand-logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M4 21V8l8-5 8 5v13"/>
+        <path d="M8 21v-7h8v7M8 10h.01M12 10h.01M16 10h.01"/>
+      </svg>
+    </span>
+    <span class="brand-name client-brand-name">
+      <strong data-hotel-name>NESTORA</strong>
+      <small>HOTEL &amp; RESORT</small>
+    </span>
+  </a>
+
+  <button class="client-nav-toggle" type="button" data-client-nav-toggle
+          aria-controls="client-navigation" aria-expanded="false" aria-label="Mở điều hướng">
+    <span></span><span></span><span></span>
+  </button>
+
+  <nav class="client-nav" id="client-navigation" data-client-nav>
+    <a class="<%= clientHeaderHome ? "active" : "" %>"
+       <%= clientHeaderHome ? "aria-current=\"page\"" : "" %>
+       href="<%= request.getContextPath() %>/home">Trang chủ</a>
+    <a class="<%= clientHeaderBuffet ? "active" : "" %>"
+       <%= clientHeaderBuffet ? "aria-current=\"page\"" : "" %>
+       href="<%= request.getContextPath() %>/buffet">Menu Buffet</a>
+    <a class="<%= clientHeaderPath.contains("/laundry") ? "active" : "" %>"
+       href="<%= request.getContextPath() %>/laundry?action=clientBook">Dịch vụ giặt ủi</a>
+
+    <% if (clientHeaderUser != null && !clientHeaderManager) { %>
+      <a class="<%= clientHeaderBookings ? "active" : "" %>"
+         <%= clientHeaderBookings ? "aria-current=\"page\"" : "" %>
+         href="<%= request.getContextPath() %>/bookings?action=mybookings">Phòng đã đặt</a>
+      <a class="<%= clientHeaderBills ? "active" : "" %>"
+         <%= clientHeaderBills ? "aria-current=\"page\"" : "" %>
+         href="<%= request.getContextPath() %>/bills?action=mybills">Hóa đơn</a>
+      <a class="<%= clientHeaderProfile ? "active" : "" %>"
+         <%= clientHeaderProfile ? "aria-current=\"page\"" : "" %>
+         href="<%= request.getContextPath() %>/profile">Hồ sơ</a>
+      <a class="client-nav-cta secondary" href="<%= request.getContextPath() %>/logout">Đăng xuất</a>
+    <% } else if (clientHeaderManager) { %>
+      <a class="client-nav-cta" href="<%= request.getContextPath() %>/bookings?action=list">Trang quản trị</a>
+      <a class="client-nav-cta secondary" href="<%= request.getContextPath() %>/logout">Đăng xuất</a>
+    <% } else { %>
+      <a href="<%= request.getContextPath() %>/login">Đăng nhập</a>
+      <a class="client-nav-cta" href="<%= request.getContextPath() %>/register">Đăng ký hội viên</a>
+    <% } %>
+  </nav>
+</header>

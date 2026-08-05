@@ -1,0 +1,17 @@
+<%@ page pageEncoding="UTF-8" %>
+<footer class="client-footer">
+  <div class="client-footer-inner">
+    <a class="client-footer-brand brand-name" href="<%= request.getContextPath() %>/home">
+      <strong data-hotel-name>NESTORA</strong>
+      <small>HOTEL &amp; RESORT</small>
+    </a>
+    <p>
+      <span data-hotel-address>Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam</span><br>
+      Điện thoại: <span data-hotel-phone>+84 (0) 258 3567 890</span>
+      <span aria-hidden="true"> · </span>
+      Email: <span data-hotel-email>info@nestorahotel.com</span>
+    </p>
+    <p class="client-footer-copy">&copy; 2026 Nestora Hotel &amp; Resort. Bảo lưu mọi quyền.</p>
+  </div>
+</footer>
+<script src="<%= request.getContextPath() %>/js/app.js"></script>
