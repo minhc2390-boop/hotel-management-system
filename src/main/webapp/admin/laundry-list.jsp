@@ -109,8 +109,8 @@
                     <input type="text" name="keyword" placeholder="Tìm tên khách, số phòng, ghi chú..." value="<%= keyword %>" style="min-width: 240px;">
                     <select name="status">
                         <option value="">-- Tất cả trạng thái --</option>
-                        <option value="Chưa hoàn tất" <%= "Chưa hoàn tất".equals(status) ? "selected" : "" %>>Chưa hoàn tất</option>
-                        <option value="Đã hoàn tất" <%= "Đã hoàn tất".equals(status) ? "selected" : "" %>>Đã hoàn tất</option>
+                        <option value="Chưa hoàn thành" <%= ("Chưa hoàn thành".equals(status) || "Chưa hoàn tất".equals(status)) ? "selected" : "" %>>Chưa hoàn thành</option>
+                        <option value="Đã hoàn thành" <%= ("Đã hoàn thành".equals(status) || "Đã hoàn tất".equals(status)) ? "selected" : "" %>>Đã hoàn thành</option>
                     </select>
                     <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">Lọc dữ liệu</button>
                     <a href="<%= request.getContextPath() %>/laundry?action=list" class="btn btn-outline" style="padding: 8px 16px;">Đặt lại</a>
@@ -151,10 +151,10 @@
                                         <td><%= l.getQuantity() %></td>
                                         <td class="table-strong"><%= money.format(l.getTotalPrice()) %></td>
                                         <td>
-                                            <% if ("Đã hoàn tất".equals(l.getProcessingStatus())) { %>
-                                                <span class="badge badge-success">Đã hoàn tất</span>
+                                            <% if (l.isCompleted()) { %>
+                                                <span class="badge badge-success">Đã hoàn thành</span>
                                             <% } else { %>
-                                                <span class="badge badge-warning">Chưa hoàn tất</span>
+                                                <span class="badge badge-warning">Chưa hoàn thành</span>
                                             <% } %>
                                         </td>
                                         <td class="notes-cell"><%= (l.getNotes() != null && !l.getNotes().trim().isEmpty()) ? l.getNotes() : "-" %></td>
@@ -163,11 +163,11 @@
                                             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                                 <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/laundry?action=detail&id=<%= l.getId() %>">Chi tiết</a>
                                                 <a class="btn btn-primary" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/laundry?action=edit&id=<%= l.getId() %>">Sửa</a>
-                                                <% if (!"Đã hoàn tất".equals(l.getProcessingStatus())) { %>
-                                                    <form method="post" action="<%= request.getContextPath() %>/laundry" style="display:inline;" onsubmit="return confirm('Xác nhận hoàn thành đơn giặt ủi này?');">
+                                                <% if (!l.isCompleted()) { %>
+                                                    <form method="post" action="<%= request.getContextPath() %>/laundry" accept-charset="UTF-8" style="display:inline;" onsubmit="return confirm('Xác nhận hoàn thành đơn giặt ủi này?');">
                                                         <input type="hidden" name="action" value="updateStatus">
                                                         <input type="hidden" name="id" value="<%= l.getId() %>">
-                                                        <input type="hidden" name="processingStatus" value="Đã hoàn tất">
+                                                        <input type="hidden" name="processingStatus" value="Đã hoàn thành">
                                                         <button type="submit" class="btn btn-success" style="padding: 4px 8px; font-size:12px;">Hoàn thành</button>
                                                     </form>
                                                 <% } %>

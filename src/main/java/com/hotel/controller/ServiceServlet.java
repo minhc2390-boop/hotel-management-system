@@ -1,4 +1,4 @@
-﻿package com.hotel.controller;
+package com.hotel.controller;
 
 import com.hotel.dao.ServiceDAO;
 import com.hotel.model.Service;

@@ -1,4 +1,4 @@
-﻿package com.hotel.controller;
+package com.hotel.controller;
 
 import com.hotel.dao.RoomTypeDAO;
 import com.hotel.model.RoomType;

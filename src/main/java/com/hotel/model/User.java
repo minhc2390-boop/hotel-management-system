@@ -1,4 +1,4 @@
-﻿package com.hotel.model;
+package com.hotel.model;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -18,7 +18,8 @@ public class User {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "full_name", nullable = false)
+    @org.hibernate.annotations.Nationalized
+    @Column(name = "full_name", nullable = false, columnDefinition = "NVARCHAR(150)")
     private String fullName;
 
     @Column(name = "email", nullable = false, unique = true)
@@ -88,11 +89,26 @@ public class User {
     }
 
     public String getFullName() {
-        return fullName;
+        return fixEncoding(fullName);
     }
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    private String fixEncoding(String str) {
+        if (str == null || str.trim().isEmpty()) return "";
+        String s = str.trim();
+        try {
+            if (s.contains("Ã") || s.contains("Â") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘")) {
+                byte[] bytes = s.getBytes("ISO-8859-1");
+                String decoded = new String(bytes, "UTF-8");
+                if (!decoded.contains("ï¿½") && !decoded.contains("\uFFFD")) {
+                    return decoded;
+                }
+            }
+        } catch (Exception e) {}
+        return s;
     }
 
     public String getEmail() {

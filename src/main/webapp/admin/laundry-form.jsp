@@ -95,7 +95,7 @@
                     <div class="surface-head">
                         <h2 class="surface-title">Thông tin chi tiết đơn giặt</h2>
                     </div>
-                    <form method="post" action="<%= request.getContextPath() %>/laundry" style="padding: 10px 0;">
+                    <form method="post" action="<%= request.getContextPath() %>/laundry" accept-charset="UTF-8" style="padding: 10px 0;">
                         <input type="hidden" name="action" value="<%= isEdit ? "update" : "insert" %>">
                         <% if (isEdit) { %>
                             <input type="hidden" name="id" value="<%= laundry.getId() %>">
@@ -128,8 +128,8 @@
                             <div class="form-group">
                                 <label for="processingStatus">Trạng thái xử lý <span style="color:red;">*</span></label>
                                 <select id="processingStatus" name="processingStatus">
-                                    <option value="Chưa hoàn tất" <%= "Chưa hoàn tất".equals(laundry.getProcessingStatus()) ? "selected" : "" %>>Chưa hoàn tất (cần xử lý)</option>
-                                    <option value="Đã hoàn tất" <%= "Đã hoàn tất".equals(laundry.getProcessingStatus()) ? "selected" : "" %>>Đã hoàn tất (sẵn sàng giao)</option>
+                                    <option value="Chưa hoàn thành" <%= "Chưa hoàn thành".equals(laundry.getProcessingStatus()) ? "selected" : "" %>>Chưa hoàn thành (cần xử lý)</option>
+                                    <option value="Đã hoàn thành" <%= "Đã hoàn thành".equals(laundry.getProcessingStatus()) ? "selected" : "" %>>Đã hoàn thành (sẵn sàng giao)</option>
                                 </select>
                             </div>
                         </div>

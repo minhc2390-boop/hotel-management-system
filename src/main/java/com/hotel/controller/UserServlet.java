@@ -4,6 +4,8 @@ import com.hotel.dao.UserDAO;
 import com.hotel.dao.BookingDAO;
 import com.hotel.model.User;
 import com.hotel.model.Booking;
+import com.hotel.util.AuthUtil;
+import com.hotel.util.ParamUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -125,56 +127,80 @@ public class UserServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        String action = request.getParameter("action");
+        response.setCharacterEncoding("UTF-8");
+
+        String action = ParamUtil.getString(request, "action", "");
 
         HttpSession session = request.getSession(false);
-        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
+        User currentUser = AuthUtil.getUser(request);
 
-        if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
 
         if ("insert".equals(action)) {
-            String username = request.getParameter("username");
-            String password = request.getParameter("password");
-            String fullName = request.getParameter("fullName");
-            String email = request.getParameter("email");
-            String phone = request.getParameter("phone");
-            String role = request.getParameter("role");
+            String username = ParamUtil.getString(request, "username", "");
+            String password = ParamUtil.getString(request, "password", "");
+            String fullName = ParamUtil.getString(request, "fullName", "");
+            String email = ParamUtil.getString(request, "email", "");
+            String phone = ParamUtil.getString(request, "phone", "");
+            String role = ParamUtil.getString(request, "role", "Customer");
 
             // Chỉ Admin mới được phân bổ quyền (gán vai trò bất kỳ), Lễ tân chỉ được tạo Khách hàng
-            if (currentUser == null || !"Admin".equals(currentUser.getRole())) {
+            if (!"Admin".equalsIgnoreCase(currentUser.getRole())) {
                 role = "Customer";
-            } else if (role == null || role.isEmpty()) {
-                role = "Customer";
+            }
+
+            if (username.isEmpty() || password.isEmpty() || fullName.isEmpty() || email.isEmpty()) {
+                request.setAttribute("error", "Vui lòng điền đầy đủ Tên đăng nhập, Mật khẩu, Họ tên và Email!");
+                request.getRequestDispatcher("/admin/customer-form.jsp").forward(request, response);
+                return;
+            }
+
+            // Check if username/email already exists
+            User existingByUsername = userDAO.findByEmailOrUsername(username);
+            User existingByEmail = userDAO.findByEmailOrUsername(email);
+            if (existingByUsername != null || existingByEmail != null) {
+                request.setAttribute("error", "Tên đăng nhập hoặc Email này đã tồn tại trong hệ thống!");
+                User draftUser = new User(username, password, fullName, email, phone, role);
+                request.setAttribute("user", draftUser);
+                request.getRequestDispatcher("/admin/customer-form.jsp").forward(request, response);
+                return;
             }
 
             User user = new User(username, password, fullName, email, phone, role);
-            userDAO.register(user);
-            
-            if ("Admin".equals(currentUser.getRole()) && ("Admin".equals(role) || "Receptionist".equals(role))) {
-                response.sendRedirect(request.getContextPath() + "/users?action=employees");
+            boolean success = userDAO.register(user);
+
+            if (success) {
+                if ("Admin".equalsIgnoreCase(currentUser.getRole()) && ("Admin".equalsIgnoreCase(role) || "Receptionist".equalsIgnoreCase(role))) {
+                    response.sendRedirect(request.getContextPath() + "/users?action=employees");
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/users?action=list");
+                }
             } else {
-                response.sendRedirect(request.getContextPath() + "/users?action=list");
+                request.setAttribute("error", "Lưu tài khoản thất bại! Vui lòng thử lại.");
+                User draftUser = new User(username, password, fullName, email, phone, role);
+                request.setAttribute("user", draftUser);
+                request.getRequestDispatcher("/admin/customer-form.jsp").forward(request, response);
             }
 
         } else if ("update".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
+            int id = ParamUtil.getInt(request, "id", 0);
             User existingUser = userDAO.getUserById(id);
             if (existingUser != null) {
-                String fullName = request.getParameter("fullName");
-                String email = request.getParameter("email");
-                String phone = request.getParameter("phone");
-                String role = request.getParameter("role");
-                String newPassword = request.getParameter("password");
+                String fullName = ParamUtil.getString(request, "fullName", "");
+                String email = ParamUtil.getString(request, "email", "");
+                String phone = ParamUtil.getString(request, "phone", "");
+                String role = ParamUtil.getString(request, "role", "");
+                String newPassword = ParamUtil.getString(request, "password", "");
 
                 existingUser.setFullName(fullName);
                 existingUser.setEmail(email);
                 existingUser.setPhone(phone);
                 
                 // Chỉ Admin mới có quyền thay đổi vai trò (phân bổ quyền)
-                if (currentUser != null && "Admin".equals(currentUser.getRole())) {
+                if ("Admin".equalsIgnoreCase(currentUser.getRole())) {
                     if (role != null && !role.isEmpty()) {
                         existingUser.setRole(role);
                     }
@@ -186,7 +212,7 @@ public class UserServlet extends HttpServlet {
 
                 userDAO.updateUser(existingUser);
                 
-                if ("Admin".equals(currentUser.getRole()) && ("Admin".equals(existingUser.getRole()) || "Receptionist".equals(existingUser.getRole()))) {
+                if ("Admin".equalsIgnoreCase(currentUser.getRole()) && ("Admin".equalsIgnoreCase(existingUser.getRole()) || "Receptionist".equalsIgnoreCase(existingUser.getRole()))) {
                     response.sendRedirect(request.getContextPath() + "/users?action=employees");
                     return;
                 }

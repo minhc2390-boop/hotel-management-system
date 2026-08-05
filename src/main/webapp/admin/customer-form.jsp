@@ -32,7 +32,10 @@
 
         <section class="surface surface-pad form-surface">
           <h2 class="form-title">Thông tin tài khoản</h2>
-          <form action="<%= request.getContextPath() %>/users" method="POST">
+          <% String errorMsg = (String) request.getAttribute("error"); if (errorMsg != null) { %>
+            <div class="alert alert-error" style="margin-bottom:15px; color:#ef4444; background:#fef2f2; padding:10px 14px; border-radius:6px; border:1px solid #fca5a5;"><%= errorMsg %></div>
+          <% } %>
+          <form action="<%= request.getContextPath() %>/users" method="POST" accept-charset="UTF-8">
             <input type="hidden" name="action" value="<%= isEdit ? "update" : "insert" %>">
             <% if (isEdit) { %>
               <input type="hidden" name="id" value="<%= user.getId() %>">

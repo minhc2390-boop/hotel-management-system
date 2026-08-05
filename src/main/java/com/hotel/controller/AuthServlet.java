@@ -1,4 +1,4 @@
-﻿package com.hotel.controller;
+package com.hotel.controller;
 
 import com.hotel.dao.UserDAO;
 import com.hotel.model.User;
@@ -38,26 +38,29 @@ public class AuthServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        // Sử dụng ParamUtil để lấy tham số đăng nhập an toàn
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
         String loginKey = ParamUtil.getString(request, "email", "");
+        if (loginKey.isEmpty()) {
+            loginKey = ParamUtil.getString(request, "username", "");
+        }
         String password = ParamUtil.getString(request, "password", "");
 
         if (loginKey.isEmpty() || password.isEmpty()) {
-            request.setAttribute("error", "Email/Username and Password cannot be empty!");
+            request.setAttribute("error", "Vui lòng nhập Email/Tên đăng nhập và Mật khẩu!");
             request.setAttribute("email", loginKey);
             request.getRequestDispatcher("/login.jsp").forward(request, response);
             return;
         }
 
-        // Tìm kiếm linh hoạt bằng cả Email và Username
-        User user = userDAO.findByEmailOrUsername(loginKey);
+        User user = userDAO.login(loginKey, password);
         
-        if (user != null && user.getPassword().equals(password)) {
-            // Đăng nhập thành công, lưu session qua AuthUtil
+        if (user != null) {
             AuthUtil.setUser(request, user);
             response.sendRedirect(request.getContextPath() + "/home");
         } else {
-            request.setAttribute("error", "Invalid email/username or password!");
+            request.setAttribute("error", "Tên đăng nhập hoặc mật khẩu không chính xác!");
             request.setAttribute("email", loginKey);
             request.getRequestDispatcher("/login.jsp").forward(request, response);
         }

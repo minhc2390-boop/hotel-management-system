@@ -23,6 +23,8 @@ public class NotificationServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
         if (!isAdminOrManager(request)) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
@@ -37,7 +39,7 @@ public class NotificationServlet extends HttpServlet {
                 request.getRequestDispatcher("/admin/notification-list.jsp").forward(request, response);
                 break;
             case "add":
-                if (!isAdmin(request)) {
+                if (!isAdminOrManager(request)) {
                     response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&denied=1");
                     return;
                 }
@@ -46,7 +48,7 @@ public class NotificationServlet extends HttpServlet {
                 request.getRequestDispatcher("/admin/notification-form.jsp").forward(request, response);
                 break;
             case "edit":
-                if (!isAdmin(request)) {
+                if (!isAdminOrManager(request)) {
                     response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&denied=1");
                     return;
                 }
@@ -69,7 +71,9 @@ public class NotificationServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        if (!isAdmin(request)) {
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        if (!isAdminOrManager(request)) {
             response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&denied=1");
             return;
         }
@@ -116,17 +120,27 @@ public class NotificationServlet extends HttpServlet {
             return;
         }
 
-        boolean success;
-        if ("insert".equals(action) || id == 0) {
-            success = notificationDAO.insert(item);
-        } else {
-            success = notificationDAO.update(item);
-        }
+        try {
+            boolean success;
+            if ("insert".equals(action) || id == 0) {
+                success = notificationDAO.insert(item);
+            } else {
+                success = notificationDAO.update(item);
+            }
 
-        if (!success) {
+            if (!success) {
+                request.setAttribute("notification", item);
+                request.setAttribute("isEdit", id > 0);
+                request.setAttribute("error", "Không thể lưu thông báo vào cơ sở dữ liệu.");
+                request.getRequestDispatcher("/admin/notification-form.jsp").forward(request, response);
+                return;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            String errorMsg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
             request.setAttribute("notification", item);
             request.setAttribute("isEdit", id > 0);
-            request.setAttribute("error", "Không thể lưu thông báo. Vui lòng thử lại.");
+            request.setAttribute("error", "Lỗi lưu Database: " + (errorMsg != null ? errorMsg : ex.toString()));
             request.getRequestDispatcher("/admin/notification-form.jsp").forward(request, response);
             return;
         }

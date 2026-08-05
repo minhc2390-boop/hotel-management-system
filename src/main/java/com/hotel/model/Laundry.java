@@ -12,13 +12,15 @@ public class Laundry {
     @Column(name = "id")
     private int id;
 
-    @Column(name = "customer_name", nullable = false, length = 150)
+    @org.hibernate.annotations.Nationalized
+    @Column(name = "customer_name", nullable = false, length = 150, columnDefinition = "NVARCHAR(150)")
     private String customerName;
 
     @Column(name = "room_number", nullable = false, length = 20)
     private String roomNumber;
 
-    @Column(name = "service_type", length = 100)
+    @org.hibernate.annotations.Nationalized
+    @Column(name = "service_type", length = 100, columnDefinition = "NVARCHAR(100)")
     private String serviceType;
 
     @Column(name = "quantity")
@@ -27,10 +29,12 @@ public class Laundry {
     @Column(name = "total_price")
     private double totalPrice = 0.0;
 
-    @Column(name = "processing_status", nullable = false, length = 20)
-    private String processingStatus = "Chưa hoàn tất";
+    @org.hibernate.annotations.Nationalized
+    @Column(name = "processing_status", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
+    private String processingStatus = "PENDING";
 
-    @Column(name = "notes", length = 500)
+    @org.hibernate.annotations.Nationalized
+    @Column(name = "notes", length = 500, columnDefinition = "NVARCHAR(500)")
     private String notes;
 
     @Column(name = "created_date")
@@ -71,7 +75,7 @@ public class Laundry {
     }
 
     public String getCustomerName() {
-        return customerName;
+        return fixEncoding(customerName);
     }
 
     public void setCustomerName(String customerName) {
@@ -87,7 +91,28 @@ public class Laundry {
     }
 
     public String getServiceType() {
-        return serviceType;
+        if (serviceType == null || serviceType.trim().isEmpty()) {
+            return "Giặt sấy thông thường";
+        }
+        String str = fixEncoding(serviceType.trim());
+
+        String lower = str.toLowerCase();
+        if (lower.contains("sấy") || lower.contains("say") || lower.contains("thông thường") || lower.contains("thong thuong")) {
+            return "Giặt sấy thông thường";
+        }
+        if (lower.contains("khô") || lower.contains("kho") || lower.contains("dry cleaning")) {
+            return "Giặt khô (Dry Cleaning)";
+        }
+        if (lower.contains("ủi") || lower.contains("ui quan ao")) {
+            return "Ủi quần áo";
+        }
+        if (lower.contains("hấp") || lower.contains("hap cao cap")) {
+            return "Giặt hấp cao cấp";
+        }
+        if (lower.contains("tẩy") || lower.contains("tay vet ban")) {
+            return "Tẩy vết bẩn đặc biệt";
+        }
+        return str;
     }
 
     public void setServiceType(String serviceType) {
@@ -111,19 +136,67 @@ public class Laundry {
     }
 
     public String getProcessingStatus() {
-        return processingStatus;
+        if (processingStatus == null || processingStatus.trim().isEmpty()) {
+            return "Chưa hoàn thành";
+        }
+        String s = fixEncoding(processingStatus.trim()).toUpperCase();
+        if (s.contains("CHƯA") || s.contains("CHUA") || s.contains("PENDING") || s.contains("UNCOMPLETED")) {
+            return "Chưa hoàn thành";
+        }
+        if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("ĐÃ") || s.contains("DA") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT")) {
+            return "Đã hoàn thành";
+        }
+        return "Chưa hoàn thành";
+    }
+
+    public boolean isCompleted() {
+        return "Đã hoàn thành".equals(getProcessingStatus());
     }
 
     public void setProcessingStatus(String processingStatus) {
-        this.processingStatus = processingStatus;
+        if (processingStatus == null || processingStatus.trim().isEmpty()) {
+            this.processingStatus = "Chưa hoàn thành";
+            return;
+        }
+        String s = processingStatus.trim().toUpperCase();
+        if (s.contains("CHƯA") || s.contains("CHUA") || s.contains("PENDING") || s.contains("UNCOMPLETED")) {
+            this.processingStatus = "Chưa hoàn thành";
+        } else if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("ĐÃ") || s.contains("DA") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT")) {
+            this.processingStatus = "Đã hoàn thành";
+        } else {
+            this.processingStatus = processingStatus.trim();
+        }
     }
 
     public String getNotes() {
-        return notes;
+        return fixEncoding(notes);
     }
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    private String fixEncoding(String str) {
+        if (str == null || str.trim().isEmpty()) return "";
+        String s = str.trim();
+        if (containsVietnamese(s) && !s.contains("Ã") && !s.contains("áº") && !s.contains("á»") && !s.contains("Æ°") && !s.contains("Ä‘")) {
+            return s;
+        }
+        try {
+            if (s.contains("Ã") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘")) {
+                byte[] bytes = s.getBytes("ISO-8859-1");
+                String decoded = new String(bytes, "UTF-8");
+                if (!decoded.contains("ï¿½") && !decoded.contains("\uFFFD") && containsVietnamese(decoded)) {
+                    return decoded;
+                }
+            }
+        } catch (Exception e) {}
+        return s;
+    }
+
+    private boolean containsVietnamese(String str) {
+        if (str == null) return false;
+        return str.matches(".*[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđĐ].*");
     }
 
     public LocalDateTime getCreatedDate() {

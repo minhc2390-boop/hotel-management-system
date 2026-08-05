@@ -133,7 +133,7 @@
             </div>
         <% } %>
 
-        <form method="post" action="<%= request.getContextPath() %>/laundry">
+        <form method="post" action="<%= request.getContextPath() %>/laundry" accept-charset="UTF-8">
             <input type="hidden" name="action" value="clientInsert">
 
             <div class="form-grid">

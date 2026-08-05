@@ -5,6 +5,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import javax.servlet.annotation.WebFilter;
+
+@WebFilter(filterName = "Utf8Filter", urlPatterns = {"/*"})
 public class Utf8Filter implements Filter {
 
     @Override
@@ -24,7 +27,9 @@ public class Utf8Filter implements Filter {
         // Chỉ định dạng Content-Type text/html với UTF-8 cho các trang động (JSP, HTML, Servlet)
         // tránh ảnh hưởng đến các tài nguyên tĩnh như CSS, JS, ảnh...
         String path = httpRequest.getRequestURI().substring(httpRequest.getContextPath().length());
-        if (!path.contains(".") || path.endsWith(".jsp") || path.endsWith(".html")) {
+        if (!path.endsWith(".css") && !path.endsWith(".js") && !path.endsWith(".png") &&
+            !path.endsWith(".jpg") && !path.endsWith(".jpeg") && !path.endsWith(".gif") &&
+            !path.endsWith(".svg") && !path.endsWith(".ico") && !path.endsWith(".woff") && !path.endsWith(".woff2")) {
             httpResponse.setContentType("text/html; charset=UTF-8");
         }
         

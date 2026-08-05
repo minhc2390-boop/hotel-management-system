@@ -1,4 +1,4 @@
-﻿package com.hotel.filter;
+package com.hotel.filter;
 
 import com.hotel.model.User;
 

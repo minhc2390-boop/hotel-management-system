@@ -1,4 +1,4 @@
-﻿package com.hotel.dao;
+package com.hotel.dao;
 
 import com.hotel.model.Service;
 import javax.persistence.EntityManager;

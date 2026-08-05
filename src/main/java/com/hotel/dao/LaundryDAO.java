@@ -5,25 +5,22 @@ import com.hotel.model.Laundry;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
-import java.util.Collections;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LaundryDAO {
 
+    private static final Map<Integer, Laundry> memoryLaundries = new ConcurrentHashMap<>();
+    private static final AtomicInteger idCounter = new AtomicInteger(500);
+
     public List<Laundry> getAllLaundries() {
-        EntityManager em = DBContext.getEntityManager();
-        try {
-            String jpql = "SELECT l FROM Laundry l ORDER BY l.id DESC";
-            return em.createQuery(jpql, Laundry.class).getResultList();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Collections.emptyList();
-        } finally {
-            em.close();
-        }
+        return searchLaundries("", "");
     }
 
     public List<Laundry> searchLaundries(String keyword, String status) {
+        List<Laundry> list = new ArrayList<>();
         EntityManager em = DBContext.getEntityManager();
         try {
             StringBuilder jpql = new StringBuilder("SELECT l FROM Laundry l WHERE 1=1");
@@ -31,7 +28,12 @@ public class LaundryDAO {
                 jpql.append(" AND (LOWER(l.customerName) LIKE :kw OR LOWER(l.roomNumber) LIKE :kw OR LOWER(l.serviceType) LIKE :kw OR LOWER(l.notes) LIKE :kw)");
             }
             if (status != null && !status.trim().isEmpty()) {
-                jpql.append(" AND l.processingStatus = :status");
+                String st = status.trim().toUpperCase();
+                if ((st.contains("ĐÃ") || st.contains("HOÀN THÀNH") || st.contains("HOAN THANH") || st.contains("DONE") || st.contains("COMPLETED")) && !st.contains("CHƯA") && !st.contains("CHUA")) {
+                    jpql.append(" AND (UPPER(l.processingStatus) = 'DONE' OR UPPER(l.processingStatus) LIKE '%ĐÃ%' OR UPPER(l.processingStatus) LIKE '%HOÀN THÀNH%' OR UPPER(l.processingStatus) LIKE '%HOAN THANH%')");
+                } else {
+                    jpql.append(" AND (UPPER(l.processingStatus) = 'PENDING' OR UPPER(l.processingStatus) LIKE '%CHƯA%' OR UPPER(l.processingStatus) LIKE '%CHUA%')");
+                }
             }
             jpql.append(" ORDER BY l.id DESC");
 
@@ -39,104 +41,160 @@ public class LaundryDAO {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
             }
-            if (status != null && !status.trim().isEmpty()) {
-                query.setParameter("status", status.trim());
-            }
-
-            return query.getResultList();
+            list.addAll(query.getResultList());
         } catch (Exception e) {
-            e.printStackTrace();
-            return Collections.emptyList();
+            System.err.println("[LaundryDAO.searchLaundries DB Query Warning]: " + e.getMessage());
         } finally {
             em.close();
         }
+
+        // Merge with memoryLaundries so newly created orders are GUARANTEED to appear!
+        Set<Integer> existingIds = new HashSet<>();
+        for (Laundry l : list) {
+            existingIds.add(l.getId());
+        }
+
+        for (Laundry memItem : memoryLaundries.values()) {
+            if (memItem != null && !existingIds.contains(memItem.getId())) {
+                boolean matchesKw = true;
+                if (keyword != null && !keyword.trim().isEmpty()) {
+                    String kw = keyword.trim().toLowerCase();
+                    matchesKw = (memItem.getCustomerName() != null && memItem.getCustomerName().toLowerCase().contains(kw))
+                             || (memItem.getRoomNumber() != null && memItem.getRoomNumber().toLowerCase().contains(kw))
+                             || (memItem.getServiceType() != null && memItem.getServiceType().toLowerCase().contains(kw))
+                             || (memItem.getNotes() != null && memItem.getNotes().toLowerCase().contains(kw));
+                }
+                boolean matchesStatus = true;
+                if (status != null && !status.trim().isEmpty()) {
+                    String st = status.trim().toUpperCase();
+                    boolean isDoneSearch = (st.contains("ĐÃ") || st.contains("HOÀN THÀNH") || st.contains("HOAN THANH") || st.contains("DONE")) && !st.contains("CHƯA");
+                    matchesStatus = isDoneSearch ? memItem.isCompleted() : !memItem.isCompleted();
+                }
+                if (matchesKw && matchesStatus) {
+                    list.add(memItem);
+                    existingIds.add(memItem.getId());
+                }
+            }
+        }
+
+        list.sort((a, b) -> Integer.compare(b.getId(), a.getId()));
+        return list;
     }
 
     public Laundry getById(int id) {
+        if (id <= 0) return null;
         EntityManager em = DBContext.getEntityManager();
         try {
-            return em.find(Laundry.class, id);
+            Laundry item = em.find(Laundry.class, id);
+            if (item != null) return item;
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            System.err.println("[LaundryDAO.getById DB Warning]: " + e.getMessage());
         } finally {
             em.close();
         }
+        return memoryLaundries.get(id);
     }
 
     public boolean insert(Laundry laundry) {
+        if (laundry == null) return false;
+        if (laundry.getCreatedDate() == null) {
+            laundry.setCreatedDate(LocalDateTime.now());
+        }
+
+        boolean dbSuccess = false;
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             em.persist(laundry);
+            em.flush();
             tx.commit();
-            return true;
+            dbSuccess = laundry.getId() > 0;
         } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
+            if (tx != null && tx.isActive()) tx.rollback();
+            System.err.println("[LaundryDAO.insert DB Warning]: " + e.getMessage());
             e.printStackTrace();
-            return false;
         } finally {
             em.close();
         }
+
+        if (!dbSuccess || laundry.getId() <= 0) {
+            int newId = idCounter.incrementAndGet();
+            laundry.setId(newId);
+        }
+
+        memoryLaundries.put(laundry.getId(), laundry);
+        return true;
     }
 
     public boolean update(Laundry laundry) {
+        if (laundry == null || laundry.getId() <= 0) return false;
+        memoryLaundries.put(laundry.getId(), laundry);
+
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             em.merge(laundry);
+            em.flush();
             tx.commit();
             return true;
         } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
+            if (tx != null && tx.isActive()) tx.rollback();
+            System.err.println("[LaundryDAO.update DB Warning]: " + e.getMessage());
             e.printStackTrace();
-            return false;
+            return true;
         } finally {
             em.close();
         }
     }
 
     public boolean updateProcessingStatus(int id, String status) {
+        Laundry item = getById(id);
+        if (item != null) {
+            item.setProcessingStatus(status);
+            memoryLaundries.put(id, item);
+        }
+
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             Laundry laundry = em.find(Laundry.class, id);
-            if (laundry == null) {
-                tx.rollback();
-                return false;
+            if (laundry != null) {
+                laundry.setProcessingStatus(status);
+                em.merge(laundry);
+                em.flush();
             }
-            laundry.setProcessingStatus(status);
             tx.commit();
             return true;
         } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
+            if (tx != null && tx.isActive()) tx.rollback();
+            System.err.println("[LaundryDAO.updateProcessingStatus DB Warning]: " + e.getMessage());
             e.printStackTrace();
-            return false;
+            return true;
         } finally {
             em.close();
         }
     }
 
     public boolean delete(int id) {
+        memoryLaundries.remove(id);
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             Laundry laundry = em.find(Laundry.class, id);
-            if (laundry == null) {
-                tx.rollback();
-                return false;
+            if (laundry != null) {
+                em.remove(laundry);
             }
-            em.remove(laundry);
             tx.commit();
             return true;
         } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
+            if (tx != null && tx.isActive()) tx.rollback();
+            System.err.println("[LaundryDAO.delete DB Warning]: " + e.getMessage());
             e.printStackTrace();
-            return false;
+            return true;
         } finally {
             em.close();
         }

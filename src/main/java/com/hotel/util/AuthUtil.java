@@ -1,4 +1,4 @@
-﻿package com.hotel.util;
+package com.hotel.util;
 
 import com.hotel.model.User;
 import javax.servlet.http.HttpServletRequest;

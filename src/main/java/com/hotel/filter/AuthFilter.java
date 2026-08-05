@@ -39,20 +39,20 @@ public class AuthFilter implements Filter {
         }
 
         User currentUser = AuthUtil.getUser(httpRequest);
+        String role = (currentUser != null && currentUser.getRole() != null) ? currentUser.getRole() : "";
 
         // 2. Chỉ user có quyền quản lý mới truy cập được các URL /manager/*
         if (uri.contains("/manager/")) {
-            if (!AuthUtil.isManager(httpRequest)) {
+            if (!"Admin".equalsIgnoreCase(role) && !"Manager".equalsIgnoreCase(role)) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/home");
                 return;
             }
         }
 
         // 3. Đối với các URL quản trị khác của khách sạn (như admin, quản lý phòng, dịch vụ, hóa đơn, loại phòng)
-        // Yêu cầu tối thiểu là Admin hoặc Receptionist.
-        if (uri.contains("/admin/") || uri.contains("/rooms") || uri.contains("/services") || uri.contains("/bills") || uri.contains("/roomtypes")) {
-            String role = currentUser.getRole();
-            if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
+        // Yêu cầu tối thiểu là Admin, Receptionist hoặc Manager.
+        if (uri.contains("/admin/")) {
+            if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role) && !"Manager".equalsIgnoreCase(role)) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/home");
                 return;
             }

@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%
   String activeTab = (String) request.getAttribute("activeTab");
   if (activeTab == null) {
@@ -201,7 +201,7 @@
 
     <!-- FORM ĐĂNG NHẬP -->
     <div id="form-login" class="form-container <%= "login".equals(activeTab) ? "active" : "" %>">
-      <form action="<%= request.getContextPath() %>/login" method="POST" autocomplete="on">
+      <form action="<%= request.getContextPath() %>/login" method="POST" autocomplete="on" accept-charset="UTF-8">
         <div class="form-group">
           <label class="form-label" for="email">Email hoặc Tên đăng nhập</label>
           <div class="input-icon-group">

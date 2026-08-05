@@ -2,6 +2,7 @@ package com.hotel.controller;
 
 import com.hotel.dao.UserDAO;
 import com.hotel.model.User;
+import com.hotel.util.ParamUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -17,53 +18,60 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        request.getRequestDispatcher("/register.jsp").forward(request, response);
+        request.setAttribute("activeTab", "register");
+        request.getRequestDispatcher("/login.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-        String confirmPassword = request.getParameter("confirmPassword");
-        String fullName = request.getParameter("fullName");
-        String email = request.getParameter("email");
-        String phone = request.getParameter("phone");
+        response.setCharacterEncoding("UTF-8");
+
+        String username = ParamUtil.getString(request, "username", "");
+        String password = ParamUtil.getString(request, "password", "");
+        String confirmPassword = ParamUtil.getString(request, "confirmPassword", "");
+        String fullName = ParamUtil.getString(request, "fullName", "");
+        String email = ParamUtil.getString(request, "email", "");
+        String phone = ParamUtil.getString(request, "phone", "");
 
         // Keep values in case of error
         request.setAttribute("regUsername", username);
         request.setAttribute("regFullName", fullName);
         request.setAttribute("regEmail", email);
         request.setAttribute("regPhone", phone);
+        request.setAttribute("activeTab", "register");
 
-        if (username == null || username.trim().isEmpty() ||
-            password == null || password.trim().isEmpty() ||
-            fullName == null || fullName.trim().isEmpty() ||
-            email == null || email.trim().isEmpty() ||
-            phone == null || phone.trim().isEmpty()) {
-            request.setAttribute("error", "Vui lòng điền đầy đủ các thông tin bắt buộc!");
-            request.getRequestDispatcher("/register.jsp").forward(request, response);
+        if (username.isEmpty() || password.isEmpty() || fullName.isEmpty() || email.isEmpty()) {
+            request.setAttribute("error", "Vui lòng điền đầy đủ Họ tên, Tên đăng nhập, Email và Mật khẩu!");
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
             return;
         }
 
         if (!password.equals(confirmPassword)) {
             request.setAttribute("error", "Mật khẩu xác nhận không khớp!");
-            request.getRequestDispatcher("/register.jsp").forward(request, response);
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
             return;
         }
 
-        // Check if username/email already exists by fetching users or trying to save
+        // Check if username/email already exists
+        if (userDAO.findByEmailOrUsername(username) != null || userDAO.findByEmailOrUsername(email) != null) {
+            request.setAttribute("error", "Tên đăng nhập hoặc Email này đã tồn tại trong hệ thống!");
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            return;
+        }
+
         User user = new User(username, password, fullName, email, phone, "Customer");
         boolean success = userDAO.register(user);
 
         if (success) {
-            request.setAttribute("success", "Đăng ký thành công tài khoản hội viên Nestora Club! Vui lòng đăng nhập.");
+            request.setAttribute("success", "Đăng ký tài khoản thành công! Vui lòng đăng nhập bằng tài khoản vừa tạo.");
             request.setAttribute("activeTab", "login");
+            request.setAttribute("email", username);
             request.getRequestDispatcher("/login.jsp").forward(request, response);
         } else {
-            request.setAttribute("error", "Đăng ký thất bại! Tên đăng nhập hoặc Email có thể đã tồn tại.");
-            request.getRequestDispatcher("/register.jsp").forward(request, response);
+            request.setAttribute("error", "Đăng ký thất bại! Vui lòng kiểm tra lại thông tin.");
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
         }
     }
 }

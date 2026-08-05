@@ -12,6 +12,7 @@ import com.hotel.model.RoomType;
 import com.hotel.model.Service;
 import com.hotel.model.User;
 import com.hotel.model.Bill;
+import com.hotel.util.AuthUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -34,28 +35,31 @@ public class HomeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
+        User currentUser = AuthUtil.getUser(request);
 
         // If Admin or Receptionist, show dashboard stats
-        if (currentUser != null && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()))) {
+        if (currentUser != null && (currentUser.getRole() != null && 
+            ("Admin".equalsIgnoreCase(currentUser.getRole()) || "Receptionist".equalsIgnoreCase(currentUser.getRole()) || "Manager".equalsIgnoreCase(currentUser.getRole())))) {
             List<Room> rooms = roomDAO.getAllRooms();
             List<User> users = userDAO.getAllUsers();
             List<Bill> bills = billDAO.getAllBills();
             List<Service> services = serviceDAO.getAllServices();
             List<HotelNotification> latestNotifications = notificationDAO.getTop5Newest();
             
-            //chống null khi login
+            // Chống null khi login
             if (rooms == null) rooms = java.util.Collections.emptyList();
             if (users == null) users = java.util.Collections.emptyList();
             if (bills == null) bills = java.util.Collections.emptyList();
             if (services == null) services = java.util.Collections.emptyList();
             if (latestNotifications == null) latestNotifications = java.util.Collections.emptyList();
             
-            long availableCount = rooms.stream().filter(r -> "Available".equals(r.getStatus())).count();
-            long bookedCount = rooms.stream().filter(r -> "Booked".equals(r.getStatus())).count();
-            long maintenanceCount = rooms.stream().filter(r -> "Maintenance".equals(r.getStatus())).count();
-            double totalRevenue = bills.stream().filter(b -> "Paid".equals(b.getStatus())).mapToDouble(Bill::getTotalAmount).sum();
+            long availableCount = rooms.stream().filter(r -> r != null && "Available".equalsIgnoreCase(r.getStatus())).count();
+            long bookedCount = rooms.stream().filter(r -> r != null && "Booked".equalsIgnoreCase(r.getStatus())).count();
+            long maintenanceCount = rooms.stream().filter(r -> r != null && "Maintenance".equalsIgnoreCase(r.getStatus())).count();
+            double totalRevenue = bills.stream().filter(b -> b != null && "Paid".equalsIgnoreCase(b.getStatus())).mapToDouble(Bill::getTotalAmount).sum();
 
             request.setAttribute("totalRooms", rooms.size());
             request.setAttribute("availableRooms", availableCount);

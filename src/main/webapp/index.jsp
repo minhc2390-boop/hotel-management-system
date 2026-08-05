@@ -602,27 +602,22 @@
                 %>
                     <div class="luxury-card">
                         <div class="luxury-card-img-wrap">
-                            <img class="luxury-card-img" src="<%= request.getContextPath() %>/assets/<%= imgPath %>" alt="<%= r.getRoomType().getName() %>">
+                            <a href="<%= request.getContextPath() %>/rooms?action=bookForm&roomId=<%= r.getId() %>">
+                                <img class="luxury-card-img" src="<%= request.getContextPath() %>/assets/<%= imgPath %>" alt="<%= r.getRoomType().getName() %>">
+                            </a>
                             <%
-                                String statusBadgeText = "Phòng trống";
-                                String badgeBgColor = "rgba(22, 163, 106, 0.9)"; // Xanh lá
-                                String btnText = "Đặt ngay";
-                                if ("Booked".equals(r.getStatus())) {
-                                    statusBadgeText = "Đã đặt trước";
-                                    badgeBgColor = "rgba(217, 119, 6, 0.9)"; // Cam
-                                    btnText = "Đặt trước";
-                                } else if ("Occupied".equals(r.getStatus())) {
-                                    statusBadgeText = "Có khách ở";
-                                    badgeBgColor = "rgba(100, 116, 139, 0.9)"; // Xám
-                                    btnText = "Đặt trước";
-                                }
+                                boolean isAvailable = !"Occupied".equalsIgnoreCase(r.getStatus()) && !"Maintenance".equalsIgnoreCase(r.getStatus());
+                                String statusBadgeText = isAvailable ? "Còn phòng" : "Kín phòng";
+                                String badgeBgColor = isAvailable ? "rgba(22, 163, 106, 0.9)" : "rgba(217, 119, 6, 0.9)";
                             %>
                             <span class="luxury-card-badge" style="background: <%= badgeBgColor %>;"><%= statusBadgeText %></span>
                         </div>
                         <div class="luxury-card-body">
                             <div>
                                 <span class="luxury-card-type"><%= r.getRoomType().getName() %></span>
-                                <h3 class="luxury-card-title">Phòng số <%= r.getRoomNumber() %></h3>
+                                <h3 class="luxury-card-title">
+                                    <a href="<%= request.getContextPath() %>/rooms?action=bookForm&roomId=<%= r.getId() %>" style="color: inherit; text-decoration: none;">Phòng số <%= r.getRoomNumber() %></a>
+                                </h3>
                                 <div class="luxury-card-meta">
                                     <span>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -640,7 +635,11 @@
                                     <span>Giá mỗi đêm</span>
                                     <strong class="luxury-card-price"><%= money.format(r.getRoomType().getPricePerDay()) %></strong>
                                 </div>
-                                <a class="luxury-card-btn" href="<%= request.getContextPath() %>/rooms?action=bookForm&roomId=<%= r.getId() %>"><%= btnText %></a>
+                                <% if (isAvailable) { %>
+                                    <a class="luxury-card-btn" href="<%= request.getContextPath() %>/rooms?action=bookForm&roomId=<%= r.getId() %>">Đặt ngay</a>
+                                <% } else { %>
+                                    <span class="luxury-card-btn" style="background: #94a3b8; cursor: not-allowed; opacity: 0.85;">Kín phòng</span>
+                                <% } %>
                             </div>
                         </div>
                     </div>

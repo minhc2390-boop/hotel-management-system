@@ -1,4 +1,4 @@
-﻿package com.hotel.dao;
+package com.hotel.dao;
 
 import com.hotel.model.BillDetail;
 import javax.persistence.EntityManager;
@@ -33,6 +33,12 @@ public class BillDetailDAO {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
+            if (detail.getRoom() != null && detail.getRoom().getId() > 0) {
+                detail.setRoom(em.find(com.hotel.model.Room.class, detail.getRoom().getId()));
+            }
+            if (detail.getService() != null && detail.getService().getId() > 0) {
+                detail.setService(em.find(com.hotel.model.Service.class, detail.getService().getId()));
+            }
             em.persist(detail);
             tx.commit();
             return true;

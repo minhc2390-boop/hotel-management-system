@@ -66,6 +66,12 @@ public class BillDAO {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
+            if (bill.getUser() != null && bill.getUser().getId() > 0) {
+                bill.setUser(em.find(com.hotel.model.User.class, bill.getUser().getId()));
+            }
+            if (bill.getCustomer() != null && bill.getCustomer().getCustomerId() > 0) {
+                bill.setCustomer(em.find(com.hotel.model.Customer.class, bill.getCustomer().getCustomerId()));
+            }
             em.persist(bill);
             tx.commit();
             return bill.getId(); // Automatically populated by JPA/Hibernate

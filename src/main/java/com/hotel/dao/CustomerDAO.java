@@ -1,4 +1,4 @@
-﻿package com.hotel.dao;
+package com.hotel.dao;
 
 import com.hotel.model.Customer;
 import javax.persistence.EntityManager;
@@ -39,7 +39,11 @@ public class CustomerDAO {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            em.persist(customer);
+            if (customer.getCustomerId() > 0) {
+                em.merge(customer);
+            } else {
+                em.persist(customer);
+            }
             tx.commit();
             return true;
         } catch (Exception e) {

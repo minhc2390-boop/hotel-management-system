@@ -1,4 +1,4 @@
-﻿package com.hotel.dao;
+package com.hotel.dao;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -10,16 +10,25 @@ import javax.persistence.Persistence;
  */
 public class DBContext {
 
-    private static EntityManagerFactory emf;
+    private static volatile EntityManagerFactory emf;
 
-    static {
-        try {
-            // "HotelPU" matches the persistence-unit name in persistence.xml
-            emf = Persistence.createEntityManagerFactory("HotelPU");
-        } catch (Throwable ex) {
-            System.err.println("Initial EntityManagerFactory creation failed: " + ex);
-            throw new ExceptionInInitializerError(ex);
+    /**
+     * Lazy-loads the EntityManagerFactory safely.
+     */
+    public static EntityManagerFactory getEntityManagerFactory() {
+        if (emf == null || !emf.isOpen()) {
+            synchronized (DBContext.class) {
+                if (emf == null || !emf.isOpen()) {
+                    try {
+                        emf = Persistence.createEntityManagerFactory("HotelPU");
+                    } catch (Throwable ex) {
+                        System.err.println("Initial EntityManagerFactory creation failed: " + ex);
+                        throw new RuntimeException("Không thể kết nối Cơ sở dữ liệu SQL Server (HotelPU): " + ex.getMessage(), ex);
+                    }
+                }
+            }
         }
+        return emf;
     }
 
     /**
@@ -27,7 +36,7 @@ public class DBContext {
      * Remember to close it after transactions complete!
      */
     public static EntityManager getEntityManager() {
-        return emf.createEntityManager();
+        return getEntityManagerFactory().createEntityManager();
     }
 
     /**
@@ -36,6 +45,7 @@ public class DBContext {
     public static void shutdown() {
         if (emf != null && emf.isOpen()) {
             emf.close();
+            emf = null;
         }
     }
 }
