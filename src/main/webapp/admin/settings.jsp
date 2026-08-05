@@ -133,24 +133,38 @@
       font-size: 16px;
     }
     
+    .surface {
+      padding: 24px !important;
+      border-radius: 12px;
+    }
+    .surface-head {
+      padding: 0 0 16px 0 !important;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .setting-card-body {
+      padding: 10px 4px;
+    }
     .form-group {
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
     .form-group label {
       display: block;
       font-weight: 600;
-      margin-bottom: 6px;
-      font-size: 13px;
+      margin-bottom: 8px;
+      font-size: 14px;
       color: var(--text);
+      text-indent: 4px;
     }
     .form-group input, .form-group select {
       width: 100%;
-      padding: 10px 12px;
+      padding: 12px 16px;
       border: 1px solid var(--line);
-      border-radius: 6px;
+      border-radius: 8px;
       background: var(--surface);
       color: var(--text);
       transition: border-color 0.2s;
+      font-size: 14px;
     }
     .form-group input:focus, .form-group select:focus {
       border-color: var(--brand);
@@ -165,6 +179,8 @@
         text-indent: 24px !important;
         line-height: 1.6;
         font-family: "Segoe UI", Arial, sans-serif;
+        padding-left: 4px;
+        padding-right: 4px;
     }
   </style>
 </head>
@@ -189,7 +205,7 @@
             <div class="surface-head">
               <h2 class="surface-title">Cấu hình giao diện & Trải nghiệm</h2>
             </div>
-            <div style="padding: 15px 0">
+            <div class="setting-card-body">
               <div class="form-group">
                 <label>Lựa chọn chủ đề (Web Theme)</label>
                 <div class="theme-grid">
@@ -269,7 +285,7 @@
             <div class="surface-head">
               <h2 class="surface-title">Cấu hình VietQR & Chuyển khoản</h2>
             </div>
-            <div style="padding: 15px 0">
+            <div class="setting-card-body">
               <p style="font-size: 13px; color: var(--muted); margin-bottom: 18px;">
                 Các cấu hình tài khoản dưới đây sẽ được sử dụng để tự động sinh mã VietQR quét tiền phòng động tại trang Chi tiết hóa đơn khách hàng.
               </p>

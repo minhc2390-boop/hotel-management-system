@@ -32,7 +32,7 @@ public class HotelNotification {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", insertable = false, updatable = false)
     private User creator;
 
@@ -72,7 +72,7 @@ public class HotelNotification {
     }
 
     public void setTitle(String title) {
-        this.title = fixEncoding(title);
+        this.title = title;
     }
 
     public String getContent() {
@@ -81,27 +81,23 @@ public class HotelNotification {
     }
 
     public void setContent(String content) {
-        this.content = fixEncoding(content);
+        this.content = content;
     }
 
     private String fixEncoding(String str) {
         if (str == null || str.trim().isEmpty()) return "";
         String s = str.trim();
 
-        if (s.contains("Ã") || s.contains("Â") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘") || s.contains("Å") || s.contains("â")) {
+        if (containsVietnamese(s) && !s.contains("Ã") && !s.contains("áº") && !s.contains("á»") && !s.contains("Æ°") && !s.contains("Ä‘")) {
+            return s;
+        }
+
+        if (s.contains("Ã") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘")) {
             try {
                 byte[] b1 = s.getBytes("ISO-8859-1");
                 String d1 = new String(b1, "UTF-8");
                 if (!d1.contains("ï¿½") && !d1.contains("\uFFFD") && containsVietnamese(d1)) {
                     return d1;
-                }
-            } catch (Exception e) {}
-
-            try {
-                byte[] b2 = s.getBytes("Windows-1252");
-                String d2 = new String(b2, "UTF-8");
-                if (!d2.contains("ï¿½") && !d2.contains("\uFFFD") && containsVietnamese(d2)) {
-                    return d2;
                 }
             } catch (Exception e) {}
         }

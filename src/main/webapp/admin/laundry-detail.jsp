@@ -128,10 +128,10 @@
                     <div class="detail-row">
                         <span class="detail-label">Trạng thái xử lý:</span>
                         <span class="detail-value">
-                            <% if ("Đã hoàn tất".equals(laundry.getProcessingStatus()) || laundry.isCompleted()) { %>
-                                <span class="badge badge-success">Đã hoàn tất</span>
+                            <% if (laundry.isCompleted()) { %>
+                                <span class="badge badge-success">Đã hoàn thành</span>
                             <% } else { %>
-                                <span class="badge badge-warning">Chưa hoàn tất</span>
+                                <span class="badge badge-warning">Chưa hoàn thành</span>
                             <% } %>
                         </span>
                     </div>

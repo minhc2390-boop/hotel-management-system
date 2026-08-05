@@ -136,30 +136,36 @@ public class Laundry {
     }
 
     public String getProcessingStatus() {
-        if (processingStatus == null) return "Chưa hoàn thành";
+        if (processingStatus == null || processingStatus.trim().isEmpty()) {
+            return "Chưa hoàn thành";
+        }
         String s = fixEncoding(processingStatus.trim()).toUpperCase();
-
-        if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT")) {
+        if (s.contains("CHƯA") || s.contains("CHUA") || s.contains("PENDING") || s.contains("UNCOMPLETED")) {
+            return "Chưa hoàn thành";
+        }
+        if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("ĐÃ") || s.contains("DA") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT")) {
             return "Đã hoàn thành";
         }
         return "Chưa hoàn thành";
     }
 
     public boolean isCompleted() {
-        if (processingStatus == null) return false;
-        String s = fixEncoding(processingStatus.trim()).toUpperCase();
-        return s.contains("DONE") || s.contains("COMPLETED") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT");
+        return "Đã hoàn thành".equals(getProcessingStatus());
     }
 
     public void setProcessingStatus(String processingStatus) {
-        if (processingStatus != null) {
-            String s = processingStatus.trim().toUpperCase();
-            if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("HOÀN") || s.contains("HOAN")) {
-                this.processingStatus = "DONE";
-                return;
-            }
+        if (processingStatus == null || processingStatus.trim().isEmpty()) {
+            this.processingStatus = "Chưa hoàn thành";
+            return;
         }
-        this.processingStatus = "PENDING";
+        String s = processingStatus.trim().toUpperCase();
+        if (s.contains("CHƯA") || s.contains("CHUA") || s.contains("PENDING") || s.contains("UNCOMPLETED")) {
+            this.processingStatus = "Chưa hoàn thành";
+        } else if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("ĐÃ") || s.contains("DA") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT")) {
+            this.processingStatus = "Đã hoàn thành";
+        } else {
+            this.processingStatus = processingStatus.trim();
+        }
     }
 
     public String getNotes() {
@@ -173,8 +179,11 @@ public class Laundry {
     private String fixEncoding(String str) {
         if (str == null || str.trim().isEmpty()) return "";
         String s = str.trim();
+        if (containsVietnamese(s) && !s.contains("Ã") && !s.contains("áº") && !s.contains("á»") && !s.contains("Æ°") && !s.contains("Ä‘")) {
+            return s;
+        }
         try {
-            if (s.contains("Ã") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘") || s.contains("Â")) {
+            if (s.contains("Ã") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘")) {
                 byte[] bytes = s.getBytes("ISO-8859-1");
                 String decoded = new String(bytes, "UTF-8");
                 if (!decoded.contains("ï¿½") && !decoded.contains("\uFFFD") && containsVietnamese(decoded)) {

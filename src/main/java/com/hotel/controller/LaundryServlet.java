@@ -111,7 +111,7 @@ public class LaundryServlet extends HttpServlet {
             laundry.setServiceType(serviceType);
             laundry.setQuantity(quantity);
             laundry.setTotalPrice(totalPrice);
-            laundry.setProcessingStatus("Chưa hoàn tất");
+            laundry.setProcessingStatus("Chưa hoàn thành");
             laundry.setNotes(notes);
             laundry.setCreatedDate(LocalDateTime.now());
 
@@ -151,7 +151,7 @@ public class LaundryServlet extends HttpServlet {
         if ("updateStatus".equals(action)) {
             int id = ParamUtil.getInt(request, "id", 0);
             String rawStatus = request.getParameter("processingStatus");
-            String newStatus = (rawStatus != null && !rawStatus.trim().isEmpty()) ? rawStatus.trim() : "Đã hoàn tất";
+            String newStatus = (rawStatus != null && !rawStatus.trim().isEmpty()) ? rawStatus.trim() : "Đã hoàn thành";
             laundryDAO.updateProcessingStatus(id, newStatus);
             response.sendRedirect(request.getContextPath() + "/laundry?action=list&statusUpdated=1");
             return;
@@ -168,7 +168,7 @@ public class LaundryServlet extends HttpServlet {
         String serviceType = ParamUtil.getString(request, "serviceType", "Giặt sấy thông thường");
         int quantity = ParamUtil.getInt(request, "quantity", 1);
         double totalPrice = ParamUtil.getDouble(request, "totalPrice", 0.0);
-        String processingStatus = ParamUtil.getString(request, "processingStatus", "Chưa hoàn tất");
+        String processingStatus = ParamUtil.getString(request, "processingStatus", "Chưa hoàn thành");
         String notes = ParamUtil.getString(request, "notes", "");
 
         laundry.setCustomerName(customerName);
@@ -188,18 +188,28 @@ public class LaundryServlet extends HttpServlet {
             return;
         }
 
-        boolean success;
-        if ("insert".equals(action) || id == 0) {
-            laundry.setCreatedDate(LocalDateTime.now());
-            success = laundryDAO.insert(laundry);
-        } else {
-            success = laundryDAO.update(laundry);
-        }
+        try {
+            boolean success;
+            if ("insert".equals(action) || id == 0) {
+                laundry.setCreatedDate(LocalDateTime.now());
+                success = laundryDAO.insert(laundry);
+            } else {
+                success = laundryDAO.update(laundry);
+            }
 
-        if (!success) {
+            if (!success) {
+                request.setAttribute("laundry", laundry);
+                request.setAttribute("isEdit", id > 0);
+                request.setAttribute("error", "Không thể lưu đơn giặt ủi. Vui lòng kiểm tra dữ liệu.");
+                request.getRequestDispatcher("/admin/laundry-form.jsp").forward(request, response);
+                return;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            String errorMsg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
             request.setAttribute("laundry", laundry);
             request.setAttribute("isEdit", id > 0);
-            request.setAttribute("error", "Không thể lưu đơn giặt ủi. Vui lòng kiểm tra lại.");
+            request.setAttribute("error", "Lỗi lưu Database: " + (errorMsg != null ? errorMsg : ex.toString()));
             request.getRequestDispatcher("/admin/laundry-form.jsp").forward(request, response);
             return;
         }
@@ -234,7 +244,9 @@ public class LaundryServlet extends HttpServlet {
     private String validateAdminInput(Laundry item) {
         String error = validateClientInput(item);
         if (error != null) return error;
-        if (!"Chưa hoàn tất".equals(item.getProcessingStatus()) && !"Đã hoàn tất".equals(item.getProcessingStatus())) {
+        String status = item.getProcessingStatus();
+        if (!"Chưa hoàn thành".equals(status) && !"Đã hoàn thành".equals(status) &&
+            !"Chưa hoàn tất".equals(status) && !"Đã hoàn tất".equals(status)) {
             return "Trạng thái xử lý không hợp lệ.";
         }
         return null;

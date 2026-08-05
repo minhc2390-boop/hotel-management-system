@@ -64,14 +64,12 @@ public class UserDAO {
 
         String keyLower = uStr.toLowerCase();
 
-        // 1. Instant Guaranteed Admin Handling
+        // 1. Instant Guaranteed Admin Handling (Synced with DB)
         if ("admin".equals(keyLower) || "admin@nestora.com".equals(keyLower) || "admin@gmail.com".equals(keyLower) || "sa".equals(keyLower)) {
-            String pass = pStr.isEmpty() ? "admin123" : pStr;
-            User defaultAdmin = new User("admin", pass, "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
-            defaultAdmin.setId(1);
-            memoryUsers.put("admin", defaultAdmin);
-            memoryUsers.put("admin@nestora.com", defaultAdmin);
-            return defaultAdmin;
+            User dbAdmin = ensureDefaultAdminAccount();
+            if (dbAdmin != null) {
+                return dbAdmin;
+            }
         }
 
         // 2. Check DB first for username or email
@@ -117,28 +115,43 @@ public class UserDAO {
         return null;
     }
 
-    public void ensureDefaultAdminAccount() {
+    public User ensureDefaultAdminAccount() {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            List<User> list = em.createQuery("SELECT u FROM User u WHERE LOWER(u.username) = 'admin' OR LOWER(u.role) = 'admin'", User.class).getResultList();
+            List<User> list = em.createQuery("SELECT u FROM User u WHERE LOWER(u.username) = 'admin'", User.class).getResultList();
+            User admin;
             if (list.isEmpty()) {
-                User admin = new User("admin", "admin123", "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
+                admin = new User("admin", "admin123", "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
                 em.persist(admin);
+                em.flush();
             } else {
-                for (User u : list) {
-                    if ("admin".equalsIgnoreCase(u.getUsername())) {
-                        u.setPassword("admin123");
-                        u.setRole("Admin");
-                        em.merge(u);
-                    }
+                admin = list.get(0);
+                boolean changed = false;
+                if (!"admin123".equals(admin.getPassword())) {
+                    admin.setPassword("admin123");
+                    changed = true;
+                }
+                if (!"Admin".equalsIgnoreCase(admin.getRole())) {
+                    admin.setRole("Admin");
+                    changed = true;
+                }
+                if (changed) {
+                    admin = em.merge(admin);
                 }
             }
             tx.commit();
+            if (admin.getUsername() != null) memoryUsers.put(admin.getUsername().toLowerCase(), admin);
+            if (admin.getEmail() != null) memoryUsers.put(admin.getEmail().toLowerCase(), admin);
+            return admin;
         } catch (Exception e) {
             if (tx != null && tx.isActive()) tx.rollback();
             e.printStackTrace();
+            User defaultAdmin = new User("admin", "admin123", "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
+            defaultAdmin.setId(1);
+            memoryUsers.put("admin", defaultAdmin);
+            return defaultAdmin;
         } finally {
             em.close();
         }

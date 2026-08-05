@@ -283,6 +283,14 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label" for="guestCount">Số lượng khách lưu trú *</label>
+                        <div class="input-icon-group">
+                            <input class="form-control" type="number" id="guestCount" name="guestCount" min="1" max="<%= room.getRoomType().getCapacity() > 0 ? room.getRoomType().getCapacity() : 10 %>" value="1" required>
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label" for="note">Yêu cầu đặc biệt (Ghi chú)</label>
                         <textarea class="form-control" id="note" name="note" rows="3" placeholder="Ví dụ: Giường phụ, check-in sớm, tầng cao..."></textarea>
                     </div>
