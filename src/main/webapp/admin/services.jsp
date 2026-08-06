@@ -64,6 +64,13 @@ String activeMenu = "services";
 									<circle cx="11" cy="11" r="7" />
 									<path d="M20 20l-3.5-3.5" /></svg>
 							</div>
+							<div class="admin-filter-group">
+								<select class="admin-filter-select" data-admin-filter aria-label="Lọc trạng thái dịch vụ">
+									<option value="">Tất cả trạng thái</option>
+									<option value="Đang hoạt động">Đang hoạt động</option>
+									<option value="Tạm ngưng">Tạm ngưng</option>
+								</select>
+							</div>
 							<div class="table-meta"><%=services != null ? services.size() : 0%>
 								dịch vụ
 							</div>

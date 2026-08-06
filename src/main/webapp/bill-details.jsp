@@ -6,6 +6,13 @@
 	import="com.hotel.model.Service"%><%@ page import="java.util.List"%><%@ page
 	import="java.text.NumberFormat"%><%@ page
 	import="java.text.SimpleDateFormat"%><%@ page import="java.util.Locale"%>
+<%!
+private String billEscape(String value) {
+	if (value == null) return "";
+	return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+			.replace("\"", "&quot;").replace("'", "&#39;");
+}
+%>
 <%
 HttpSession sess = request.getSession(false);
 User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
@@ -32,6 +39,24 @@ if (details != null) {
 if (roomNumber.isEmpty()) {
     roomNumber = "HD" + bill.getId();
 }
+String customerName = bill.getCustomer() != null ? bill.getCustomer().getCustomerName()
+		: (bill.getUser() != null ? bill.getUser().getFullName() : "N/A");
+String customerEmail = bill.getCustomer() != null ? bill.getCustomer().getCustomerEmail() : null;
+if (customerEmail == null || customerEmail.trim().isEmpty()) {
+	customerEmail = bill.getUser() != null && "Customer".equals(bill.getUser().getRole())
+			? bill.getUser().getEmail() : null;
+}
+if (customerEmail == null || customerEmail.trim().isEmpty()) customerEmail = "N/A";
+String customerPhone = bill.getCustomer() != null ? bill.getCustomer().getCustomerPhone() : null;
+if (customerPhone == null || customerPhone.trim().isEmpty()) {
+	customerPhone = bill.getUser() != null && "Customer".equals(bill.getUser().getRole())
+			? bill.getUser().getPhone() : null;
+}
+if (customerPhone == null || customerPhone.trim().isEmpty()) customerPhone = "Chưa có";
+String paymentMethodLabel = "Chưa ghi nhận";
+if ("Cash".equals(bill.getPaymentMethod())) paymentMethodLabel = "Tiền mặt";
+else if ("BankTransfer".equals(bill.getPaymentMethod())) paymentMethodLabel = "Chuyển khoản";
+else if ("Card".equals(bill.getPaymentMethod())) paymentMethodLabel = "Thẻ ngân hàng";
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -86,6 +111,13 @@ if (roomNumber.isEmpty()) {
 				<p class="page-desc">Thông tin lưu trú và dịch vụ phát sinh.</p>
 			</div>
 		</div>
+		<% if ("1".equals(request.getParameter("paid"))) { %>
+		<div class="alert alert-success">Đã xác nhận thanh toán và lưu hình thức thanh toán.</div>
+		<% } else if (request.getParameter("error") != null) { %>
+		<div class="alert alert-error"><%="paymentMethodRequired".equals(request.getParameter("error"))
+				? "Vui lòng chọn hình thức thanh toán."
+				: "Không thể xác nhận thanh toán. Vui lòng tải lại trang và thử lại."%></div>
+		<% } %>
 		<div class="checkout-grid">
 			<div>
 				<section class="surface">
@@ -199,6 +231,9 @@ if (roomNumber.isEmpty()) {
 					</strong>
 				</div>
 				<div class="checkout-line">
+					<span>Hình thức thanh toán</span><strong><%=paymentMethodLabel%></strong>
+				</div>
+				<div class="checkout-line">
 					<span>Ngày tạo</span><strong><%=dt.format(bill.getCreatedAt())%></strong>
 				</div>
 				<div class="checkout-line">
@@ -209,27 +244,26 @@ if (roomNumber.isEmpty()) {
 				</div>
 				<h2 class="form-title" style="margin-top: 22px">Khách hàng</h2>
 				<div class="checkout-line">
-					<span>Họ tên</span><strong><%=bill.getCustomer() != null ? bill.getCustomer().getCustomerName() : bill.getUser().getFullName()%></strong>
+					<span>Họ tên</span><strong><%=billEscape(customerName)%></strong>
 				</div>
 				<div class="checkout-line">
-					<span>Email</span><strong><%=bill.getCustomer() != null && bill.getCustomer().getCustomerEmail() != null
-		? bill.getCustomer().getCustomerEmail()
-		: (bill.getUser().getEmail() != null ? bill.getUser().getEmail() : "N/A")%></strong>
+					<span>Email</span><strong><%=billEscape(customerEmail)%></strong>
 				</div>
 				<div class="checkout-line">
-					<span>Điện thoại</span><strong><%=bill.getCustomer() != null && bill.getCustomer().getCustomerPhone() != null
-		? bill.getCustomer().getCustomerPhone()
-		: (bill.getUser().getPhone() != null ? bill.getUser().getPhone() : "Chưa có")%></strong>
+					<span>Điện thoại</span><strong><%=billEscape(customerPhone)%></strong>
 				</div>
 				<%
-				if ("Unpaid".equals(bill.getStatus())) {
+				if ("Unpaid".equals(bill.getStatus()) && admin) {
 				%>
+				<form action="<%=request.getContextPath()%>/bills" method="post" id="payment-form">
+					<input type="hidden" name="action" value="pay">
+					<input type="hidden" name="billId" value="<%=bill.getId()%>">
 				<div class="form-group" style="margin-top:18px">
-					<label class="form-label" style="font-weight: 600; margin-bottom: 6px; display: block;">Phương thức thanh toán</label>
-					<select class="form-control" id="payment-method-select" onchange="handlePaymentMethodChange()">
-						<option value="cash">Tiền mặt</option>
-						<option value="transfer">Chuyển khoản (VietQR)</option>
-						<option value="card">Thẻ ngân hàng</option>
+					<label class="form-label" style="font-weight: 600; margin-bottom: 6px; display: block;">Hình thức thanh toán</label>
+					<select class="form-control" id="payment-method-select" name="paymentMethod" required onchange="handlePaymentMethodChange()">
+						<option value="Cash">Tiền mặt</option>
+						<option value="BankTransfer">Chuyển khoản (VietQR)</option>
+						<option value="Card">Thẻ ngân hàng</option>
 					</select>
 				</div>
 				<div id="transfer-qr-container">
@@ -243,16 +277,15 @@ if (roomNumber.isEmpty()) {
 						Chủ TK: <strong id="display-account-name">CONG TY NESTORA HOTEL</strong>
 					</div>
 				</div>
+				</form>
 				<%
 				}
 				%>
 				<div style="display: grid; gap: 8px; margin-top: 18px">
 					<%
 					if ("Unpaid".equals(bill.getStatus()) && admin) {
-					%><a
-						class="btn btn-success"
-						href="<%=request.getContextPath()%>/bills?action=pay&id=<%=bill.getId()%>">Xác
-						nhận thanh toán</a>
+					%><button class="btn btn-success" type="submit" form="payment-form">Xác
+						nhận thanh toán</button>
 					<%
 					}
 					%>
@@ -277,7 +310,7 @@ if (roomNumber.isEmpty()) {
 	      var qrContainer = document.getElementById('transfer-qr-container');
 	      if (!select || !qrContainer) return;
 	      
-	      if (select.value === 'transfer') {
+	      if (select.value === 'BankTransfer') {
 	          var amount = '<%= (long)bill.getTotalAmount() %>';
 	          var bankId = localStorage.getItem('hotel_bank_id') || 'MB';
 	          var accountNo = localStorage.getItem('hotel_bank_account') || '1903567890123';

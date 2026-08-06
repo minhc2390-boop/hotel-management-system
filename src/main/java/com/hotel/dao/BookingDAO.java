@@ -236,6 +236,32 @@ public class BookingDAO {
         return false;
     }
 
+    public boolean cancelBooking(int id, String cancellationReason) {
+        EntityManager em = DBContext.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            Booking booking = em.find(Booking.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (booking == null
+                    || (!"Pending".equals(booking.getStatus()) && !"Confirmed".equals(booking.getStatus()))) {
+                tx.rollback();
+                return false;
+            }
+            Room room = em.find(Room.class, booking.getRoom().getId(), LockModeType.PESSIMISTIC_WRITE);
+            booking.setStatus("Cancelled");
+            booking.setCancellationReason(cancellationReason);
+            if (room != null) room.setStatus("Available");
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
     /**
      * Checks in one or more rooms atomically. Every selected booking must belong
      * to the same customer and still be waiting for check-in.

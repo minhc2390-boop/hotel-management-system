@@ -43,6 +43,15 @@
               <input type="search" placeholder="Tìm theo tên loại phòng...">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
             </div>
+            <div class="admin-filter-group">
+              <select class="admin-filter-select" data-admin-filter aria-label="Lọc theo sức chứa">
+                <option value="">Tất cả sức chứa</option>
+                <option value="1 khách">1 khách</option>
+                <option value="2 khách">2 khách</option>
+                <option value="3 khách">3 khách</option>
+                <option value="4 khách">4 khách</option>
+              </select>
+            </div>
             <div class="table-meta"><%= roomTypes != null ? roomTypes.size() : 0 %> loại phòng</div>
           </div>
 
