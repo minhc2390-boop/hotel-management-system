@@ -7,6 +7,13 @@
   const savedTheme = localStorage.getItem('nestora_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
 
+  // Sync theme changes across tabs in real-time
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'nestora_theme' && e.newValue) {
+      document.documentElement.setAttribute('data-theme', e.newValue);
+    }
+  });
+
   const savedHotelName = localStorage.getItem('hotel_name') || 'NESTORA';
   const brandNameStrong = document.querySelectorAll('.brand-name strong, [data-hotel-name]');
   if (brandNameStrong.length > 0) {

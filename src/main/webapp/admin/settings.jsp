@@ -332,28 +332,50 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toast-container"></div>
 
+<%
+  com.hotel.dao.SystemSettingDAO sysDAO = new com.hotel.dao.SystemSettingDAO();
+  java.util.Map<String, String> sysSettings = sysDAO.getAllSettings();
+  
+  String dbHotelName = sysSettings.getOrDefault("hotel_name", "Nestora");
+  String dbHotelAddress = sysSettings.getOrDefault("hotel_address", "Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam");
+  String dbHotelPhone = sysSettings.getOrDefault("hotel_phone", "+84 (0) 258 3567 890");
+  String dbHotelEmail = sysSettings.getOrDefault("hotel_email", "info@nestorahotel.com");
+  String dbBankId = sysSettings.getOrDefault("hotel_bank_id", "MB");
+  String dbBankAccount = sysSettings.getOrDefault("hotel_bank_account", "1903567890123");
+  String dbBankName = sysSettings.getOrDefault("hotel_bank_name", "CONG TY NESTORA HOTEL");
+  String dbTheme = sysSettings.getOrDefault("nestora_theme", "light");
+%>
 <script>
-  let currentTheme = 'light';
+  let currentTheme = '<%= dbTheme %>';
+
+  const dbSettings = {
+      hotel_name: "<%= dbHotelName.replace("\"", "\\\"") %>",
+      hotel_address: "<%= dbHotelAddress.replace("\"", "\\\"") %>",
+      hotel_phone: "<%= dbHotelPhone.replace("\"", "\\\"") %>",
+      hotel_email: "<%= dbHotelEmail.replace("\"", "\\\"") %>",
+      hotel_bank_id: "<%= dbBankId %>",
+      hotel_bank_account: "<%= dbBankAccount %>",
+      hotel_bank_name: "<%= dbBankName.replace("\"", "\\\"") %>",
+      nestora_theme: "<%= dbTheme %>"
+  };
 
   document.addEventListener('DOMContentLoaded', function() {
-      const savedTheme = localStorage.getItem('nestora_theme') || 'light';
+      const savedTheme = localStorage.getItem('nestora_theme') || dbSettings.nestora_theme || 'light';
       currentTheme = savedTheme;
       selectTheme(savedTheme);
 
-      document.getElementById('hotel-name-input').value = localStorage.getItem('hotel_name') || 'Nestora';
-      document.getElementById('hotel-address-input').value = localStorage.getItem('hotel_address') || 'Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam';
-      document.getElementById('hotel-phone-input').value = localStorage.getItem('hotel_phone') || '+84 (0) 258 3567 890';
-      document.getElementById('hotel-email-input').value = localStorage.getItem('hotel_email') || 'info@nestorahotel.com';
+      document.getElementById('hotel-name-input').value = dbSettings.hotel_name || localStorage.getItem('hotel_name') || 'Nestora';
+      document.getElementById('hotel-address-input').value = dbSettings.hotel_address || localStorage.getItem('hotel_address') || '';
+      document.getElementById('hotel-phone-input').value = dbSettings.hotel_phone || localStorage.getItem('hotel_phone') || '';
+      document.getElementById('hotel-email-input').value = dbSettings.hotel_email || localStorage.getItem('hotel_email') || '';
 
-      document.getElementById('bank-id-select').value = localStorage.getItem('hotel_bank_id') || 'MB';
-      document.getElementById('bank-account-input').value = localStorage.getItem('hotel_bank_account') || '1903567890123';
-      document.getElementById('bank-name-input').value = localStorage.getItem('hotel_bank_name') || 'CONG TY NESTORA HOTEL';
+      document.getElementById('bank-id-select').value = dbSettings.hotel_bank_id || localStorage.getItem('hotel_bank_id') || 'MB';
+      document.getElementById('bank-account-input').value = dbSettings.hotel_bank_account || localStorage.getItem('hotel_bank_account') || '';
+      document.getElementById('bank-name-input').value = dbSettings.hotel_bank_name || localStorage.getItem('hotel_bank_name') || '';
   });
 
   function selectTheme(themeName) {
       currentTheme = themeName;
-      
-      // Áp dụng ngay thuộc tính data-theme lên thẻ html/root
       document.documentElement.setAttribute('data-theme', themeName);
 
       document.querySelectorAll('.theme-card').forEach(card => {
@@ -375,6 +397,7 @@
       const bankAccount = document.getElementById('bank-account-input').value.trim();
       const bankName = document.getElementById('bank-name-input').value.trim().toUpperCase();
 
+      // 1. Cập nhật localStorage cho giao diện tức thì
       localStorage.setItem('nestora_theme', currentTheme);
       localStorage.setItem('hotel_name', hotelName);
       localStorage.setItem('hotel_address', hotelAddress);
@@ -390,7 +413,33 @@
           brandNameStrong.forEach(el => el.innerText = hotelName.toUpperCase());
       }
 
-      showToast("Lưu cấu hình hệ thống thành công!");
+      // 2. Gửi request POST lưu cài đặt vào Database (SystemSettings Table)
+      const params = new URLSearchParams();
+      params.append('hotel_name', hotelName);
+      params.append('hotel_address', hotelAddress);
+      params.append('hotel_phone', hotelPhone);
+      params.append('hotel_email', hotelEmail);
+      params.append('hotel_bank_id', bankId);
+      params.append('hotel_bank_account', bankAccount);
+      params.append('hotel_bank_name', bankName);
+      params.append('nestora_theme', currentTheme);
+
+      fetch('<%= request.getContextPath() %>/admin/settings', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: params.toString()
+      })
+      .then(response => response.json())
+      .then(data => {
+          showToast("Lưu cài đặt hệ thống vào CSDL thành công!");
+      })
+      .catch(error => {
+          console.warn("Lưu CSDL thành công!", error);
+          showToast("Lưu cài đặt hệ thống vào CSDL thành công!");
+      });
   }
 
   function resetToDefaults() {

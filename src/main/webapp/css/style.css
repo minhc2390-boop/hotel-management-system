@@ -839,6 +839,61 @@ html[data-theme="cyberpunk"] {
   --shadow: 0 8px 24px rgba(255, 0, 127, .2);
 }
 
+/* ===== Comprehensive Theme Styling for Admin & All Pages ===== */
+html[data-theme] body,
+html[data-theme] .admin-layout,
+html[data-theme] .main-shell,
+html[data-theme] .content,
+html[data-theme] .client-body {
+  background-color: var(--canvas) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme] .surface,
+html[data-theme] .card,
+html[data-theme] .topbar,
+html[data-theme] .sidebar,
+html[data-theme] .modal-card-notif,
+html[data-theme] .notif-dropdown-panel,
+html[data-theme] .form-control,
+html[data-theme] input,
+html[data-theme] select,
+html[data-theme] textarea {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="cyberpunk"] .page-title,
+html[data-theme="dark"] .surface-title,
+html[data-theme="cyberpunk"] .surface-title,
+html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3,
+html[data-theme="cyberpunk"] h1, html[data-theme="cyberpunk"] h2, html[data-theme="cyberpunk"] h3 {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .page-desc,
+html[data-theme="cyberpunk"] .page-desc,
+html[data-theme="dark"] .breadcrumb,
+html[data-theme="cyberpunk"] .breadcrumb,
+html[data-theme="dark"] .table-meta,
+html[data-theme="cyberpunk"] .table-meta {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html[data-theme="forest"] .page-title,
+html[data-theme="forest"] .surface-title,
+html[data-theme="forest"] h1, html[data-theme="forest"] h2, html[data-theme="forest"] h3 {
+  color: #064e3b !important;
+}
+
+html[data-theme="sunset"] .page-title,
+html[data-theme="sunset"] .surface-title,
+html[data-theme="sunset"] h1, html[data-theme="sunset"] h2, html[data-theme="sunset"] h3 {
+  color: #451a03 !important;
+}
+
 /* ===== Public Page Header Dark Mode Overrides ===== */
 html[data-theme="dark"] .luxury-header,
 html[data-theme="cyberpunk"] .luxury-header {

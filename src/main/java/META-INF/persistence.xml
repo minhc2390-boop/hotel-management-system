@@ -25,7 +25,7 @@
             <property name="javax.persistence.jdbc.driver" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
             <property name="javax.persistence.jdbc.url" value="jdbc:sqlserver://localhost:1433;databaseName=Hotel_manage;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true"/>
             <property name="javax.persistence.jdbc.user" value="sa"/>
-            <property name="javax.persistence.jdbc.password" value="vy2211"/>
+            <property name="javax.persistence.jdbc.password" value="123"/>
             
             <!-- Hibernate ORM Configurations -->
 
