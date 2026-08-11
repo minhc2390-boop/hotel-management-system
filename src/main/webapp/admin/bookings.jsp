@@ -109,8 +109,16 @@
 
                 <% if (request.getParameter("processed") != null) { %>
                     <div class="alert alert-success">Đã xử lý thành công cho <%= request.getParameter("processed") %> phòng.</div>
+                <% } else if ("1".equals(request.getParameter("cancelled"))) { %>
+                    <div class="alert alert-success">Đã hủy đặt phòng và lưu lý do hủy.</div>
+                <% } else if ("cancelReasonRequired".equals(request.getParameter("error"))) { %>
+                    <div class="alert alert-error">Vui lòng dùng nút Hủy và nhập lý do hủy đặt phòng.</div>
                 <% } else if ("noSelection".equals(request.getParameter("error"))) { %>
                     <div class="alert alert-error">Vui lòng chọn ít nhất một phòng.</div>
+                <% } else if ("invalidCancelReason".equals(request.getParameter("error"))) { %>
+                    <div class="alert alert-error">Lý do hủy phải có từ 3 đến 500 ký tự.</div>
+                <% } else if ("cancelFailed".equals(request.getParameter("error"))) { %>
+                    <div class="alert alert-error">Không thể hủy đặt phòng ở trạng thái hiện tại.</div>
                 <% } else if ("bulkFailed".equals(request.getParameter("error"))) { %>
                     <div class="alert alert-error">Không thể xử lý. Các phòng phải cùng một khách hàng và có trạng thái phù hợp.</div>
                 <% } %>
@@ -141,6 +149,16 @@
                                 <circle cx="11" cy="11" r="7"/>
                                 <path d="M20 20l-3.5-3.5"/>
                             </svg>
+                        </div>
+                        <div class="admin-filter-group">
+                            <select class="admin-filter-select" data-admin-filter aria-label="Lọc trạng thái đặt phòng">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="Chờ xác nhận">Chờ xác nhận</option>
+                                <option value="Đã xác nhận">Đã xác nhận</option>
+                                <option value="Đã nhận phòng">Đã nhận phòng</option>
+                                <option value="Đã trả phòng">Đã trả phòng</option>
+                                <option value="Đã hủy">Đã hủy</option>
+                            </select>
                         </div>
                         <div class="table-meta"><%= bookings != null ? bookings.size() : 0 %> đặt phòng</div>
                     </div>
@@ -224,8 +242,10 @@
                                             <a class="btn btn-success" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=checkout&id=<%= b.getBookingId() %>">Trả phòng</a>
                                         <% } %>
 
-                                        <% if (!"CheckedOut".equals(b.getStatus()) && !"Cancelled".equals(b.getStatus())) { %>
-                                            <a class="btn btn-danger" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=cancel&id=<%= b.getBookingId() %>" onclick="return confirm('Bạn có chắc muốn hủy đặt phòng này?')">Hủy</a>
+                                        <% if ("Pending".equals(b.getStatus()) || "Confirmed".equals(b.getStatus())) { %>
+                                            <button class="btn btn-danger" type="button" style="padding: 4px 8px; font-size:12px;"
+                                                    data-cancel-booking data-booking-id="<%= b.getBookingId() %>"
+                                                    data-cancel-url="<%= request.getContextPath() %>/bookings">Hủy</button>
                                         <% } %>
 
                                         <a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bookings?action=edit&id=<%= b.getBookingId() %>">✎</a>

@@ -27,6 +27,9 @@ public class Bill {
     @Column(name = "status", nullable = false)
     private String status; // Unpaid, Paid, Cancelled
 
+    @Column(name = "payment_method", length = 30)
+    private String paymentMethod; // Cash, BankTransfer, Card
+
     @Column(name = "created_at")
     private Timestamp createdAt;
 
@@ -122,6 +125,14 @@ public class Bill {
         this.status = status;
     }
 
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
     public Timestamp getCreatedAt() {
         return createdAt;
     }
@@ -158,6 +169,7 @@ public class Bill {
                 ", checkOutDate=" + checkOutDate +
                 ", totalAmount=" + totalAmount +
                 ", status='" + status + '\'' +
+                ", paymentMethod='" + paymentMethod + '\'' +
                 '}';
     }
 }

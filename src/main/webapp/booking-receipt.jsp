@@ -4,6 +4,13 @@
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.Locale" %>
 <%@ page import="java.text.SimpleDateFormat" %>
+<%!
+    private String receiptEscape(String value) {
+        if (value == null) return "";
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\"", "&quot;").replace("'", "&#39;");
+    }
+%>
 <%
     Booking booking = (Booking) request.getAttribute("booking");
     if (booking == null) {
@@ -246,12 +253,22 @@
                     </div>
                     <div class="receipt-row">
                         <span>Email</span>
-                        <strong><%= booking.getCustomer().getCustomerEmail() != null ? booking.getCustomer().getCustomerEmail() : "N/A" %></strong>
+                        <strong><%= receiptEscape(booking.getCustomer().getCustomerEmail() != null && !booking.getCustomer().getCustomerEmail().trim().isEmpty()
+                                ? booking.getCustomer().getCustomerEmail()
+                                : (booking.getCreatedBy() != null && "Customer".equals(booking.getCreatedBy().getRole())
+                                    && booking.getCreatedBy().getEmail() != null
+                                    ? booking.getCreatedBy().getEmail() : "N/A")) %></strong>
                     </div>
                     <% if (booking.getCustomer().getCustomerCccd() != null && !booking.getCustomer().getCustomerCccd().isEmpty()) { %>
                     <div class="receipt-row">
                         <span>Số CCCD/CMND</span>
                         <strong><%= booking.getCustomer().getCustomerCccd() %></strong>
+                    </div>
+                    <% } %>
+                    <% if ("Cancelled".equals(booking.getStatus()) && booking.getCancellationReason() != null) { %>
+                    <div class="receipt-row">
+                        <span>Lý do hủy</span>
+                        <strong><%= receiptEscape(booking.getCancellationReason()) %></strong>
                     </div>
                     <% } %>
                 </div>

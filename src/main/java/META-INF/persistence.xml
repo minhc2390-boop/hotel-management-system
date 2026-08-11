@@ -26,6 +26,8 @@
             <property name="javax.persistence.jdbc.url" value="jdbc:sqlserver://localhost:1433;databaseName=Hotel_manage;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true"/>
             <property name="javax.persistence.jdbc.user" value="sa"/>
             <property name="javax.persistence.jdbc.password" value="123"/>
+            
+            <!-- Hibernate ORM Configurations -->
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServer2012Dialect"/>
             <property name="hibernate.show_sql" value="true"/>

@@ -51,6 +51,14 @@
         <div class="alert alert-error">Phiếu đặt phòng này đã được đánh giá hoặc không thể gửi lại.</div>
     <% } else if ("notAllowed".equals(request.getParameter("feedback"))) { %>
         <div class="alert alert-error">Bạn chỉ có thể đánh giá phiếu của mình sau khi đã trả phòng.</div>
+    <% } else if ("1".equals(request.getParameter("cancelled"))) { %>
+        <div class="alert alert-success">Đã hủy đặt phòng và ghi nhận lý do hủy.</div>
+    <% } else if ("cancelReasonRequired".equals(request.getParameter("error"))) { %>
+        <div class="alert alert-error">Vui lòng dùng nút Hủy và nhập lý do hủy đặt phòng.</div>
+    <% } else if ("invalidCancelReason".equals(request.getParameter("error"))) { %>
+        <div class="alert alert-error">Lý do hủy phải có từ 3 đến 500 ký tự.</div>
+    <% } else if ("cancelFailed".equals(request.getParameter("error"))) { %>
+        <div class="alert alert-error">Không thể hủy đặt phòng ở trạng thái hiện tại.</div>
     <% } %>
     <div class="page-head">
         <div>
@@ -98,7 +106,9 @@
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                             <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=receipt&id=<%= b.getBookingId() %>">Xem phiếu</a>
                             <% if ("Pending".equals(b.getStatus()) || "Confirmed".equals(b.getStatus())) { %>
-                                <a class="btn btn-danger" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=cancel&id=<%= b.getBookingId() %>" onclick="return confirm('Bạn có chắc muốn hủy đặt phòng này?')">Hủy</a>
+                                <button class="btn btn-danger" type="button" style="padding: 4px 8px; font-size:12px;"
+                                        data-cancel-booking data-booking-id="<%= b.getBookingId() %>"
+                                        data-cancel-url="<%= request.getContextPath() %>/bookings">Hủy</button>
                             <% } else if ("CheckedOut".equals(b.getStatus()) && reviewedBookingIds.contains(b.getBookingId())) { %>
                                 <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/feedbacks?action=view&bookingId=<%= b.getBookingId() %>">Xem đánh giá</a>
                             <% } else if ("CheckedOut".equals(b.getStatus())) { %>

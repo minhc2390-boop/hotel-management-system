@@ -839,6 +839,61 @@ html[data-theme="cyberpunk"] {
   --shadow: 0 8px 24px rgba(255, 0, 127, .2);
 }
 
+/* ===== Comprehensive Theme Styling for Admin & All Pages ===== */
+html[data-theme] body,
+html[data-theme] .admin-layout,
+html[data-theme] .main-shell,
+html[data-theme] .content,
+html[data-theme] .client-body {
+  background-color: var(--canvas) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme] .surface,
+html[data-theme] .card,
+html[data-theme] .topbar,
+html[data-theme] .sidebar,
+html[data-theme] .modal-card-notif,
+html[data-theme] .notif-dropdown-panel,
+html[data-theme] .form-control,
+html[data-theme] input,
+html[data-theme] select,
+html[data-theme] textarea {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="cyberpunk"] .page-title,
+html[data-theme="dark"] .surface-title,
+html[data-theme="cyberpunk"] .surface-title,
+html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3,
+html[data-theme="cyberpunk"] h1, html[data-theme="cyberpunk"] h2, html[data-theme="cyberpunk"] h3 {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .page-desc,
+html[data-theme="cyberpunk"] .page-desc,
+html[data-theme="dark"] .breadcrumb,
+html[data-theme="cyberpunk"] .breadcrumb,
+html[data-theme="dark"] .table-meta,
+html[data-theme="cyberpunk"] .table-meta {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html[data-theme="forest"] .page-title,
+html[data-theme="forest"] .surface-title,
+html[data-theme="forest"] h1, html[data-theme="forest"] h2, html[data-theme="forest"] h3 {
+  color: #064e3b !important;
+}
+
+html[data-theme="sunset"] .page-title,
+html[data-theme="sunset"] .surface-title,
+html[data-theme="sunset"] h1, html[data-theme="sunset"] h2, html[data-theme="sunset"] h3 {
+  color: #451a03 !important;
+}
+
 /* ===== Public Page Header Dark Mode Overrides ===== */
 html[data-theme="dark"] .luxury-header,
 html[data-theme="cyberpunk"] .luxury-header {
@@ -1237,6 +1292,67 @@ html[data-theme="cyberpunk"] { --client-footer-bg: #090011; }
 .client-body .register-panel,
 .client-body .register-container {
   background: var(--canvas);
+}
+
+/* Admin list search/filter controls */
+.admin-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-filter-select {
+  min-width: 170px;
+  min-height: 44px;
+  padding: 0 36px 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  outline: none;
+}
+.admin-filter-select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
+}
+.admin-filter-empty {
+  padding: 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Booking cancellation dialog */
+body.modal-open { overflow: hidden; }
+.cancel-booking-modal {
+  position: fixed;
+  z-index: 2000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .56);
+  backdrop-filter: blur(3px);
+}
+.cancel-booking-modal[hidden] { display: none; }
+.cancel-booking-dialog {
+  width: min(100%, 480px);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+}
+.cancel-booking-dialog h2 { margin: 0 0 8px; color: var(--navy); }
+.cancel-booking-dialog p { margin: 0 0 20px; color: var(--muted); }
+.cancel-booking-dialog textarea { resize: vertical; }
+.cancel-booking-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 @media (max-width: 1080px) {

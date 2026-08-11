@@ -7,6 +7,13 @@
   const savedTheme = localStorage.getItem('nestora_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
 
+  // Sync theme changes across tabs in real-time
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'nestora_theme' && e.newValue) {
+      document.documentElement.setAttribute('data-theme', e.newValue);
+    }
+  });
+
   const savedHotelName = localStorage.getItem('hotel_name') || 'NESTORA';
   const brandNameStrong = document.querySelectorAll('.brand-name strong, [data-hotel-name]');
   if (brandNameStrong.length > 0) {
@@ -74,6 +81,121 @@
       clientNav.classList.remove('open');
       clientNavToggle.setAttribute('aria-expanded', 'false');
     }
+  });
+
+  function normalizeSearch(value) {
+    return (value || '').toString().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  // Shared search and filter behavior for all administration tables.
+  document.querySelectorAll('.surface').forEach(function (surface) {
+    const searchInput = surface.querySelector('.table-tools .search-box input[type="search"]');
+    const filters = Array.from(surface.querySelectorAll('[data-admin-filter]'));
+    const tableWrap = surface.querySelector('.table-wrap');
+    const tbody = tableWrap ? tableWrap.querySelector('table tbody') : null;
+    if ((!searchInput && filters.length === 0) || !tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr')).filter(function (row) {
+      return row.children.length > 1;
+    });
+    if (rows.length === 0) return;
+
+    const meta = surface.querySelector('.table-meta');
+    const originalMeta = meta ? meta.textContent.trim() : '';
+    const resultUnit = originalMeta.replace(/^[\d.,]+\s*/, '') || 'kết quả';
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'admin-filter-empty';
+    emptyMessage.hidden = true;
+    emptyMessage.textContent = 'Không tìm thấy dữ liệu phù hợp.';
+    tableWrap.insertAdjacentElement('afterend', emptyMessage);
+
+    function applyFilters() {
+      const query = normalizeSearch(searchInput ? searchInput.value : '');
+      let visibleCount = 0;
+
+      rows.forEach(function (row) {
+        const matchesSearch = !query || normalizeSearch(row.textContent).includes(query);
+        const matchesFilters = filters.every(function (filter) {
+          if (!filter.value) return true;
+          const filterKey = filter.dataset.filterKey;
+          const source = filterKey ? row.dataset[filterKey] : row.textContent;
+          return normalizeSearch(source).includes(normalizeSearch(filter.value));
+        });
+        row.hidden = !(matchesSearch && matchesFilters);
+        if (!row.hidden) visibleCount += 1;
+      });
+
+      if (meta) meta.textContent = visibleCount + ' ' + resultUnit;
+      emptyMessage.hidden = visibleCount !== 0;
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    filters.forEach(function (filter) {
+      filter.addEventListener('change', applyFilters);
+    });
+  });
+
+  // A single reusable dialog prevents nested forms in booking list pages.
+  let cancelDialog = null;
+  let cancelForm = null;
+  let cancellationReason = null;
+
+  function closeCancelDialog() {
+    if (!cancelDialog) return;
+    cancelDialog.hidden = true;
+    document.body.classList.remove('modal-open');
+  }
+
+  function ensureCancelDialog() {
+    if (cancelDialog) return;
+    cancelDialog = document.createElement('div');
+    cancelDialog.className = 'cancel-booking-modal';
+    cancelDialog.hidden = true;
+    cancelDialog.innerHTML =
+      '<div class="cancel-booking-dialog" role="dialog" aria-modal="true" aria-labelledby="cancel-booking-title">' +
+        '<h2 id="cancel-booking-title">Lý do hủy đặt phòng</h2>' +
+        '<p>Vui lòng nhập lý do để lưu cùng thông tin đặt phòng.</p>' +
+        '<form method="post" id="cancel-booking-form">' +
+          '<input type="hidden" name="action" value="cancel">' +
+          '<input type="hidden" name="bookingId" value="">' +
+          '<label class="form-label" for="cancellation-reason">Lý do hủy <span aria-hidden="true">*</span></label>' +
+          '<textarea class="form-control" id="cancellation-reason" name="cancellationReason" rows="4" minlength="3" maxlength="500" required placeholder="Nhập lý do hủy đặt phòng..."></textarea>' +
+          '<small class="form-hint">Từ 3 đến 500 ký tự.</small>' +
+          '<div class="cancel-booking-actions">' +
+            '<button class="btn btn-outline" type="button" data-cancel-dialog-close>Quay lại</button>' +
+            '<button class="btn btn-danger" type="submit">Xác nhận hủy</button>' +
+          '</div>' +
+        '</form>' +
+      '</div>';
+    document.body.appendChild(cancelDialog);
+    cancelForm = cancelDialog.querySelector('#cancel-booking-form');
+    cancellationReason = cancelDialog.querySelector('#cancellation-reason');
+
+    cancelDialog.addEventListener('click', function (event) {
+      if (event.target === cancelDialog || event.target.closest('[data-cancel-dialog-close]')) {
+        closeCancelDialog();
+      }
+    });
+  }
+
+  document.addEventListener('click', function (event) {
+    const trigger = event.target.closest('[data-cancel-booking]');
+    if (!trigger) return;
+    event.preventDefault();
+    ensureCancelDialog();
+    cancelForm.action = trigger.dataset.cancelUrl || window.location.pathname;
+    cancelForm.querySelector('[name="bookingId"]').value = trigger.dataset.bookingId || '';
+    cancellationReason.value = '';
+    cancelDialog.hidden = false;
+    document.body.classList.add('modal-open');
+    window.setTimeout(function () { cancellationReason.focus(); }, 0);
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && cancelDialog && !cancelDialog.hidden) closeCancelDialog();
   });
 
 })();

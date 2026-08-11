@@ -39,6 +39,9 @@ public class Booking {
     @Column(name = "note")
     private String note;
 
+    @Column(name = "cancellation_reason", length = 500, columnDefinition = "NVARCHAR(500)")
+    private String cancellationReason;
+
     public Booking() {}
 
     public Booking(Customer customer, Room room, User createdBy, Timestamp checkInDate, Timestamp checkOutDate, String status, double roomPrice, String note) {
@@ -131,5 +134,13 @@ public class Booking {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
 }
