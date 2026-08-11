@@ -1,107 +1,122 @@
 package com.hotel.dao;
 
+import com.hotel.model.Bill;
+import com.hotel.model.BillDetail;
+import com.hotel.model.Booking;
 import com.hotel.model.Laundry;
+import com.hotel.model.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class LaundryDAO {
 
-    private static final Map<Integer, Laundry> memoryLaundries = new ConcurrentHashMap<>();
-    private static final AtomicInteger idCounter = new AtomicInteger(500);
+    public enum CompletionResult {
+        COMPLETED_AND_BILLED(true),
+        COMPLETED_PENDING_BILL(true),
+        ALREADY_BILLED(true),
+        ORDER_NOT_FOUND(false),
+        ACTIVE_BOOKING_NOT_FOUND(false),
+        DATABASE_ERROR(false);
+
+        private final boolean success;
+
+        CompletionResult(boolean success) {
+            this.success = success;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+    }
 
     public List<Laundry> getAllLaundries() {
         return searchLaundries("", "");
     }
 
     public List<Laundry> searchLaundries(String keyword, String status) {
-        List<Laundry> list = new ArrayList<>();
         EntityManager em = DBContext.getEntityManager();
         try {
             StringBuilder jpql = new StringBuilder("SELECT l FROM Laundry l WHERE 1=1");
             if (keyword != null && !keyword.trim().isEmpty()) {
-                jpql.append(" AND (LOWER(l.customerName) LIKE :kw OR LOWER(l.roomNumber) LIKE :kw OR LOWER(l.serviceType) LIKE :kw OR LOWER(l.notes) LIKE :kw)");
+                jpql.append(" AND (LOWER(l.customerName) LIKE :keyword")
+                    .append(" OR LOWER(l.roomNumber) LIKE :keyword")
+                    .append(" OR LOWER(l.serviceType) LIKE :keyword")
+                    .append(" OR LOWER(l.notes) LIKE :keyword)");
             }
             if (status != null && !status.trim().isEmpty()) {
-                String st = status.trim().toUpperCase();
-                if ((st.contains("ĐÃ") || st.contains("HOÀN THÀNH") || st.contains("HOAN THANH") || st.contains("DONE") || st.contains("COMPLETED")) && !st.contains("CHƯA") && !st.contains("CHUA")) {
-                    jpql.append(" AND (UPPER(l.processingStatus) = 'DONE' OR UPPER(l.processingStatus) LIKE '%ĐÃ%' OR UPPER(l.processingStatus) LIKE '%HOÀN THÀNH%' OR UPPER(l.processingStatus) LIKE '%HOAN THANH%')");
-                } else {
-                    jpql.append(" AND (UPPER(l.processingStatus) = 'PENDING' OR UPPER(l.processingStatus) LIKE '%CHƯA%' OR UPPER(l.processingStatus) LIKE '%CHUA%')");
-                }
+                jpql.append(isCompletedStatus(status)
+                        ? " AND UPPER(l.processingStatus) IN ('COMPLETED', 'DONE', 'ĐÃ HOÀN THÀNH', 'ĐÃ HOÀN TẤT')"
+                        : " AND UPPER(l.processingStatus) IN ('PENDING', 'UNCOMPLETED', 'CHƯA HOÀN THÀNH', 'CHƯA HOÀN TẤT')");
             }
-            jpql.append(" ORDER BY l.id DESC");
+            jpql.append(" ORDER BY l.createdDate DESC, l.id DESC");
 
             TypedQuery<Laundry> query = em.createQuery(jpql.toString(), Laundry.class);
             if (keyword != null && !keyword.trim().isEmpty()) {
-                query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
+                query.setParameter("keyword", "%" + keyword.trim().toLowerCase(Locale.ROOT) + "%");
             }
-            list.addAll(query.getResultList());
+            return query.getResultList();
         } catch (Exception e) {
-            System.err.println("[LaundryDAO.searchLaundries DB Query Warning]: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
         } finally {
             em.close();
         }
-
-        // Merge with memoryLaundries so newly created orders are GUARANTEED to appear!
-        Set<Integer> existingIds = new HashSet<>();
-        for (Laundry l : list) {
-            existingIds.add(l.getId());
-        }
-
-        for (Laundry memItem : memoryLaundries.values()) {
-            if (memItem != null && !existingIds.contains(memItem.getId())) {
-                boolean matchesKw = true;
-                if (keyword != null && !keyword.trim().isEmpty()) {
-                    String kw = keyword.trim().toLowerCase();
-                    matchesKw = (memItem.getCustomerName() != null && memItem.getCustomerName().toLowerCase().contains(kw))
-                             || (memItem.getRoomNumber() != null && memItem.getRoomNumber().toLowerCase().contains(kw))
-                             || (memItem.getServiceType() != null && memItem.getServiceType().toLowerCase().contains(kw))
-                             || (memItem.getNotes() != null && memItem.getNotes().toLowerCase().contains(kw));
-                }
-                boolean matchesStatus = true;
-                if (status != null && !status.trim().isEmpty()) {
-                    String st = status.trim().toUpperCase();
-                    boolean isDoneSearch = (st.contains("ĐÃ") || st.contains("HOÀN THÀNH") || st.contains("HOAN THANH") || st.contains("DONE")) && !st.contains("CHƯA");
-                    matchesStatus = isDoneSearch ? memItem.isCompleted() : !memItem.isCompleted();
-                }
-                if (matchesKw && matchesStatus) {
-                    list.add(memItem);
-                    existingIds.add(memItem.getId());
-                }
-            }
-        }
-
-        list.sort((a, b) -> Integer.compare(b.getId(), a.getId()));
-        return list;
     }
 
     public Laundry getById(int id) {
         if (id <= 0) return null;
         EntityManager em = DBContext.getEntityManager();
         try {
-            Laundry item = em.find(Laundry.class, id);
-            if (item != null) return item;
+            return em.find(Laundry.class, id);
         } catch (Exception e) {
-            System.err.println("[LaundryDAO.getById DB Warning]: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         } finally {
             em.close();
         }
-        return memoryLaundries.get(id);
+    }
+
+    /**
+     * Resolves the checked-in booking owned by the current customer. This keeps
+     * a public form from placing a laundry charge on somebody else's room.
+     */
+    public Booking findActiveBookingForCustomer(String roomNumber, int userId, String userEmail) {
+        if (roomNumber == null || roomNumber.trim().isEmpty() || userId <= 0) return null;
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT b FROM Booking b "
+                    + "JOIN FETCH b.customer c JOIN FETCH b.room r LEFT JOIN FETCH b.createdBy u "
+                    + "WHERE LOWER(r.roomNumber) = :roomNumber AND b.status = 'CheckedIn' "
+                    + "AND (u.id = :userId OR LOWER(c.customerEmail) = :email) "
+                    + "ORDER BY b.checkInDate DESC";
+            List<Booking> bookings = em.createQuery(jpql, Booking.class)
+                    .setParameter("roomNumber", roomNumber.trim().toLowerCase(Locale.ROOT))
+                    .setParameter("userId", userId)
+                    .setParameter("email", userEmail == null ? "" : userEmail.trim().toLowerCase(Locale.ROOT))
+                    .setMaxResults(1)
+                    .getResultList();
+            return bookings.isEmpty() ? null : bookings.get(0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            em.close();
+        }
     }
 
     public boolean insert(Laundry laundry) {
         if (laundry == null) return false;
-        if (laundry.getCreatedDate() == null) {
-            laundry.setCreatedDate(LocalDateTime.now());
-        }
+        if (laundry.getCreatedDate() == null) laundry.setCreatedDate(LocalDateTime.now());
+        if (laundry.getStatusCode() == null) laundry.setProcessingStatus("Pending");
 
-        boolean dbSuccess = false;
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
@@ -109,94 +124,258 @@ public class LaundryDAO {
             em.persist(laundry);
             em.flush();
             tx.commit();
-            dbSuccess = laundry.getId() > 0;
+            return laundry.getId() > 0;
         } catch (Exception e) {
-            if (tx != null && tx.isActive()) tx.rollback();
-            System.err.println("[LaundryDAO.insert DB Warning]: " + e.getMessage());
+            if (tx.isActive()) tx.rollback();
             e.printStackTrace();
+            return false;
         } finally {
             em.close();
         }
-
-        if (!dbSuccess || laundry.getId() <= 0) {
-            int newId = idCounter.incrementAndGet();
-            laundry.setId(newId);
-        }
-
-        memoryLaundries.put(laundry.getId(), laundry);
-        return true;
     }
 
     public boolean update(Laundry laundry) {
         if (laundry == null || laundry.getId() <= 0) return false;
-        memoryLaundries.put(laundry.getId(), laundry);
-
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            em.merge(laundry);
-            em.flush();
+            Laundry managed = em.find(Laundry.class, laundry.getId(), LockModeType.PESSIMISTIC_WRITE);
+            if (managed == null) {
+                tx.rollback();
+                return false;
+            }
+            managed.setCustomerName(laundry.getCustomerName());
+            managed.setRoomNumber(laundry.getRoomNumber());
+            managed.setServiceType(laundry.getServiceType());
+            managed.setQuantity(laundry.getQuantity());
+            managed.setTotalPrice(laundry.getTotalPrice());
+            managed.setNotes(laundry.getNotes());
+            if (managed.getBillDetailId() == null) {
+                managed.setBookingId(laundry.getBookingId());
+                managed.setProcessingStatus(laundry.getStatusCode());
+            }
             tx.commit();
             return true;
         } catch (Exception e) {
-            if (tx != null && tx.isActive()) tx.rollback();
-            System.err.println("[LaundryDAO.update DB Warning]: " + e.getMessage());
+            if (tx.isActive()) tx.rollback();
             e.printStackTrace();
-            return true;
+            return false;
         } finally {
             em.close();
         }
     }
 
-    public boolean updateProcessingStatus(int id, String status) {
-        Laundry item = getById(id);
-        if (item != null) {
-            item.setProcessingStatus(status);
-            memoryLaundries.put(id, item);
-        }
-
+    /**
+     * Completes a laundry order exactly once. If an unpaid bill for the room
+     * already exists, the charge is inserted immediately. In the current hotel
+     * flow a bill is normally created at checkout; in that case the completed
+     * order is kept as an unbilled charge and attached by BookingDAO in the same
+     * checkout transaction.
+     */
+    public CompletionResult completeAndAddToBill(int laundryId) {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            Laundry laundry = em.find(Laundry.class, id);
-            if (laundry != null) {
-                laundry.setProcessingStatus(status);
-                em.merge(laundry);
-                em.flush();
+            Laundry laundry = em.find(Laundry.class, laundryId, LockModeType.PESSIMISTIC_WRITE);
+            if (laundry == null) {
+                tx.rollback();
+                return CompletionResult.ORDER_NOT_FOUND;
             }
+            if (laundry.getBillDetailId() != null) {
+                laundry.setProcessingStatus("Completed");
+                tx.commit();
+                return CompletionResult.ALREADY_BILLED;
+            }
+
+            Booking booking = findChargeableBooking(em, laundry);
+            if (booking == null) {
+                tx.rollback();
+                return CompletionResult.ACTIVE_BOOKING_NOT_FOUND;
+            }
+            laundry.setBookingId(booking.getBookingId());
+
+            Bill bill = findOpenBillForRoom(em, booking.getRoom().getId());
+            laundry.setProcessingStatus("Completed");
+            if (bill == null) {
+                tx.commit();
+                return CompletionResult.COMPLETED_PENDING_BILL;
+            }
+
+            addChargeToBill(em, laundry, bill);
+            tx.commit();
+            return CompletionResult.COMPLETED_AND_BILLED;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            return CompletionResult.DATABASE_ERROR;
+        } finally {
+            em.close();
+        }
+    }
+
+    /**
+     * Called from BookingDAO while checkout is creating the bill. The supplied
+     * EntityManager belongs to that transaction, so booking, laundry charge and
+     * invoice total either all commit or all roll back together.
+     */
+    public int attachCompletedOrdersToBill(EntityManager em, List<Booking> bookings, Bill bill) {
+        if (em == null || bookings == null || bookings.isEmpty() || bill == null || bill.getId() <= 0) {
+            return 0;
+        }
+        List<Integer> bookingIds = bookings.stream()
+                .map(Booking::getBookingId)
+                .collect(Collectors.toList());
+        String jpql = "SELECT l FROM Laundry l WHERE l.bookingId IN :bookingIds "
+                + "AND l.billDetailId IS NULL "
+                + "AND UPPER(l.processingStatus) IN ('COMPLETED', 'DONE', 'ĐÃ HOÀN THÀNH', 'ĐÃ HOÀN TẤT') "
+                + "ORDER BY l.createdDate, l.id";
+        List<Laundry> orders = em.createQuery(jpql, Laundry.class)
+                .setParameter("bookingIds", bookingIds)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultList();
+        for (Laundry order : orders) {
+            addChargeToBill(em, order, bill);
+        }
+        return orders.size();
+    }
+
+    public boolean updateProcessingStatus(int id, String status) {
+        if (isCompletedStatus(status)) {
+            return completeAndAddToBill(id).isSuccess();
+        }
+        EntityManager em = DBContext.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            Laundry laundry = em.find(Laundry.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (laundry == null || laundry.getBillDetailId() != null) {
+                tx.rollback();
+                return false;
+            }
+            laundry.setProcessingStatus("Pending");
             tx.commit();
             return true;
         } catch (Exception e) {
-            if (tx != null && tx.isActive()) tx.rollback();
-            System.err.println("[LaundryDAO.updateProcessingStatus DB Warning]: " + e.getMessage());
+            if (tx.isActive()) tx.rollback();
             e.printStackTrace();
-            return true;
+            return false;
         } finally {
             em.close();
         }
     }
 
     public boolean delete(int id) {
-        memoryLaundries.remove(id);
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            Laundry laundry = em.find(Laundry.class, id);
-            if (laundry != null) {
-                em.remove(laundry);
+            Laundry laundry = em.find(Laundry.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (laundry == null || laundry.getBillDetailId() != null) {
+                tx.rollback();
+                return false;
             }
+            em.remove(laundry);
             tx.commit();
             return true;
         } catch (Exception e) {
-            if (tx != null && tx.isActive()) tx.rollback();
-            System.err.println("[LaundryDAO.delete DB Warning]: " + e.getMessage());
+            if (tx.isActive()) tx.rollback();
             e.printStackTrace();
-            return true;
+            return false;
         } finally {
             em.close();
         }
+    }
+
+    private Booking findChargeableBooking(EntityManager em, Laundry laundry) {
+        if (laundry.getBookingId() != null && laundry.getBookingId() > 0) {
+            Booking booking = em.find(Booking.class, laundry.getBookingId(), LockModeType.PESSIMISTIC_WRITE);
+            if (booking != null && ("CheckedIn".equals(booking.getStatus())
+                    || "CheckedOut".equals(booking.getStatus())
+                    || "Completed".equalsIgnoreCase(booking.getStatus()))) {
+                booking.getRoom().getRoomNumber();
+                return booking;
+            }
+        }
+
+        String jpql = "SELECT b FROM Booking b JOIN FETCH b.room r JOIN FETCH b.customer "
+                + "LEFT JOIN FETCH b.createdBy "
+                + "WHERE LOWER(r.roomNumber) = :roomNumber AND b.status = 'CheckedIn' "
+                + "ORDER BY b.checkInDate DESC";
+        List<Booking> bookings = em.createQuery(jpql, Booking.class)
+                .setParameter("roomNumber", laundry.getRoomNumber().trim().toLowerCase(Locale.ROOT))
+                .setMaxResults(1)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultList();
+        return bookings.isEmpty() ? null : bookings.get(0);
+    }
+
+    private Bill findOpenBillForRoom(EntityManager em, int roomId) {
+        String jpql = "SELECT DISTINCT b FROM Bill b, BillDetail bd "
+                + "WHERE bd.billId = b.id AND bd.room.id = :roomId AND b.status = 'Unpaid' "
+                + "ORDER BY b.id DESC";
+        List<Bill> bills = em.createQuery(jpql, Bill.class)
+                .setParameter("roomId", roomId)
+                .setMaxResults(1)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultList();
+        return bills.isEmpty() ? null : bills.get(0);
+    }
+
+    private void addChargeToBill(EntityManager em, Laundry laundry, Bill bill) {
+        if (laundry.getBillDetailId() != null) return;
+
+        int quantity = Math.max(1, laundry.getQuantity());
+        double total = Math.max(0, laundry.getTotalPrice());
+        double unitPrice = total / quantity;
+        Service service = getOrCreateLaundryService(em, laundry.getServiceType(), unitPrice);
+
+        BillDetail detail = new BillDetail();
+        detail.setBillId(bill.getId());
+        detail.setService(service);
+        detail.setQuantity(quantity);
+        detail.setPrice(unitPrice);
+        em.persist(detail);
+        em.flush();
+
+        bill.setTotalAmount(bill.getTotalAmount() + total);
+        laundry.setBillId(bill.getId());
+        laundry.setBillDetailId(detail.getId());
+        laundry.setProcessingStatus("Completed");
+    }
+
+    private Service getOrCreateLaundryService(EntityManager em, String serviceType, double unitPrice) {
+        String normalizedType = serviceType == null || serviceType.trim().isEmpty()
+                ? "Giặt sấy thông thường" : serviceType.trim();
+        String serviceName = "Giặt ủi - " + normalizedType;
+        List<Service> services = em.createQuery(
+                        "SELECT s FROM Service s WHERE LOWER(s.name) = :name", Service.class)
+                .setParameter("name", serviceName.toLowerCase(Locale.ROOT))
+                .setMaxResults(1)
+                .getResultList();
+        if (!services.isEmpty()) return services.get(0);
+
+        Service service = new Service();
+        service.setName(serviceName);
+        service.setPrice(unitPrice);
+        service.setDescription("Dịch vụ được tạo tự động từ đơn giặt ủi.");
+        service.setStatus("Active");
+        service.setUnit("Món");
+        em.persist(service);
+        em.flush();
+        return service;
+    }
+
+    private static boolean isCompletedStatus(String status) {
+        if (status == null) return false;
+        String normalized = status.trim().toUpperCase(Locale.ROOT);
+        return normalized.contains("COMPLETED")
+                || normalized.contains("DONE")
+                || normalized.contains("ĐÃ")
+                || normalized.contains("HOÀN THÀNH")
+                || normalized.contains("HOAN THANH")
+                || normalized.contains("HOÀN TẤT")
+                || normalized.contains("HOAN TAT");
     }
 }

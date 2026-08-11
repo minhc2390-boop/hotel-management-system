@@ -93,14 +93,24 @@
                         ✓ Lưu đơn giặt ủi thành công!
                     </div>
                 <% } %>
-                <% if (request.getParameter("deleted") != null) { %>
-                    <div style="padding: 12px 16px; margin-bottom: 16px; background: #f8d7da; color: #721c24; border-radius: 6px; border: 1px solid #f5c6cb;">
-                        ✓ Đã xóa đơn giặt ủi thành công!
+                <% if (request.getParameter("deleted") != null) {
+                       boolean deleteSuccess = "1".equals(request.getParameter("deleted")); %>
+                    <div style="padding: 12px 16px; margin-bottom: 16px; background: <%= deleteSuccess ? "#d4edda" : "#f8d7da" %>; color: <%= deleteSuccess ? "#155724" : "#721c24" %>; border-radius: 6px; border: 1px solid <%= deleteSuccess ? "#c3e6cb" : "#f5c6cb" %>;">
+                        <%= deleteSuccess ? "✓ Đã xóa đơn giặt ủi thành công!" : "Không thể xóa đơn đã được tính vào hóa đơn." %>
                     </div>
                 <% } %>
-                <% if (request.getParameter("statusUpdated") != null) { %>
-                    <div style="padding: 12px 16px; margin-bottom: 16px; background: #d1ecf1; color: #0c5460; border-radius: 6px; border: 1px solid #bee5eb;">
-                        ✓ Cập nhật trạng thái thành công!
+                <% if (request.getParameter("statusUpdated") != null) {
+                       String updateResult = request.getParameter("statusUpdated");
+                       boolean updateSuccess = "COMPLETED_AND_BILLED".equals(updateResult)
+                               || "COMPLETED_PENDING_BILL".equals(updateResult)
+                               || "ALREADY_BILLED".equals(updateResult);
+                       String updateMessage = "Không thể hoàn thành đơn: không tìm thấy lượt lưu trú hợp lệ hoặc database gặp lỗi.";
+                       if ("COMPLETED_AND_BILLED".equals(updateResult)) updateMessage = "✓ Đã hoàn thành và tự động cộng phí vào hóa đơn.";
+                       else if ("COMPLETED_PENDING_BILL".equals(updateResult)) updateMessage = "✓ Đã hoàn thành. Phí giặt ủi sẽ tự động cộng khi khách trả phòng.";
+                       else if ("ALREADY_BILLED".equals(updateResult)) updateMessage = "Đơn này đã hoàn thành và đã được tính phí trước đó.";
+                %>
+                    <div style="padding: 12px 16px; margin-bottom: 16px; background: <%= updateSuccess ? "#d1ecf1" : "#f8d7da" %>; color: <%= updateSuccess ? "#0c5460" : "#721c24" %>; border-radius: 6px; border: 1px solid <%= updateSuccess ? "#bee5eb" : "#f5c6cb" %>;">
+                        <%= updateMessage %>
                     </div>
                 <% } %>
 

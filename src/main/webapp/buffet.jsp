@@ -19,13 +19,18 @@
   if (selectedDate == null) selectedDate = LocalDate.now();
   List<BuffetMenuItem> menuItems = (List<BuffetMenuItem>) request.getAttribute("menuItems");
   if (menuItems == null) menuItems = new ArrayList<>();
+  List<BuffetMenuItem> breakfastItems = (List<BuffetMenuItem>) request.getAttribute("breakfastItems");
+  List<BuffetMenuItem> lunchItems = (List<BuffetMenuItem>) request.getAttribute("lunchItems");
+  List<BuffetMenuItem> dinnerItems = (List<BuffetMenuItem>) request.getAttribute("dinnerItems");
 
   Map<String, List<BuffetMenuItem>> meals = new HashMap<>();
-  meals.put("Breakfast", new ArrayList<>());
-  meals.put("Lunch", new ArrayList<>());
-  meals.put("Dinner", new ArrayList<>());
-  for (BuffetMenuItem item : menuItems) {
-    meals.computeIfAbsent(item.getMealPeriod(), key -> new ArrayList<>()).add(item);
+  meals.put("Breakfast", breakfastItems != null ? breakfastItems : new ArrayList<>());
+  meals.put("Lunch", lunchItems != null ? lunchItems : new ArrayList<>());
+  meals.put("Dinner", dinnerItems != null ? dinnerItems : new ArrayList<>());
+  if (breakfastItems == null && lunchItems == null && dinnerItems == null) {
+    for (BuffetMenuItem item : menuItems) {
+      meals.computeIfAbsent(item.getMealPeriod(), key -> new ArrayList<>()).add(item);
+    }
   }
 
   Locale viLocale = Locale.forLanguageTag("vi-VN");
@@ -68,6 +73,10 @@
       </div>
     </form>
   </div>
+
+  <% if (request.getAttribute("dateError") != null) { %>
+    <div class="alert alert-warning" role="alert"><%= buffetEscape((String) request.getAttribute("dateError")) %></div>
+  <% } %>
 
   <nav class="buffet-date-strip" aria-label="Chọn ngày xem buffet">
     <% for (int dayOffset = 0; dayOffset < 7; dayOffset++) {

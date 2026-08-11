@@ -12,10 +12,11 @@ import java.util.List;
 public class BuffetMenuDAO {
 
     public List<BuffetMenuItem> getActiveItemsByDate(LocalDate menuDate) {
+        if (menuDate == null) return Collections.emptyList();
         EntityManager em = DBContext.getEntityManager();
         try {
             String jpql = "SELECT i FROM BuffetMenuItem i "
-                    + "WHERE i.menuDate = :menuDate AND i.status = 'Active' "
+                    + "WHERE i.menuDate = :menuDate AND UPPER(i.status) = 'ACTIVE' "
                     + "ORDER BY CASE i.mealPeriod "
                     + "WHEN 'Breakfast' THEN 1 WHEN 'Lunch' THEN 2 WHEN 'Dinner' THEN 3 ELSE 4 END, "
                     + "i.sortOrder, i.category, i.dishName";

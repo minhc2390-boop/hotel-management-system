@@ -31,7 +31,16 @@ public class Laundry {
 
     @org.hibernate.annotations.Nationalized
     @Column(name = "processing_status", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
-    private String processingStatus = "PENDING";
+    private String processingStatus = "Pending";
+
+    @Column(name = "booking_id")
+    private Integer bookingId;
+
+    @Column(name = "bill_id")
+    private Integer billId;
+
+    @Column(name = "bill_detail_id")
+    private Integer billDetailId;
 
     @org.hibernate.annotations.Nationalized
     @Column(name = "notes", length = 500, columnDefinition = "NVARCHAR(500)")
@@ -49,7 +58,7 @@ public class Laundry {
         this.serviceType = serviceType;
         this.quantity = quantity;
         this.totalPrice = totalPrice;
-        this.processingStatus = processingStatus;
+        setProcessingStatus(processingStatus);
         this.notes = notes;
         this.createdDate = createdDate;
     }
@@ -60,7 +69,7 @@ public class Laundry {
         this.serviceType = serviceType;
         this.quantity = quantity;
         this.totalPrice = totalPrice;
-        this.processingStatus = (processingStatus != null && !processingStatus.trim().isEmpty()) ? processingStatus : "Chưa hoàn tất";
+        setProcessingStatus(processingStatus);
         this.notes = notes;
         this.createdDate = LocalDateTime.now();
     }
@@ -136,36 +145,62 @@ public class Laundry {
     }
 
     public String getProcessingStatus() {
-        if (processingStatus == null || processingStatus.trim().isEmpty()) {
-            return "Chưa hoàn thành";
-        }
-        String s = fixEncoding(processingStatus.trim()).toUpperCase();
-        if (s.contains("CHƯA") || s.contains("CHUA") || s.contains("PENDING") || s.contains("UNCOMPLETED")) {
-            return "Chưa hoàn thành";
-        }
-        if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("ĐÃ") || s.contains("DA") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT")) {
-            return "Đã hoàn thành";
-        }
-        return "Chưa hoàn thành";
+        return isCompleted() ? "Đã hoàn thành" : "Chưa hoàn thành";
     }
 
     public boolean isCompleted() {
-        return "Đã hoàn thành".equals(getProcessingStatus());
+        if (processingStatus == null) return false;
+        String status = fixEncoding(processingStatus.trim()).toUpperCase();
+        return status.contains("DONE")
+                || status.contains("COMPLETED")
+                || status.contains("ĐÃ")
+                || status.contains("HOÀN THÀNH")
+                || status.contains("HOAN THANH")
+                || status.contains("HOÀN TẤT")
+                || status.contains("HOAN TAT");
     }
 
     public void setProcessingStatus(String processingStatus) {
         if (processingStatus == null || processingStatus.trim().isEmpty()) {
-            this.processingStatus = "Chưa hoàn thành";
+            this.processingStatus = "Pending";
             return;
         }
         String s = processingStatus.trim().toUpperCase();
         if (s.contains("CHƯA") || s.contains("CHUA") || s.contains("PENDING") || s.contains("UNCOMPLETED")) {
-            this.processingStatus = "Chưa hoàn thành";
+            this.processingStatus = "Pending";
         } else if (s.contains("DONE") || s.contains("COMPLETED") || s.contains("ĐÃ") || s.contains("DA") || s.contains("HOÀN THÀNH") || s.contains("HOAN THANH") || s.contains("HOÀN TẤT") || s.contains("HOAN TAT")) {
-            this.processingStatus = "Đã hoàn thành";
+            this.processingStatus = "Completed";
         } else {
-            this.processingStatus = processingStatus.trim();
+            this.processingStatus = "Pending";
         }
+    }
+
+    public String getStatusCode() {
+        return isCompleted() ? "Completed" : "Pending";
+    }
+
+    public Integer getBookingId() {
+        return bookingId;
+    }
+
+    public void setBookingId(Integer bookingId) {
+        this.bookingId = bookingId;
+    }
+
+    public Integer getBillId() {
+        return billId;
+    }
+
+    public void setBillId(Integer billId) {
+        this.billId = billId;
+    }
+
+    public Integer getBillDetailId() {
+        return billDetailId;
+    }
+
+    public void setBillDetailId(Integer billDetailId) {
+        this.billDetailId = billDetailId;
     }
 
     public String getNotes() {
@@ -217,6 +252,9 @@ public class Laundry {
                 ", quantity=" + quantity +
                 ", totalPrice=" + totalPrice +
                 ", processingStatus='" + processingStatus + '\'' +
+                ", bookingId=" + bookingId +
+                ", billId=" + billId +
+                ", billDetailId=" + billDetailId +
                 ", notes='" + notes + '\'' +
                 ", createdDate=" + createdDate +
                 '}';

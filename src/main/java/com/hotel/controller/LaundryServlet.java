@@ -1,6 +1,7 @@
 package com.hotel.controller;
 
 import com.hotel.dao.LaundryDAO;
+import com.hotel.model.Booking;
 import com.hotel.model.Laundry;
 import com.hotel.model.User;
 import com.hotel.util.AuthUtil;
@@ -27,13 +28,15 @@ public class LaundryServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         String action = ParamUtil.getString(request, "action", "list");
 
-        // Client-facing laundry order form (No Admin check required)
+        // Client-facing laundry order form: authenticated customers only.
         if ("clientBook".equals(action)) {
             User currentUser = AuthUtil.getUser(request);
-            Laundry laundry = new Laundry();
-            if (currentUser != null) {
-                laundry.setCustomerName(currentUser.getFullName());
+            if (!isCustomer(currentUser)) {
+                response.sendRedirect(request.getContextPath() + "/login?redirect=laundry");
+                return;
             }
+            Laundry laundry = new Laundry();
+            laundry.setCustomerName(currentUser.getFullName());
             request.setAttribute("laundry", laundry);
             request.getRequestDispatcher("/client-laundry-form.jsp").forward(request, response);
             return;
@@ -94,9 +97,14 @@ public class LaundryServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         String action = ParamUtil.getString(request, "action", "");
 
-        // Customer submission route (No Admin check required)
+        // Customer submission route: room ownership is checked server-side.
         if ("clientInsert".equals(action)) {
-            String customerName = ParamUtil.getString(request, "customerName", "");
+            User currentUser = AuthUtil.getUser(request);
+            if (!isCustomer(currentUser)) {
+                response.sendRedirect(request.getContextPath() + "/login?redirect=laundry");
+                return;
+            }
+            String customerName = currentUser.getFullName();
             String roomNumber = ParamUtil.getString(request, "roomNumber", "");
             String serviceType = ParamUtil.getString(request, "serviceType", "Giặt sấy thông thường");
             int quantity = Math.max(1, ParamUtil.getInt(request, "quantity", 1));
@@ -111,7 +119,7 @@ public class LaundryServlet extends HttpServlet {
             laundry.setServiceType(serviceType);
             laundry.setQuantity(quantity);
             laundry.setTotalPrice(totalPrice);
-            laundry.setProcessingStatus("Chưa hoàn thành");
+            laundry.setProcessingStatus("Pending");
             laundry.setNotes(notes);
             laundry.setCreatedDate(LocalDateTime.now());
 
@@ -121,6 +129,20 @@ public class LaundryServlet extends HttpServlet {
                 request.setAttribute("error", error);
                 request.getRequestDispatcher("/client-laundry-form.jsp").forward(request, response);
                 return;
+            }
+
+            Booking activeBooking = laundryDAO.findActiveBookingForCustomer(
+                    roomNumber, currentUser.getId(), currentUser.getEmail());
+            if (activeBooking == null) {
+                request.setAttribute("laundry", laundry);
+                request.setAttribute("error",
+                        "Không tìm thấy phòng đang lưu trú thuộc tài khoản của bạn. Vui lòng kiểm tra số phòng hoặc liên hệ lễ tân.");
+                request.getRequestDispatcher("/client-laundry-form.jsp").forward(request, response);
+                return;
+            }
+            laundry.setBookingId(activeBooking.getBookingId());
+            if (activeBooking.getCustomer() != null) {
+                laundry.setCustomerName(activeBooking.getCustomer().getCustomerName());
             }
 
             boolean success = laundryDAO.insert(laundry);
@@ -143,17 +165,17 @@ public class LaundryServlet extends HttpServlet {
 
         if ("delete".equals(action)) {
             int id = ParamUtil.getInt(request, "id", 0);
-            laundryDAO.delete(id);
-            response.sendRedirect(request.getContextPath() + "/laundry?action=list&deleted=1");
+            boolean deleted = laundryDAO.delete(id);
+            response.sendRedirect(request.getContextPath()
+                    + "/laundry?action=list&deleted=" + (deleted ? "1" : "0"));
             return;
         }
 
         if ("updateStatus".equals(action)) {
             int id = ParamUtil.getInt(request, "id", 0);
-            String rawStatus = request.getParameter("processingStatus");
-            String newStatus = (rawStatus != null && !rawStatus.trim().isEmpty()) ? rawStatus.trim() : "Đã hoàn thành";
-            laundryDAO.updateProcessingStatus(id, newStatus);
-            response.sendRedirect(request.getContextPath() + "/laundry?action=list&statusUpdated=1");
+            LaundryDAO.CompletionResult result = laundryDAO.completeAndAddToBill(id);
+            response.sendRedirect(request.getContextPath()
+                    + "/laundry?action=list&statusUpdated=" + result.name());
             return;
         }
 
@@ -163,6 +185,7 @@ public class LaundryServlet extends HttpServlet {
             laundry = new Laundry();
         }
 
+        boolean wasCompleted = laundry.isCompleted();
         String customerName = ParamUtil.getString(request, "customerName", "");
         String roomNumber = ParamUtil.getString(request, "roomNumber", "");
         String serviceType = ParamUtil.getString(request, "serviceType", "Giặt sấy thông thường");
@@ -176,7 +199,8 @@ public class LaundryServlet extends HttpServlet {
         laundry.setServiceType(serviceType);
         laundry.setQuantity(Math.max(1, quantity));
         laundry.setTotalPrice(Math.max(0.0, totalPrice));
-        laundry.setProcessingStatus(processingStatus);
+        boolean requestedCompletion = isCompletedStatus(processingStatus);
+        laundry.setProcessingStatus(wasCompleted ? "Completed" : "Pending");
         laundry.setNotes(notes);
 
         String validationError = validateAdminInput(laundry);
@@ -203,6 +227,17 @@ public class LaundryServlet extends HttpServlet {
                 request.setAttribute("error", "Không thể lưu đơn giặt ủi. Vui lòng kiểm tra dữ liệu.");
                 request.getRequestDispatcher("/admin/laundry-form.jsp").forward(request, response);
                 return;
+            }
+
+            if (requestedCompletion && !wasCompleted) {
+                LaundryDAO.CompletionResult completionResult = laundryDAO.completeAndAddToBill(laundry.getId());
+                if (!completionResult.isSuccess()) {
+                    request.setAttribute("laundry", laundryDAO.getById(laundry.getId()));
+                    request.setAttribute("isEdit", true);
+                    request.setAttribute("error", completionError(completionResult));
+                    request.getRequestDispatcher("/admin/laundry-form.jsp").forward(request, response);
+                    return;
+                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -255,5 +290,28 @@ public class LaundryServlet extends HttpServlet {
     private boolean isAuthorized(HttpServletRequest request) {
         User user = AuthUtil.getUser(request);
         return user != null && ("Admin".equalsIgnoreCase(user.getRole()) || "Receptionist".equalsIgnoreCase(user.getRole()));
+    }
+
+    private boolean isCustomer(User user) {
+        return user != null && "Customer".equalsIgnoreCase(user.getRole());
+    }
+
+    private boolean isCompletedStatus(String status) {
+        if (status == null) return false;
+        String normalized = status.trim().toUpperCase();
+        return normalized.contains("COMPLETED") || normalized.contains("DONE")
+                || normalized.contains("ĐÃ") || normalized.contains("HOÀN THÀNH")
+                || normalized.contains("HOAN THANH") || normalized.contains("HOÀN TẤT")
+                || normalized.contains("HOAN TAT");
+    }
+
+    private String completionError(LaundryDAO.CompletionResult result) {
+        if (result == LaundryDAO.CompletionResult.ACTIVE_BOOKING_NOT_FOUND) {
+            return "Không tìm thấy lượt lưu trú hợp lệ của phòng nên chưa thể hoàn thành và tính phí đơn giặt.";
+        }
+        if (result == LaundryDAO.CompletionResult.ORDER_NOT_FOUND) {
+            return "Đơn giặt ủi không tồn tại.";
+        }
+        return "Không thể hoàn thành và tính phí đơn giặt do lỗi cơ sở dữ liệu.";
     }
 }

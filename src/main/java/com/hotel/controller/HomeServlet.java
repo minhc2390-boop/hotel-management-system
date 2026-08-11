@@ -39,6 +39,8 @@ public class HomeServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         User currentUser = AuthUtil.getUser(request);
+        List<HotelNotification> latestNotifications = notificationDAO.getTop5Newest();
+        if (latestNotifications == null) latestNotifications = java.util.Collections.emptyList();
 
         // If Admin or Receptionist, show dashboard stats
         if (currentUser != null && (currentUser.getRole() != null && 
@@ -47,14 +49,12 @@ public class HomeServlet extends HttpServlet {
             List<User> users = userDAO.getAllUsers();
             List<Bill> bills = billDAO.getAllBills();
             List<Service> services = serviceDAO.getAllServices();
-            List<HotelNotification> latestNotifications = notificationDAO.getTop5Newest();
             
             // Chống null khi login
             if (rooms == null) rooms = java.util.Collections.emptyList();
             if (users == null) users = java.util.Collections.emptyList();
             if (bills == null) bills = java.util.Collections.emptyList();
             if (services == null) services = java.util.Collections.emptyList();
-            if (latestNotifications == null) latestNotifications = java.util.Collections.emptyList();
             
             long availableCount = rooms.stream().filter(r -> r != null && "Available".equalsIgnoreCase(r.getStatus())).count();
             long bookedCount = rooms.stream().filter(r -> r != null && "Booked".equalsIgnoreCase(r.getStatus())).count();
@@ -82,6 +82,7 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("availableRooms", availableRooms);
             request.setAttribute("roomTypes", roomTypes);
             request.setAttribute("services", services);
+            request.setAttribute("latestNotifications", latestNotifications);
             
             request.getRequestDispatcher("/index.jsp").forward(request, response);
         }

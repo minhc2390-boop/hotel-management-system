@@ -87,9 +87,11 @@
                 <%
                     for (Booking b : bookings) {
                         String statusText = "Chờ xác nhận";
+                        boolean completedBooking = "CheckedOut".equalsIgnoreCase(b.getStatus())
+                                || "Completed".equalsIgnoreCase(b.getStatus());
                         if ("Confirmed".equals(b.getStatus())) statusText = "Đã xác nhận";
                         else if ("CheckedIn".equals(b.getStatus())) statusText = "Đã nhận phòng";
-                        else if ("CheckedOut".equals(b.getStatus())) statusText = "Đã trả phòng";
+                        else if (completedBooking) statusText = "Đã trả phòng";
                         else if ("Cancelled".equals(b.getStatus())) statusText = "Đã hủy";
                 %>
                 <tr>
@@ -109,9 +111,9 @@
                                 <button class="btn btn-danger" type="button" style="padding: 4px 8px; font-size:12px;"
                                         data-cancel-booking data-booking-id="<%= b.getBookingId() %>"
                                         data-cancel-url="<%= request.getContextPath() %>/bookings">Hủy</button>
-                            <% } else if ("CheckedOut".equals(b.getStatus()) && reviewedBookingIds.contains(b.getBookingId())) { %>
+                            <% } else if (completedBooking && reviewedBookingIds.contains(b.getBookingId())) { %>
                                 <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/feedbacks?action=view&bookingId=<%= b.getBookingId() %>">Xem đánh giá</a>
-                            <% } else if ("CheckedOut".equals(b.getStatus())) { %>
+                            <% } else if (completedBooking) { %>
                                 <a class="btn btn-primary" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/feedbacks?action=add&bookingId=<%= b.getBookingId() %>">Đánh giá</a>
                             <% } %>
                         </div>

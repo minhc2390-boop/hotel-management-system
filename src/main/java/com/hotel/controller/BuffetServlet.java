@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet(name = "BuffetServlet", urlPatterns = {"/buffet"})
@@ -27,9 +28,18 @@ public class BuffetServlet extends HttpServlet {
         String action = ParamUtil.getString(request, "action", "view");
 
         if ("view".equals(action)) {
-            LocalDate selectedDate = parseDate(request.getParameter("date"), LocalDate.now());
+            String rawDate = request.getParameter("date");
+            LocalDate requestedDate = parseOptionalDate(rawDate);
+            LocalDate selectedDate = requestedDate != null ? requestedDate : LocalDate.now();
+            if (rawDate != null && !rawDate.trim().isEmpty() && requestedDate == null) {
+                request.setAttribute("dateError", "Ngày không hợp lệ. Định dạng đúng là YYYY-MM-DD.");
+            }
+            List<BuffetMenuItem> menuItems = buffetMenuDAO.getActiveItemsByDate(selectedDate);
             request.setAttribute("selectedDate", selectedDate);
-            request.setAttribute("menuItems", buffetMenuDAO.getActiveItemsByDate(selectedDate));
+            request.setAttribute("menuItems", menuItems);
+            request.setAttribute("breakfastItems", filterByMealPeriod(menuItems, "Breakfast"));
+            request.setAttribute("lunchItems", filterByMealPeriod(menuItems, "Lunch"));
+            request.setAttribute("dinnerItems", filterByMealPeriod(menuItems, "Dinner"));
             request.getRequestDispatcher("/buffet.jsp").forward(request, response);
             return;
         }
@@ -186,5 +196,16 @@ public class BuffetServlet extends HttpServlet {
         } catch (DateTimeParseException ignored) {
             return null;
         }
+    }
+
+    private List<BuffetMenuItem> filterByMealPeriod(List<BuffetMenuItem> items, String mealPeriod) {
+        List<BuffetMenuItem> filtered = new ArrayList<>();
+        if (items == null) return filtered;
+        for (BuffetMenuItem item : items) {
+            if (item != null && mealPeriod.equalsIgnoreCase(item.getMealPeriod())) {
+                filtered.add(item);
+            }
+        }
+        return filtered;
     }
 }

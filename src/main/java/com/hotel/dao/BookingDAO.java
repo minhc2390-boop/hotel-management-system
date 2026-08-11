@@ -366,6 +366,11 @@ public class BookingDAO {
                 booking.getRoom().setStatus("Available");
             }
 
+            // A bill does not exist while the guest is staying. Completed,
+            // unbilled laundry orders are therefore attached atomically as
+            // soon as checkout creates the bill.
+            new LaundryDAO().attachCompletedOrdersToBill(em, bookings, bill);
+
             tx.commit();
             return bill.getId();
         } catch (Exception e) {

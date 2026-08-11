@@ -73,14 +73,14 @@ public class FeedbackDAO {
         }
     }
 
-    public boolean insertForCheckedOutBooking(Feedback feedback, int bookingId, int userId, String userEmail) {
+    public boolean insertForCompletedBooking(Feedback feedback, int bookingId, int userId, String userEmail) {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             Booking booking = em.find(Booking.class, bookingId, LockModeType.PESSIMISTIC_WRITE);
             User user = em.find(User.class, userId);
-            if (booking == null || user == null || !"CheckedOut".equals(booking.getStatus())) {
+            if (booking == null || user == null || !isCompletedBooking(booking.getStatus())) {
                 tx.rollback();
                 return false;
             }
@@ -116,5 +116,19 @@ public class FeedbackDAO {
         } finally {
             em.close();
         }
+    }
+
+    /** Kept for callers compiled against the previous method name. */
+    public boolean insertForCheckedOutBooking(Feedback feedback, int bookingId, int userId, String userEmail) {
+        return insertForCompletedBooking(feedback, bookingId, userId, userEmail);
+    }
+
+    private boolean isCompletedBooking(String status) {
+        if (status == null) return false;
+        String normalized = status.replace("_", "").replace("-", "").replace(" ", "");
+        return "CheckedOut".equalsIgnoreCase(normalized)
+                || "Completed".equalsIgnoreCase(normalized)
+                || "ĐãCheckOut".equalsIgnoreCase(normalized)
+                || "ĐãTrảPhòng".equalsIgnoreCase(normalized);
     }
 }

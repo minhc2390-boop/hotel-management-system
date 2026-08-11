@@ -19,7 +19,10 @@ BEGIN
         service_type NVARCHAR(100) DEFAULT N'Giặt sấy thông thường',
         quantity INT DEFAULT 1,
         total_price FLOAT DEFAULT 0,
-        processing_status VARCHAR(20) NOT NULL CONSTRAINT DF_Laundry_ProcessingStatus DEFAULT 'Chưa hoàn tất',
+        processing_status VARCHAR(20) NOT NULL CONSTRAINT DF_Laundry_ProcessingStatus DEFAULT 'Pending',
+        booking_id INT NULL,
+        bill_id INT NULL,
+        bill_detail_id INT NULL,
         notes NVARCHAR(500) NULL,
         created_date DATETIME DEFAULT GETDATE()
     );
@@ -37,6 +40,27 @@ BEGIN
         ALTER TABLE Laundry
         ADD notes NVARCHAR(500) NULL;
     END;
+
+    IF COL_LENGTH(N'dbo.Laundry', N'booking_id') IS NULL
+        ALTER TABLE dbo.Laundry ADD booking_id INT NULL;
+
+    IF COL_LENGTH(N'dbo.Laundry', N'bill_id') IS NULL
+        ALTER TABLE dbo.Laundry ADD bill_id INT NULL;
+
+    IF COL_LENGTH(N'dbo.Laundry', N'bill_detail_id') IS NULL
+        ALTER TABLE dbo.Laundry ADD bill_detail_id INT NULL;
+END;
+GO
+
+-- Chuẩn hóa trạng thái backend để transaction tính phí dùng một giá trị duy nhất.
+UPDATE dbo.Laundry
+SET processing_status = CASE
+    WHEN UPPER(processing_status) IN ('COMPLETED', 'DONE')
+         OR processing_status LIKE N'%Đã%'
+         OR processing_status LIKE N'%hoàn thành%'
+         OR processing_status LIKE N'%hoàn tất%'
+        THEN 'Completed'
+    ELSE 'Pending'
 END;
 GO
 
@@ -61,8 +85,8 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Laundry)
 BEGIN
     INSERT INTO dbo.Laundry (customer_name, room_number, service_type, quantity, total_price, processing_status, notes, created_date)
     VALUES 
-    (N'Nguyễn Văn An', '101', N'Giặt sấy thông thường', 3, 45000, 'Chưa hoàn tất', N'Không dùng nước nóng\nGiặt riêng', GETDATE()),
-    (N'Trần Thị Bích', '205', N'Giặt khô (Dry Cleaning)', 1, 120000, N'Đã hoàn tất', N'Quần áo dễ phai màu', GETDATE());
+    (N'Nguyễn Văn An', '101', N'Giặt sấy thông thường', 3, 135000, 'Pending', N'Không dùng nước nóng\nGiặt riêng', GETDATE()),
+    (N'Trần Thị Bích', '205', N'Giặt khô (Dry Cleaning)', 1, 120000, 'Completed', N'Quần áo dễ phai màu', GETDATE());
 END;
 GO
 

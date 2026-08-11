@@ -2,15 +2,26 @@
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Room" %>
 <%@ page import="com.hotel.model.Service" %>
+<%@ page import="com.hotel.model.HotelNotification" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.text.NumberFormat" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.Locale" %>
+<%!
+    private String indexEscape(String value) {
+        if (value == null) return "";
+        return value.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
+    }
+%>
 <%
     HttpSession sess = request.getSession(false);
     User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
     List<Room> availableRooms = (List<Room>) request.getAttribute("availableRooms");
     List<Service> services = (List<Service>) request.getAttribute("services");
+    List<HotelNotification> latestNotifications = (List<HotelNotification>) request.getAttribute("latestNotifications");
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+    DateTimeFormatter notificationTime = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -692,6 +703,38 @@
             </div>
         </section>
     <% } %>
+
+    <!-- Năm thông báo hệ thống mới nhất từ backend -->
+    <section class="client-surface" style="margin-top: 32px; padding: 28px;">
+        <div class="section-header" style="text-align: left; margin: 0 0 20px; max-width: none;">
+            <span class="section-subtitle">Cập nhật từ Nestora</span>
+            <h2 class="section-title">Thông Báo Mới Nhất</h2>
+        </div>
+        <% if (latestNotifications != null && !latestNotifications.isEmpty()) { %>
+            <div style="display: grid; gap: 12px;">
+                <% for (HotelNotification notification : latestNotifications) {
+                       String notificationColor = "var(--brand)";
+                       if ("WARNING".equalsIgnoreCase(notification.getType())) notificationColor = "#d97706";
+                       else if ("SUCCESS".equalsIgnoreCase(notification.getType())) notificationColor = "#15803d";
+                       else if ("ERROR".equalsIgnoreCase(notification.getType())) notificationColor = "#dc2626";
+                %>
+                    <article style="border: 1px solid var(--line); border-left: 4px solid <%= notificationColor %>; border-radius: 10px; padding: 16px 18px; background: var(--surface);">
+                        <div style="display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                            <div>
+                                <h3 style="margin: 0 0 6px; font-size: 16px; color: var(--text);"><%= indexEscape(notification.getTitle()) %></h3>
+                                <p style="margin: 0; color: var(--muted); line-height: 1.6;"><%= indexEscape(notification.getContent()) %></p>
+                            </div>
+                            <time style="font-size: 12px; color: var(--muted); white-space: nowrap;">
+                                <%= notification.getCreatedAt() != null ? notification.getCreatedAt().format(notificationTime) : "" %>
+                            </time>
+                        </div>
+                    </article>
+                <% } %>
+            </div>
+        <% } else { %>
+            <div class="empty"><strong>Chưa có thông báo mới</strong>Các cập nhật mới nhất sẽ hiển thị tại đây.</div>
+        <% } %>
+    </section>
 
 </main>
 

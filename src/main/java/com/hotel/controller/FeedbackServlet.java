@@ -104,7 +104,7 @@ public class FeedbackServlet extends HttpServlet {
                 content,
                 new Timestamp(System.currentTimeMillis())
         );
-        boolean success = feedbackDAO.insertForCheckedOutBooking(
+        boolean success = feedbackDAO.insertForCompletedBooking(
                 feedback, bookingId, currentUser.getId(), currentUser.getEmail());
 
         response.sendRedirect(request.getContextPath()
@@ -130,7 +130,7 @@ public class FeedbackServlet extends HttpServlet {
     private boolean isEligibleOwner(Booking booking, User currentUser) {
         if (booking == null || currentUser == null
                 || !"Customer".equalsIgnoreCase(currentUser.getRole())
-                || !"CheckedOut".equals(booking.getStatus())) {
+                || !isCompletedBooking(booking.getStatus())) {
             return false;
         }
         if (booking.getCreatedBy() != null && booking.getCreatedBy().getId() == currentUser.getId()) {
@@ -139,6 +139,15 @@ public class FeedbackServlet extends HttpServlet {
         return booking.getCustomer() != null
                 && currentUser.getEmail() != null
                 && currentUser.getEmail().equalsIgnoreCase(booking.getCustomer().getCustomerEmail());
+    }
+
+    private boolean isCompletedBooking(String status) {
+        if (status == null) return false;
+        String normalized = status.replace("_", "").replace("-", "").replace(" ", "");
+        return "CheckedOut".equalsIgnoreCase(normalized)
+                || "Completed".equalsIgnoreCase(normalized)
+                || "ĐãCheckOut".equalsIgnoreCase(normalized)
+                || "ĐãTrảPhòng".equalsIgnoreCase(normalized);
     }
 
     private boolean isManager(User user) {

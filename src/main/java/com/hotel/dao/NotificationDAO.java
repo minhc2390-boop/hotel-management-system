@@ -43,15 +43,29 @@ public class NotificationDAO {
     }
 
     public List<HotelNotification> getTop5Newest() {
-        List<HotelNotification> all = getAllNotifications();
-        List<HotelNotification> result = new ArrayList<>();
-        for (HotelNotification n : all) {
-            if (n.getIsActive() != null && n.getIsActive()) {
-                result.add(n);
-                if (result.size() >= 5) break;
-            }
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            return em.createQuery(
+                            "SELECT n FROM HotelNotification n "
+                                    + "WHERE n.isActive = TRUE "
+                                    + "ORDER BY n.createdAt DESC, n.notificationId DESC",
+                            HotelNotification.class)
+                    .setMaxResults(5)
+                    .getResultList();
+        } catch (Exception e) {
+            System.err.println("[NotificationDAO.getTop5Newest DB Warning]: " + e.getMessage());
+        } finally {
+            em.close();
         }
-        return result;
+
+        return getAllNotifications().stream()
+                .filter(n -> n != null && Boolean.TRUE.equals(n.getIsActive()))
+                .sorted(Comparator
+                        .comparing(HotelNotification::getCreatedAt,
+                                Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(HotelNotification::getNotificationId, Comparator.reverseOrder()))
+                .limit(5)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public HotelNotification getById(int id) {
