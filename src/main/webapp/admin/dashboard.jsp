@@ -44,7 +44,7 @@
       double dayTotal = 0;
       if (recentBills != null) {
           for (Bill b : recentBills) {
-              if ("Paid".equals(b.getStatus())) {
+              if (b != null && "Paid".equalsIgnoreCase(b.getStatus()) && b.getCreatedAt() != null) {
                   java.time.LocalDate billDate = b.getCreatedAt().toLocalDateTime().toLocalDate();
                   if (billDate.equals(date)) {
                       dayTotal += b.getTotalAmount();
@@ -73,17 +73,42 @@
         <div class="page-actions"><a class="btn btn-primary" href="<%= request.getContextPath() %>/admin/booking-form.jsp">＋ Tạo đặt phòng</a></div>
       </div>
 
+      <% int occupancyRate = totalRooms > 0 ? (int) Math.round(bookedRooms * 100.0 / totalRooms) : 0; %>
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">Tỷ lệ lấp đầy</div><div class="stat-value"><%= totalRooms > 0 ? Math.round(bookedRooms * 100.0 / totalRooms) : 0 %>%</div><div class="stat-change">↗ Theo dữ liệu phòng hiện tại</div></div>
-        <div class="stat-card"><div class="stat-label">Phòng đang thuê</div><div class="stat-value"><%= bookedRooms %></div><div class="stat-change">Trong tổng số <%= totalRooms %> phòng</div></div>
-        <div class="stat-card"><div class="stat-label">Phòng trống</div><div class="stat-value"><%= availableRooms %></div><div class="stat-change">Sẵn sàng nhận khách</div></div>
-        <div class="stat-card"><div class="stat-label">Doanh thu đã thu</div><div class="stat-value"><%= money.format(totalRevenue) %></div><div class="stat-change">Từ hóa đơn đã thanh toán</div></div>
+        <div class="stat-card">
+          <div class="stat-label">Tỷ lệ lấp đầy phòng</div>
+          <div class="stat-value"><%= occupancyRate %>%</div>
+          <div class="stat-change" style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            <div style="flex:1; background:var(--line, #e2e8f0); height:6px; border-radius:3px; overflow:hidden;">
+              <div style="width:<%= occupancyRate %>%; background:var(--brand, #1769e0); height:100%;"></div>
+            </div>
+            <span><%= bookedRooms %>/<%= totalRooms %> phòng</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Phòng trống sẵn sàng</div>
+          <div class="stat-value"><%= availableRooms %></div>
+          <div class="stat-change">Đang thuê: <strong><%= bookedRooms %></strong> | Bảo trì: <strong><%= maintenanceRooms %></strong></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Tổng người dùng & Khách hàng</div>
+          <div class="stat-value"><%= totalUsers %></div>
+          <div class="stat-change">Tài khoản quản trị, lễ tân & hội viên</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Doanh thu đã thu</div>
+          <div class="stat-value"><%= money.format(totalRevenue) %></div>
+          <div class="stat-change">Từ <%= totalBills %> hóa đơn đã ghi nhận</div>
+        </div>
       </div>
 
       <div class="dashboard-grid">
         <section class="surface">
           <div class="surface-head"><div><h2 class="surface-title">Doanh thu 7 ngày gần đây</h2><p class="surface-subtitle">Biểu đồ thể hiện doanh thu thực tế từ backend.</p></div><a href="<%= request.getContextPath() %>/admin/profits.jsp" class="table-primary">Xem chi tiết</a></div>
-          <div style="position: relative; height: 260px; width: 100%; padding: 10px 0;">
+          <div style="position: relative; height: 270px; width: 100%; padding: 10px 0;">
               <canvas id="dashboardChart"></canvas>
           </div>
         </section>
@@ -104,7 +129,7 @@
         <% if (recentBills != null && !recentBills.isEmpty()) { %>
         <div class="table-wrap"><table><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày tạo</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr></thead><tbody>
         <% int limit = Math.min(recentBills.size(), 5); for (int i=0;i<limit;i++){ Bill b=recentBills.get(i); %>
-          <tr><td class="table-primary">#<%= b.getId() %></td><td><span class="table-strong"><%= b.getCustomer() != null ? b.getCustomer().getCustomerName() : (b.getUser() != null ? b.getUser().getFullName() : "N/A") %></span><br><span class="text-muted"><%= b.getCustomer() != null && b.getCustomer().getCustomerEmail() != null ? b.getCustomer().getCustomerEmail() : (b.getUser() != null ? b.getUser().getEmail() : "") %></span></td><td><%= dateTime.format(b.getCreatedAt()) %></td><td class="table-strong"><%= money.format(b.getTotalAmount()) %></td><td><% if("Paid".equals(b.getStatus())){%><span class="status success">Đã thanh toán</span><%}else if("Unpaid".equals(b.getStatus())){%><span class="status info">Chưa thanh toán</span><%}else{%><span class="status danger">Đã hủy</span><%}%></td><td><a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bills?action=detail&id=<%= b.getId() %>">›</a></td></tr>
+          <tr><td class="table-primary">#<%= b.getId() %></td><td><span class="table-strong"><%= b.getCustomer() != null ? b.getCustomer().getCustomerName() : (b.getUser() != null ? b.getUser().getFullName() : "N/A") %></span><br><span class="text-muted"><%= b.getCustomer() != null && b.getCustomer().getCustomerEmail() != null ? b.getCustomer().getCustomerEmail() : (b.getUser() != null ? b.getUser().getEmail() : "") %></span></td><td><%= b.getCreatedAt() != null ? dateTime.format(b.getCreatedAt()) : "N/A" %></td><td class="table-strong"><%= money.format(b.getTotalAmount()) %></td><td><% if("Paid".equalsIgnoreCase(b.getStatus())){%><span class="status success">Đã thanh toán</span><%}else if("Unpaid".equalsIgnoreCase(b.getStatus())){%><span class="status info">Chưa thanh toán</span><%}else{%><span class="status danger">Đã hủy</span><%}%></td><td><a class="btn btn-outline btn-icon" href="<%= request.getContextPath() %>/bills?action=detail&id=<%= b.getId() %>">›</a></td></tr>
         <% } %></tbody></table></div>
         <% } else { %><div class="empty"><strong>Chưa có đặt phòng gần đây</strong>Dữ liệu sẽ hiển thị khi hệ thống có giao dịch.</div><% } %>
       </section>
@@ -119,6 +144,10 @@
     const dailyRevData7 = [<%= java.util.Arrays.stream(dailyRev7).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
     
     const ctx7 = document.getElementById('dashboardChart').getContext('2d');
+    const gradient = ctx7.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, 'rgba(23, 105, 224, 0.28)');
+    gradient.addColorStop(1, 'rgba(23, 105, 224, 0.01)');
+
     new Chart(ctx7, {
         type: 'line',
         data: {
@@ -127,13 +156,15 @@
                 label: 'Doanh thu',
                 data: dailyRevData7,
                 fill: true,
-                backgroundColor: 'rgba(23, 105, 224, 0.12)',
+                backgroundColor: gradient,
                 borderColor: '#1769e0',
                 borderWidth: 2.5,
-                tension: 0.35,
-                pointBackgroundColor: '#1769e0',
+                tension: 0.4,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#1769e0',
+                pointBorderWidth: 2,
                 pointRadius: 4,
-                pointHoverRadius: 6
+                pointHoverRadius: 7
             }]
         },
         options: {
@@ -144,6 +175,8 @@
                     display: false
                 },
                 tooltip: {
+                    padding: 10,
+                    cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
                             let label = context.dataset.label || '';
@@ -159,6 +192,11 @@
                 }
             },
             scales: {
+                x: {
+                    grid: {
+                        display: false
+                    }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {

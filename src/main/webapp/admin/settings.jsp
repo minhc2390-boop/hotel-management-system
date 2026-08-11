@@ -171,8 +171,39 @@
             <h1 class="page-title">Cài đặt cấu hình</h1>
             <p class="page-desc">Chỉnh sửa giao diện hệ thống, thông tin khách sạn và thông tin thanh toán chuyển khoản.</p>
           </div>
+<%
+  com.hotel.dao.SystemSettingDAO sysDAO = new com.hotel.dao.SystemSettingDAO();
+  java.util.Map<String, String> sysSettings = sysDAO.getAllSettings();
+  
+  String reqHotelName = (String) request.getAttribute("hotel_name");
+  String dbHotelName = reqHotelName != null ? reqHotelName : sysSettings.getOrDefault("hotel_name", "Nestora");
+  
+  String reqHotelAddress = (String) request.getAttribute("hotel_address");
+  String dbHotelAddress = reqHotelAddress != null ? reqHotelAddress : sysSettings.getOrDefault("hotel_address", "Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam");
+  
+  String reqHotelPhone = (String) request.getAttribute("hotel_phone");
+  String dbHotelPhone = reqHotelPhone != null ? reqHotelPhone : sysSettings.getOrDefault("hotel_phone", "+84 (0) 258 3567 890");
+  
+  String reqHotelEmail = (String) request.getAttribute("hotel_email");
+  String dbHotelEmail = reqHotelEmail != null ? reqHotelEmail : sysSettings.getOrDefault("hotel_email", "info@nestorahotel.com");
+  
+  String reqBankId = (String) request.getAttribute("hotel_bank_id");
+  String dbBankId = reqBankId != null ? reqBankId : sysSettings.getOrDefault("hotel_bank_id", "MB");
+  
+  String reqBankAccount = (String) request.getAttribute("hotel_bank_account");
+  String dbBankAccount = reqBankAccount != null ? reqBankAccount : sysSettings.getOrDefault("hotel_bank_account", "1903567890123");
+  
+  String reqBankName = (String) request.getAttribute("hotel_bank_name");
+  String dbBankName = reqBankName != null ? reqBankName : sysSettings.getOrDefault("hotel_bank_name", "CONG TY NESTORA HOTEL");
+  
+  String reqTheme = (String) request.getAttribute("nestora_theme");
+  String dbTheme = reqTheme != null ? reqTheme : sysSettings.getOrDefault("nestora_theme", "light");
+
+  String successMsg = (String) request.getAttribute("success");
+%>
         </div>
 
+<<<<<<< Updated upstream
         <div class="settings-grid">
           <!-- Cột trái: Cấu hình giao diện -->
           <div class="surface">
@@ -189,70 +220,140 @@
                       <span style="background: #1769e0"></span>
                       <span style="background: #ffffff"></span>
                       <span style="background: #f4f7fb"></span>
+=======
+        <form action="<%=request.getContextPath()%>/admin/settings" method="post" id="settingsForm">
+          <input type="hidden" name="nestora_theme" id="nestora-theme-input" value="<%= dbTheme %>">
+          <div class="settings-grid">
+            <!-- Cột trái: Cấu hình giao diện -->
+            <div class="surface">
+              <div class="surface-head">
+                <h2 class="surface-title">Cấu hình giao diện & Trải nghiệm</h2>
+              </div>
+              <div class="setting-card-body">
+                <div class="form-group">
+                  <label>Lựa chọn chủ đề (Web Theme)</label>
+                  <div class="theme-grid">
+                    
+                    <div class="theme-card" data-theme-val="light" onclick="selectTheme('light')">
+                      <div class="color-preview">
+                        <span style="background: #1769e0"></span>
+                        <span style="background: #ffffff"></span>
+                        <span style="background: #f4f7fb"></span>
+                      </div>
+                      <span class="theme-title">Mặc định (Sáng)</span>
+>>>>>>> Stashed changes
                     </div>
-                    <span class="theme-title">Mặc định (Sáng)</span>
-                  </div>
 
-                  <div class="theme-card" data-theme-val="dark" onclick="selectTheme('dark')">
-                    <div class="color-preview">
-                      <span style="background: #3b82f6"></span>
-                      <span style="background: #1e293b"></span>
-                      <span style="background: #0f172a"></span>
+                    <div class="theme-card" data-theme-val="dark" onclick="selectTheme('dark')">
+                      <div class="color-preview">
+                        <span style="background: #3b82f6"></span>
+                        <span style="background: #1e293b"></span>
+                        <span style="background: #0f172a"></span>
+                      </div>
+                      <span class="theme-title">Tối (Dark)</span>
                     </div>
+<<<<<<< Updated upstream
                     <span class="theme-title">Tối tối (Dark)</span>
                   </div>
+=======
+>>>>>>> Stashed changes
 
-                  <div class="theme-card" data-theme-val="forest" onclick="selectTheme('forest')">
-                    <div class="color-preview">
-                      <span style="background: #10b981"></span>
-                      <span style="background: #ecfdf5"></span>
-                      <span style="background: #f0fdf4"></span>
+                    <div class="theme-card" data-theme-val="forest" onclick="selectTheme('forest')">
+                      <div class="color-preview">
+                        <span style="background: #10b981"></span>
+                        <span style="background: #ecfdf5"></span>
+                        <span style="background: #f0fdf4"></span>
+                      </div>
+                      <span class="theme-title">Xanh rừng (Forest)</span>
                     </div>
-                    <span class="theme-title">Xanh rừng (Forest)</span>
-                  </div>
 
-                  <div class="theme-card" data-theme-val="sunset" onclick="selectTheme('sunset')">
-                    <div class="color-preview">
-                      <span style="background: #f97316"></span>
-                      <span style="background: #fff7ed"></span>
-                      <span style="background: #fffaf0"></span>
+                    <div class="theme-card" data-theme-val="sunset" onclick="selectTheme('sunset')">
+                      <div class="color-preview">
+                        <span style="background: #f97316"></span>
+                        <span style="background: #fff7ed"></span>
+                        <span style="background: #fffaf0"></span>
+                      </div>
+                      <span class="theme-title">Hoàng hôn</span>
                     </div>
-                    <span class="theme-title">Hoàng hôn</span>
-                  </div>
 
-                  <div class="theme-card" data-theme-val="cyberpunk" onclick="selectTheme('cyberpunk')">
-                    <div class="color-preview">
-                      <span style="background: #ff007f"></span>
-                      <span style="background: #120022"></span>
-                      <span style="background: #090011"></span>
+                    <div class="theme-card" data-theme-val="cyberpunk" onclick="selectTheme('cyberpunk')">
+                      <div class="color-preview">
+                        <span style="background: #ff007f"></span>
+                        <span style="background: #120022"></span>
+                        <span style="background: #090011"></span>
+                      </div>
+                      <span class="theme-title">Cyberpunk</span>
                     </div>
-                    <span class="theme-title">Cyberpunk</span>
-                  </div>
 
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 24px;">
+                  <label for="hotel-name-input">Tên khách sạn hiển thị (Branding)</label>
+                  <input type="text" id="hotel-name-input" name="hotel_name" value="<%= dbHotelName %>" placeholder="Tên khách sạn (ví dụ: Nestora Hotel)" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="hotel-address-input">Địa chỉ khách sạn</label>
+                  <input type="text" id="hotel-address-input" name="hotel_address" value="<%= dbHotelAddress %>" placeholder="Địa chỉ chi tiết">
+                </div>
+
+                <div class="form-group">
+                  <label for="hotel-phone-input">Số điện thoại liên hệ</label>
+                  <input type="text" id="hotel-phone-input" name="hotel_phone" value="<%= dbHotelPhone %>" placeholder="Số điện thoại bàn / Hotline">
+                </div>
+
+                <div class="form-group">
+                  <label for="hotel-email-input">Email khách sạn</label>
+                  <input type="email" id="hotel-email-input" name="hotel_email" value="<%= dbHotelEmail %>" placeholder="Địa chỉ email nhận thông tin">
                 </div>
               </div>
+            </div>
 
-              <div class="form-group" style="margin-top: 24px;">
-                <label for="hotel-name-input">Tên khách sạn hiển thị (Branding)</label>
-                <input type="text" id="hotel-name-input" placeholder="Tên khách sạn (ví dụ: Nestora Hotel)">
+            <!-- Cột phải: Cấu hình thanh toán VietQR -->
+            <div class="surface">
+              <div class="surface-head">
+                <h2 class="surface-title">Cấu hình VietQR & Chuyển khoản</h2>
               </div>
+              <div class="setting-card-body">
+                <p style="font-size: 13px; color: var(--muted); margin-bottom: 18px;">
+                  Các cấu hình tài khoản dưới đây sẽ được sử dụng để tự động sinh mã VietQR quét tiền phòng động tại trang Chi tiết hóa đơn khách hàng.
+                </p>
 
-              <div class="form-group">
-                <label for="hotel-address-input">Địa chỉ khách sạn</label>
-                <input type="text" id="hotel-address-input" placeholder="Địa chỉ chi tiết">
-              </div>
+                <div class="form-group">
+                  <label for="bank-id-select">Ngân hàng thụ hưởng</label>
+                  <select id="bank-id-select" name="hotel_bank_id">
+                    <option value="MB" <%= "MB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>MB Bank (Ngân hàng Quân Đội)</option>
+                    <option value="VCB" <%= "VCB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>Vietcombank</option>
+                    <option value="TCB" <%= "TCB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>Techcombank</option>
+                    <option value="BIDV" <%= "BIDV".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>BIDV</option>
+                    <option value="CTG" <%= "CTG".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>VietinBank</option>
+                    <option value="ACB" <%= "ACB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>ACB</option>
+                    <option value="VPB" <%= "VPB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>VPBank</option>
+                    <option value="TPB" <%= "TPB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>TPBank</option>
+                    <option value="VIB" <%= "VIB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>VIB</option>
+                    <option value="STB" <%= "STB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>Sacombank</option>
+                  </select>
+                </div>
 
-              <div class="form-group">
-                <label for="hotel-phone-input">Số điện thoại liên hệ</label>
-                <input type="text" id="hotel-phone-input" placeholder="Số điện thoại bàn / Hotline">
-              </div>
+                <div class="form-group">
+                  <label for="bank-account-input">Số tài khoản ngân hàng</label>
+                  <input type="text" id="bank-account-input" name="hotel_bank_account" value="<%= dbBankAccount %>" placeholder="Nhập chính xác số tài khoản">
+                </div>
 
-              <div class="form-group">
-                <label for="hotel-email-input">Email khách sạn</label>
-                <input type="email" id="hotel-email-input" placeholder="Địa chỉ email nhận thông tin">
+                <div class="form-group">
+                  <label for="bank-name-input">Tên chủ tài khoản (Viết hoa không dấu)</label>
+                  <input type="text" id="bank-name-input" name="hotel_bank_name" value="<%= dbBankName %>" placeholder="Ví dụ: CONG TY NESTORA HOTEL">
+                </div>
+
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                  <button type="submit" class="btn btn-primary" style="flex: 1">Lưu cấu hình</button>
+                  <button type="button" class="btn btn-outline" onclick="resetToDefaults()">Khôi phục mặc định</button>
+                </div>
               </div>
             </div>
           </div>
+<<<<<<< Updated upstream
 
           <!-- Cột phải: Cấu hình thanh toán VietQR -->
           <div class="surface">
@@ -297,6 +398,9 @@
             </div>
           </div>
         </div>
+=======
+        </form>
+>>>>>>> Stashed changes
 
       </div>
     </section>
@@ -307,6 +411,7 @@
 <div class="toast-container" id="toast-container"></div>
 
 <script>
+<<<<<<< Updated upstream
   let currentTheme = 'light';
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -322,6 +427,46 @@
       document.getElementById('bank-id-select').value = localStorage.getItem('hotel_bank_id') || 'MB';
       document.getElementById('bank-account-input').value = localStorage.getItem('hotel_bank_account') || '1903567890123';
       document.getElementById('bank-name-input').value = localStorage.getItem('hotel_bank_name') || 'CONG TY NESTORA HOTEL';
+=======
+  let currentTheme = '<%= dbTheme %>';
+
+  document.addEventListener('DOMContentLoaded', function() {
+      selectTheme(currentTheme);
+
+      <% if (successMsg != null && !successMsg.isEmpty()) { %>
+          showToast("<%= successMsg.replace("\"", "\\\"") %>");
+      <% } %>
+
+      const form = document.getElementById('settingsForm');
+      if (form) {
+          form.addEventListener('submit', function(e) {
+              const hotelName = document.getElementById('hotel-name-input').value.trim();
+              const hotelAddress = document.getElementById('hotel-address-input').value.trim();
+              const hotelPhone = document.getElementById('hotel-phone-input').value.trim();
+              const hotelEmail = document.getElementById('hotel-email-input').value.trim();
+
+              const bankId = document.getElementById('bank-id-select').value;
+              const bankAccount = document.getElementById('bank-account-input').value.trim();
+              const bankName = document.getElementById('bank-name-input').value.trim().toUpperCase();
+
+              // Cập nhật localStorage tức thì cho client side UI
+              localStorage.setItem('nestora_theme', currentTheme);
+              localStorage.setItem('hotel_name', hotelName);
+              localStorage.setItem('hotel_address', hotelAddress);
+              localStorage.setItem('hotel_phone', hotelPhone);
+              localStorage.setItem('hotel_email', hotelEmail);
+
+              localStorage.setItem('hotel_bank_id', bankId);
+              localStorage.setItem('hotel_bank_account', bankAccount);
+              localStorage.setItem('hotel_bank_name', bankName);
+
+              const brandNameStrong = document.querySelectorAll('.brand-name strong');
+              if (brandNameStrong.length > 0) {
+                  brandNameStrong.forEach(el => el.innerText = hotelName.toUpperCase());
+              }
+          });
+      }
+>>>>>>> Stashed changes
   });
 
   function selectTheme(themeName) {
@@ -329,6 +474,8 @@
       
       // Áp dụng ngay thuộc tính data-theme lên thẻ html/root
       document.documentElement.setAttribute('data-theme', themeName);
+      const themeInp = document.getElementById('nestora-theme-input');
+      if (themeInp) themeInp.value = themeName;
 
       document.querySelectorAll('.theme-card').forEach(card => {
           if (card.getAttribute('data-theme-val') === themeName) {
@@ -339,6 +486,7 @@
       });
   }
 
+<<<<<<< Updated upstream
   function saveSettings() {
       const hotelName = document.getElementById('hotel-name-input').value.trim();
       const hotelAddress = document.getElementById('hotel-address-input').value.trim();
@@ -367,6 +515,8 @@
       showToast("Lưu cấu hình hệ thống thành công!");
   }
 
+=======
+>>>>>>> Stashed changes
   function resetToDefaults() {
       if (confirm("Bạn có chắc chắn muốn khôi phục toàn bộ cài đặt về mặc định?")) {
           localStorage.removeItem('nestora_theme');
@@ -378,12 +528,13 @@
           localStorage.removeItem('hotel_bank_account');
           localStorage.removeItem('hotel_bank_name');
 
-          window.location.reload();
+          window.location.href = '<%= request.getContextPath() %>/admin/settings';
       }
   }
 
   function showToast(message) {
       const container = document.getElementById('toast-container');
+      if (!container) return;
       const toast = document.createElement('div');
       toast.className = 'toast';
       toast.innerHTML = `<span class="toast-icon">✓</span><span>${message}</span>`;

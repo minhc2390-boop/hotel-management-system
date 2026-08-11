@@ -1,9 +1,21 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
+<%@ page import="com.hotel.model.Equipment" %>
+<%@ page import="com.hotel.dao.EquipmentDAO" %>
+<%@ page import="java.util.List" %>
 <%
     HttpSession sess = request.getSession(false);
     User currentUser = sess != null ? (User)sess.getAttribute("currentUser") : null;
+    if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        response.sendRedirect(request.getContextPath() + "/home");
+        return;
+    }
     String activeMenu = "equipments";
+    List<Equipment> equipments = (List<Equipment>) request.getAttribute("equipments");
+    if (equipments == null) {
+        EquipmentDAO equipmentDAO = new EquipmentDAO();
+        equipments = equipmentDAO.getAllEquipments();
+    }
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -26,7 +38,7 @@
                 <h1 class="page-title">Quản lý thiết bị</h1>
                 <p class="page-desc">Theo dõi thiết bị, số lượng và tình trạng sử dụng.</p>
               </div>
-              <div class="page-actions"><a class="btn btn-primary" href="equipment-form.jsp">＋ Thêm mới</a></div>
+              <div class="page-actions"><a class="btn btn-primary" href="<%= request.getContextPath() %>/equipments?action=add">＋ Thêm mới</a></div>
             </div>
             <section class="surface">
               <div class="table-tools">
@@ -37,7 +49,7 @@
                     <path d="M20 20l-3.5-3.5" />
                   </svg>
                 </div>
-                <div class="table-meta">5 thiết bị</div>
+                <div class="table-meta"><%= equipments != null ? equipments.size() : 0 %> thiết bị</div>
               </div>
               <div class="table-wrap">
                 <table>
@@ -52,62 +64,40 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td class="table-primary">#TB001</td>
-                      <td class="table-strong">Máy lạnh Daikin</td>
-                      <td>24</td>
-                      <td>Cái</td>
-                      <td><span class="status success">Hoạt động tốt</span></td>
-                      <td>
-                        <div class="row-actions">
-                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
-                          <button class="btn btn-danger btn-icon">×</button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="table-primary">#TB002</td>
-                      <td class="table-strong">Tivi Samsung 43 inch</td>
-                      <td>18</td>
-                      <td>Cái</td>
-                      <td><span class="status success">Hoạt động tốt</span></td>
-                      <td>
-                        <div class="row-actions">
-                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
-                          <button class="btn btn-danger btn-icon">×</button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="table-primary">#TB003</td>
-                      <td class="table-strong">Máy sấy tóc</td>
-                      <td>20</td>
-                      <td>Cái</td>
-                      <td><span class="status warning">Cần kiểm tra</span></td>
-                      <td>
-                        <div class="row-actions">
-                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
-                          <button class="btn btn-danger btn-icon">×</button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="table-primary">#TB004</td>
-                      <td class="table-strong">Tủ lạnh mini</td>
-                      <td>22</td>
-                      <td>Cái</td>
-                      <td><span class="status success">Hoạt động tốt</span></td>
-                      <td>
-                        <div class="row-actions">
-                          <a class="btn btn-outline btn-icon" href="equipment-form.jsp">✎</a>
-                          <button class="btn btn-danger btn-icon">×</button>
-                        </div>
-                      </td>
-                    </tr>
+                    <% if (equipments != null && !equipments.isEmpty()) {
+                         for (Equipment eq : equipments) {
+                    %>
+                      <tr>
+                        <td class="table-primary">#TB<%= String.format("%03d", eq.getEquipmentId()) %></td>
+                        <td class="table-strong"><%= eq.getEquipmentName() %></td>
+                        <td><%= eq.getTotalQuantity() %></td>
+                        <td><%= eq.getUnit() != null ? eq.getUnit() : "Cái" %></td>
+                        <td>
+                          <% if ("Hoạt động tốt".equalsIgnoreCase(eq.getStatus()) || "Good".equalsIgnoreCase(eq.getStatus())) { %>
+                            <span class="status success">Hoạt động tốt</span>
+                          <% } else if ("Cần kiểm tra".equalsIgnoreCase(eq.getStatus()) || "Maintenance".equalsIgnoreCase(eq.getStatus())) { %>
+                            <span class="status warning">Cần kiểm tra</span>
+                          <% } else { %>
+                            <span class="status danger"><%= eq.getStatus() != null ? eq.getStatus() : "N/A" %></span>
+                          <% } %>
+                        </td>
+                        <td>
+                          <div class="row-actions">
+                            <a class="btn btn-outline btn-icon" title="Sửa" href="<%= request.getContextPath() %>/equipments?action=edit&id=<%= eq.getEquipmentId() %>">✎</a>
+                            <a class="btn btn-danger btn-icon" title="Xóa" onclick="return confirm('Bạn có chắc muốn xóa thiết bị này?')" href="<%= request.getContextPath() %>/equipments?action=delete&id=<%= eq.getEquipmentId() %>">×</a>
+                          </div>
+                        </td>
+                      </tr>
+                    <%   }
+                       } else {
+                    %>
+                      <tr>
+                        <td colspan="6" style="text-align:center; padding:20px;">Chưa có thiết bị nào.</td>
+                      </tr>
+                    <% } %>
                   </tbody>
                 </table>
               </div>
-              <div class="pagination"><span class="page-number active">1</span></div>
             </section>
           </div>
         </section>

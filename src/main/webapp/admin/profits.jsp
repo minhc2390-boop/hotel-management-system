@@ -143,6 +143,25 @@
       overflow: hidden;
       white-space: nowrap;
     }
+    @media print {
+      .sidebar, .topbar, .page-actions, .breadcrumb, .btn {
+        display: none !important;
+      }
+      .main-shell, .content, .content-inner {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      .surface, .stat-card {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        break-inside: avoid;
+      }
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -158,9 +177,14 @@
             <h1 class="page-title">Thống kê doanh thu</h1>
             <p class="page-desc">Theo dõi doanh thu theo thời gian và nguồn thu.</p>
           </div>
-          <div class="page-actions">
-            <button class="btn btn-outline"><%= dateRangeStr %></button>
-            <button class="btn btn-primary">Xuất Excel</button>
+          <div class="page-actions" style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-outline" type="button"><%= dateRangeStr %></button>
+            <button class="btn btn-primary" type="button" onclick="exportProfitExcel()">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Xuất Excel
+            </button>
+            <button class="btn btn-outline" type="button" onclick="printProfitPDF()" style="border-color: var(--brand); color: var(--brand);">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>In Báo cáo PDF
+            </button>
           </div>
         </div>
 
@@ -199,11 +223,46 @@
               <canvas id="revenueChart"></canvas>
           </div>
         </section>
+
+        <!-- Bảng thống kê doanh thu chi tiết -->
+        <section class="surface" style="margin-top: 20px;">
+          <div class="surface-head">
+            <div>
+              <h2 class="surface-title">Bảng chi tiết doanh thu 14 ngày qua</h2>
+              <p class="surface-subtitle">Số liệu phân tích chi tiết cho báo cáo xuất Excel / PDF</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="profitReportTable">
+              <thead>
+                <tr>
+                  <th>NGÀY</th>
+                  <th>DOANH THU PHÒNG</th>
+                  <th>DOANH THU DỊCH VỤ</th>
+                  <th>TỔNG DOANH THU NGÀY</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% for (int i = 0; i < 14; i++) { 
+                     double dayTotal = dailyRoom[i] + dailyService[i];
+                %>
+                  <tr>
+                    <td class="table-primary"><%= dailyLabels[i] %></td>
+                    <td><%= money.format(dailyRoom[i]) %></td>
+                    <td><%= money.format(dailyService[i]) %></td>
+                    <td class="table-strong"><%= money.format(dayTotal) %></td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </section>
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/app.js"></script>
 <script>
   (function() {
@@ -220,7 +279,7 @@
                 {
                     label: 'Doanh thu phòng',
                     data: dailyRoomData,
-                    backgroundColor: '#0f172a', // Navy đậm quý tộc
+                    backgroundColor: '#0f172a',
                     borderColor: '#0f172a',
                     borderWidth: 1,
                     borderRadius: 4
@@ -228,7 +287,7 @@
                 {
                     label: 'Doanh thu dịch vụ',
                     data: dailyServiceData,
-                    backgroundColor: '#c5a880', // Gold/Bronze sang trọng
+                    backgroundColor: '#c5a880',
                     borderColor: '#c5a880',
                     borderWidth: 1,
                     borderRadius: 4
@@ -240,7 +299,7 @@
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    stacked: true // Stacked Bar Chart
+                    stacked: true
                 },
                 y: {
                     stacked: true,
@@ -280,6 +339,22 @@
         }
     });
   })();
+
+  function exportProfitExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Thư viện xuất Excel đang được tải, vui lòng thử lại sau giây lát.');
+        return;
+    }
+    const table = document.getElementById('profitReportTable');
+    if (table) {
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Bao_Cao_Doanh_Thu" });
+        XLSX.writeFile(wb, "Bao_Cao_Doanh_Thu_Nestora.xlsx");
+    }
+  }
+
+  function printProfitPDF() {
+    window.print();
+  }
 </script>
 </body>
 </html>

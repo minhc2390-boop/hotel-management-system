@@ -106,6 +106,19 @@ public class UserDAO {
         return null;
     }
 
+    public List<User> getEmployees() {
+        List<User> all = getAllUsers();
+        List<User> employees = new java.util.ArrayList<>();
+        if (all != null) {
+            for (User u : all) {
+                if (u != null && ("Admin".equalsIgnoreCase(u.getRole()) || "Receptionist".equalsIgnoreCase(u.getRole()))) {
+                    employees.add(u);
+                }
+            }
+        }
+        return employees;
+    }
+
     public boolean updateUser(User user) {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();

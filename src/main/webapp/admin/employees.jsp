@@ -4,11 +4,23 @@
 <% 
   HttpSession sess = request.getSession(false); 
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null; 
+  if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+      response.sendRedirect(request.getContextPath() + "/home");
+      return;
+  }
   String activeMenu = "employees"; 
   List<User> employees = (List<User>) request.getAttribute("employees");
   if (employees == null) {
-      response.sendRedirect(request.getContextPath() + "/users?action=employees");
-      return;
+      com.hotel.dao.UserDAO userDAO = new com.hotel.dao.UserDAO();
+      List<User> allUsers = userDAO.getAllUsers();
+      employees = new java.util.ArrayList<>();
+      if (allUsers != null) {
+          for (User u : allUsers) {
+              if (u != null && ("Admin".equalsIgnoreCase(u.getRole()) || "Receptionist".equalsIgnoreCase(u.getRole()))) {
+                  employees.add(u);
+              }
+          }
+      }
   }
 %>
 <!DOCTYPE html>

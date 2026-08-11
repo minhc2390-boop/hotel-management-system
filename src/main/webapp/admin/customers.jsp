@@ -4,8 +4,16 @@
 <% 
   HttpSession sess = request.getSession(false); 
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null; 
+  if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+    response.sendRedirect(request.getContextPath() + "/home");
+    return;
+  }
   String activeMenu = "customers"; 
   List<User> users = (List<User>) request.getAttribute("users");
+  if (users == null) {
+      com.hotel.dao.UserDAO userDAO = new com.hotel.dao.UserDAO();
+      users = userDAO.getAllUsers();
+  }
 %>
 <!DOCTYPE html>
 <html lang="vi">

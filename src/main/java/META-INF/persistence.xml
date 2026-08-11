@@ -19,7 +19,15 @@
         <class>com.hotel.model.BillDetail</class>
         <class>com.hotel.model.BuffetMenuItem</class>
         <class>com.hotel.model.Feedback</class>
+<<<<<<< Updated upstream
         
+=======
+        <class>com.hotel.model.HotelNotification</class>
+        <class>com.hotel.model.Laundry</class>
+                <class>com.hotel.model.SystemSetting</class>
+        
+
+>>>>>>> Stashed changes
         <properties>
             <!-- Database Connection Properties -->
             <property name="javax.persistence.jdbc.driver" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>

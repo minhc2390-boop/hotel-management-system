@@ -53,12 +53,28 @@ public class Equipment {
         this.equipmentId = equipmentId;
     }
 
+    public int getId() {
+        return equipmentId;
+    }
+
+    public void setId(int id) {
+        this.equipmentId = id;
+    }
+
     public String getEquipmentName() {
         return equipmentName;
     }
 
     public void setEquipmentName(String equipmentName) {
         this.equipmentName = equipmentName;
+    }
+
+    public String getName() {
+        return equipmentName;
+    }
+
+    public void setName(String name) {
+        this.equipmentName = name;
     }
 
     public int getTotalQuantity() {
