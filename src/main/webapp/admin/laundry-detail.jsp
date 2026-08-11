@@ -61,14 +61,14 @@
             text-align: center;
         }
         .badge-success {
-            color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
+            color: var(--success);
+            background-color: var(--success-bg);
+            border: 1px solid var(--line);
         }
         .badge-warning {
-            color: #856404;
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
+            color: var(--warning);
+            background-color: var(--warning-bg);
+            border: 1px solid var(--line);
         }
         .notes-box {
             background: rgba(0,0,0,0.03);

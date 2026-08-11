@@ -50,7 +50,7 @@
             <div class="table-meta"><%= feedbacks != null ? feedbacks.size() : 0 %> đánh giá</div>
           </div>
           <% if (feedbacks != null && !feedbacks.isEmpty()) { %>
-            <div class="table-wrap">
+          <div class="table-wrap" data-admin-paginated="10">
               <table>
                 <thead>
                 <tr>

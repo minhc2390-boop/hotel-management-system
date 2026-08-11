@@ -60,7 +60,7 @@
             font-size: 12px;
             color: var(--muted);
             margin-top: 6px;
-            background: rgba(0, 0, 0, 0.03);
+            background: var(--canvas);
             padding: 8px 12px;
             border-radius: 6px;
             border-left: 3px solid var(--brand);
@@ -86,7 +86,7 @@
                 </div>
 
                 <% if (error != null) { %>
-                    <div style="padding: 12px 16px; margin-bottom: 20px; background: #f8d7da; color: #721c24; border-radius: 6px; border: 1px solid #f5c6cb;">
+                    <div class="alert alert-error">
                         ⚠ <%= error %>
                     </div>
                 <% } %>
@@ -95,7 +95,7 @@
                     <div class="surface-head">
                         <h2 class="surface-title">Thông tin chi tiết đơn giặt</h2>
                     </div>
-                    <form method="post" action="<%= request.getContextPath() %>/laundry" accept-charset="UTF-8" style="padding: 10px 0;">
+                    <form class="surface-pad" method="post" action="<%= request.getContextPath() %>/laundry" accept-charset="UTF-8">
                         <input type="hidden" name="action" value="<%= isEdit ? "update" : "insert" %>">
                         <% if (isEdit) { %>
                             <input type="hidden" name="id" value="<%= laundry.getId() %>">

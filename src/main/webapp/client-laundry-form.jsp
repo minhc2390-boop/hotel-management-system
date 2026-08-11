@@ -23,7 +23,7 @@
             max-width: 720px;
             margin: 40px auto;
             padding: 30px;
-            background: #ffffff;
+            background: var(--surface);
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             border: 1px solid var(--line);
@@ -68,7 +68,7 @@
             padding: 11px 14px;
             border: 1px solid var(--line);
             border-radius: 8px;
-            background: #fff;
+            background: var(--surface);
             color: var(--text);
             font-family: inherit;
             font-size: 14px;
@@ -82,7 +82,7 @@
             font-size: 12px;
             color: var(--muted);
             margin-top: 8px;
-            background: #f8fafc;
+            background: var(--canvas);
             padding: 10px 14px;
             border-radius: 8px;
             border-left: 3px solid var(--brand);
@@ -91,19 +91,19 @@
         .alert-success {
             padding: 14px 18px;
             margin-bottom: 20px;
-            background: #d4edda;
-            color: #155724;
+            background: var(--success-bg);
+            color: var(--success);
             border-radius: 8px;
-            border: 1px solid #c3e6cb;
+            border: 1px solid var(--line);
             font-weight: 600;
         }
         .alert-error {
             padding: 14px 18px;
             margin-bottom: 20px;
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--danger-bg);
+            color: var(--danger);
             border-radius: 8px;
-            border: 1px solid #f5c6cb;
+            border: 1px solid var(--line);
             font-weight: 600;
         }
     </style>

@@ -77,7 +77,7 @@
           </div>
 
           <% if (menuItems != null && !menuItems.isEmpty()) { %>
-            <div class="table-wrap">
+            <div class="table-wrap" data-admin-paginated="10">
               <table>
                 <thead>
                 <tr>

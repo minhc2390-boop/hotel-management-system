@@ -77,7 +77,7 @@
                 </div>
 
                 <% if (error != null) { %>
-                    <div style="padding: 12px 16px; margin-bottom: 20px; background: #f8d7da; color: #721c24; border-radius: 6px; border: 1px solid #f5c6cb;">
+                    <div class="alert alert-error">
                         ⚠ <%= error %>
                     </div>
                 <% } %>
@@ -86,7 +86,7 @@
                     <div class="surface-head">
                         <h2 class="surface-title">Nội dung thông báo</h2>
                     </div>
-                    <form method="post" action="<%= request.getContextPath() %>/admin/notifications" style="padding: 10px 0;">
+                    <form class="surface-pad" method="post" action="<%= request.getContextPath() %>/admin/notifications">
                         <input type="hidden" name="action" value="<%= isEdit ? "update" : "insert" %>">
                         <% if (isEdit) { %>
                             <input type="hidden" name="id" value="<%= notification.getNotificationId() %>">

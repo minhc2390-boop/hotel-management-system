@@ -7,6 +7,14 @@
   const savedTheme = localStorage.getItem('nestora_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
 
+  // Tránh trình duyệt khôi phục vị trí cuộn cũ khi mở một trang quản trị khác.
+  if (document.querySelector('.admin-layout') && !window.location.hash) {
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+    window.requestAnimationFrame(function () {
+      window.scrollTo(0, 0);
+    });
+  }
+
   // Sync theme changes across tabs in real-time
   window.addEventListener('storage', function(e) {
     if (e.key === 'nestora_theme' && e.newValue) {
@@ -136,6 +144,61 @@
     filters.forEach(function (filter) {
       filter.addEventListener('change', applyFilters);
     });
+  });
+
+  // Phân trang gọn cho các bảng quản trị có nhiều dữ liệu.
+  document.querySelectorAll('.table-wrap[data-admin-paginated]').forEach(function (tableWrap) {
+    const tbody = tableWrap.querySelector('table tbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr')).filter(function (row) {
+      return row.children.length > 1;
+    });
+    const configuredPageSize = Number.parseInt(tableWrap.dataset.adminPaginated, 10);
+    const pageSize = Number.isFinite(configuredPageSize) && configuredPageSize > 0 ? configuredPageSize : 10;
+    const pageCount = Math.ceil(rows.length / pageSize);
+    if (pageCount <= 1) return;
+
+    let currentPage = 1;
+    const pagination = document.createElement('nav');
+    pagination.className = 'pagination';
+    pagination.setAttribute('aria-label', 'Phân trang danh sách');
+    tableWrap.insertAdjacentElement('afterend', pagination);
+
+    function renderPage() {
+      const firstRow = (currentPage - 1) * pageSize;
+      const lastRow = firstRow + pageSize;
+      rows.forEach(function (row, index) {
+        row.hidden = index < firstRow || index >= lastRow;
+      });
+
+      pagination.replaceChildren();
+
+      function appendPageButton(label, targetPage, active, disabled, ariaLabel) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'page-number' + (active ? ' active' : '');
+        button.textContent = label;
+        button.disabled = disabled;
+        button.setAttribute('aria-label', ariaLabel);
+        if (active) button.setAttribute('aria-current', 'page');
+        button.addEventListener('click', function () {
+          currentPage = targetPage;
+          renderPage();
+          const surface = tableWrap.closest('.surface');
+          if (surface) surface.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        });
+        pagination.appendChild(button);
+      }
+
+      appendPageButton('‹', currentPage - 1, false, currentPage === 1, 'Trang trước');
+      for (let page = 1; page <= pageCount; page += 1) {
+        appendPageButton(String(page), page, page === currentPage, false, 'Trang ' + page);
+      }
+      appendPageButton('›', currentPage + 1, false, currentPage === pageCount, 'Trang sau');
+    }
+
+    renderPage();
   });
 
   // A single reusable dialog prevents nested forms in booking list pages.

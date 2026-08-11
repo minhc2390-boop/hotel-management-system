@@ -30,10 +30,10 @@
             border-radius: 12px;
             text-transform: uppercase;
         }
-        .type-info { color: #0c5460; background-color: #d1ecf1; border: 1px solid #bee5eb; }
-        .type-warning { color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; }
-        .type-success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
-        .type-error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .type-info { color: var(--brand); background-color: var(--brand-soft); border: 1px solid var(--line); }
+        .type-warning { color: var(--warning); background-color: var(--warning-bg); border: 1px solid var(--line); }
+        .type-success { color: var(--success); background-color: var(--success-bg); border: 1px solid var(--line); }
+        .type-error { color: var(--danger); background-color: var(--danger-bg); border: 1px solid var(--line); }
 
         .status-badge {
             display: inline-block;
@@ -65,12 +65,12 @@
                 </div>
 
                 <% if (request.getParameter("saved") != null) { %>
-                    <div style="padding: 12px 16px; margin-bottom: 16px; background: #d4edda; color: #155724; border-radius: 6px; border: 1px solid #c3e6cb;">
+                    <div class="alert alert-success">
                         ✓ Lưu thông báo thành công!
                     </div>
                 <% } %>
                 <% if (request.getParameter("deleted") != null) { %>
-                    <div style="padding: 12px 16px; margin-bottom: 16px; background: #f8d7da; color: #721c24; border-radius: 6px; border: 1px solid #f5c6cb;">
+                    <div class="alert alert-error">
                         ✓ Đã xóa thông báo thành công!
                     </div>
                 <% } %>
@@ -84,7 +84,7 @@
                     </div>
 
                     <% if (notifications != null && !notifications.isEmpty()) { %>
-                        <div class="table-wrap">
+                        <div class="table-wrap" data-admin-paginated="10">
                             <table>
                                 <thead>
                                 <tr>

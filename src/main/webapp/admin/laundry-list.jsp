@@ -39,14 +39,14 @@
             text-align: center;
         }
         .badge-success {
-            color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
+            color: var(--success);
+            background-color: var(--success-bg);
+            border: 1px solid var(--line);
         }
         .badge-warning {
-            color: #856404;
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
+            color: var(--warning);
+            background-color: var(--warning-bg);
+            border: 1px solid var(--line);
         }
         .filter-bar {
             display: flex;
@@ -89,13 +89,13 @@
                 </div>
 
                 <% if (request.getParameter("saved") != null) { %>
-                    <div style="padding: 12px 16px; margin-bottom: 16px; background: #d4edda; color: #155724; border-radius: 6px; border: 1px solid #c3e6cb;">
+                    <div class="alert alert-success">
                         ✓ Lưu đơn giặt ủi thành công!
                     </div>
                 <% } %>
                 <% if (request.getParameter("deleted") != null) {
                        boolean deleteSuccess = "1".equals(request.getParameter("deleted")); %>
-                    <div style="padding: 12px 16px; margin-bottom: 16px; background: <%= deleteSuccess ? "#d4edda" : "#f8d7da" %>; color: <%= deleteSuccess ? "#155724" : "#721c24" %>; border-radius: 6px; border: 1px solid <%= deleteSuccess ? "#c3e6cb" : "#f5c6cb" %>;">
+                    <div class="alert <%= deleteSuccess ? "alert-success" : "alert-error" %>">
                         <%= deleteSuccess ? "✓ Đã xóa đơn giặt ủi thành công!" : "Không thể xóa đơn đã được tính vào hóa đơn." %>
                     </div>
                 <% } %>
@@ -109,7 +109,7 @@
                        else if ("COMPLETED_PENDING_BILL".equals(updateResult)) updateMessage = "✓ Đã hoàn thành. Phí giặt ủi sẽ tự động cộng khi khách trả phòng.";
                        else if ("ALREADY_BILLED".equals(updateResult)) updateMessage = "Đơn này đã hoàn thành và đã được tính phí trước đó.";
                 %>
-                    <div style="padding: 12px 16px; margin-bottom: 16px; background: <%= updateSuccess ? "#d1ecf1" : "#f8d7da" %>; color: <%= updateSuccess ? "#0c5460" : "#721c24" %>; border-radius: 6px; border: 1px solid <%= updateSuccess ? "#bee5eb" : "#f5c6cb" %>;">
+                    <div class="alert <%= updateSuccess ? "alert-success" : "alert-error" %>">
                         <%= updateMessage %>
                     </div>
                 <% } %>
@@ -135,7 +135,7 @@
                     </div>
 
                     <% if (laundries != null && !laundries.isEmpty()) { %>
-                        <div class="table-wrap">
+                        <div class="table-wrap" data-admin-paginated="10">
                             <table>
                                 <thead>
                                 <tr>
