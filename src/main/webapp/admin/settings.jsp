@@ -1,6 +1,10 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%
+  if (!Boolean.TRUE.equals(request.getAttribute("settingsControllerRequest"))) {
+    response.sendRedirect(request.getContextPath() + "/admin/settings");
+    return;
+  }
   HttpSession sess = request.getSession(false);
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
   if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {

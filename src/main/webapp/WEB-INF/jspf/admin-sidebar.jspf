@@ -112,7 +112,7 @@
       <span class="nav-icon collapse-icon" aria-hidden="true">‹</span>
       <span>Thu gọn menu</span>
     </a>
-    <a class="nav-link <%= "settings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/settings.jsp">
+    <a class="nav-link <%= "settings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/settings">
       <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/settings.svg')" aria-hidden="true"></span>
       <span>Cài đặt</span>
     </a>
