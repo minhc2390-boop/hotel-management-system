@@ -199,4 +199,33 @@ public class LaundryDAO {
             em.close();
         }
     }
+
+    public List<Laundry> getLaundriesByRoomNumber(String roomNumber) {
+        if (roomNumber == null || roomNumber.trim().isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        String cleanRoom = roomNumber.trim();
+        List<Laundry> list = new ArrayList<>();
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT l FROM Laundry l WHERE LOWER(l.roomNumber) = :rm ORDER BY l.id DESC";
+            TypedQuery<Laundry> query = em.createQuery(jpql, Laundry.class);
+            query.setParameter("rm", cleanRoom.toLowerCase());
+            list.addAll(query.getResultList());
+        } catch (Exception e) {
+            System.err.println("[LaundryDAO.getLaundriesByRoomNumber DB Warning]: " + e.getMessage());
+        } finally {
+            if (em != null && em.isOpen()) em.close();
+        }
+        return list;
+    }
+
+    public double getTotalLaundryCostForRoom(String roomNumber) {
+        List<Laundry> list = getLaundriesByRoomNumber(roomNumber);
+        double total = 0.0;
+        for (Laundry l : list) {
+            total += l.getTotalPrice();
+        }
+        return total;
+    }
 }

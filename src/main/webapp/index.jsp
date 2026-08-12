@@ -606,7 +606,7 @@
                                 <img class="luxury-card-img" src="<%= request.getContextPath() %>/assets/<%= imgPath %>" alt="<%= r.getRoomType().getName() %>">
                             </a>
                             <%
-                                boolean isAvailable = !"Occupied".equalsIgnoreCase(r.getStatus()) && !"Maintenance".equalsIgnoreCase(r.getStatus());
+                                boolean isAvailable = !"Booked".equalsIgnoreCase(r.getStatus()) && !"Maintenance".equalsIgnoreCase(r.getStatus());
                                 String statusBadgeText = isAvailable ? "Còn phòng" : "Kín phòng";
                                 String badgeBgColor = isAvailable ? "rgba(22, 163, 106, 0.9)" : "rgba(217, 119, 6, 0.9)";
                             %>

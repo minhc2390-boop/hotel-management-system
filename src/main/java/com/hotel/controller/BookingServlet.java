@@ -137,15 +137,27 @@ public class BookingServlet extends HttpServlet {
 
             case "checkin":
                 int checkinId = ParamUtil.getInt(request, "id", 0);
-                bookingDAO.checkInBookings(java.util.Collections.singletonList(checkinId));
+                Booking checkinBooking = bookingDAO.getBookingById(checkinId);
+                boolean checkinSuccess = bookingDAO.checkInBookings(java.util.Collections.singletonList(checkinId));
+                if (checkinSuccess && checkinBooking != null && checkinBooking.getRoom() != null) {
+                    roomDAO.updateRoomStatus(checkinBooking.getRoom().getId(), "Booked");
+                }
                 response.sendRedirect(request.getContextPath() + "/bookings?action=list&mode=checkin");
                 break;
 
             case "checkout":
                 int checkoutId = ParamUtil.getInt(request, "id", 0);
+                String targetRoomStatus = ParamUtil.getString(request, "roomStatus", "Maintenance");
+                if (!"Available".equalsIgnoreCase(targetRoomStatus) && !"Maintenance".equalsIgnoreCase(targetRoomStatus)) {
+                    targetRoomStatus = "Maintenance";
+                }
+                Booking checkoutBooking = bookingDAO.getBookingById(checkoutId);
                 int singleBillId = bookingDAO.checkOutBookings(
-                        java.util.Collections.singletonList(checkoutId), currentUser.getId());
+                        java.util.Collections.singletonList(checkoutId), currentUser.getId(), targetRoomStatus);
                 if (singleBillId > 0) {
+                    if (checkoutBooking != null && checkoutBooking.getRoom() != null) {
+                        roomDAO.updateRoomStatus(checkoutBooking.getRoom().getId(), targetRoomStatus);
+                    }
                     response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + singleBillId);
                     return;
                 }
@@ -227,14 +239,32 @@ public class BookingServlet extends HttpServlet {
 
             if ("bulkCheckin".equals(action)) {
                 boolean success = bookingDAO.checkInBookings(bookingIds);
+                if (success) {
+                    for (Integer bId : bookingIds) {
+                        Booking b = bookingDAO.getBookingById(bId);
+                        if (b != null && b.getRoom() != null) {
+                            roomDAO.updateRoomStatus(b.getRoom().getId(), "Booked");
+                        }
+                    }
+                }
                 response.sendRedirect(request.getContextPath()
                         + "/bookings?action=list&mode=checkin&"
                         + (success ? "processed=" + bookingIds.size() : "error=bulkFailed"));
                 return;
             }
 
-            int billId = bookingDAO.checkOutBookings(bookingIds, currentUser.getId());
+            String targetRoomStatus = ParamUtil.getString(request, "roomStatus", "Maintenance");
+            if (!"Available".equalsIgnoreCase(targetRoomStatus) && !"Maintenance".equalsIgnoreCase(targetRoomStatus)) {
+                targetRoomStatus = "Maintenance";
+            }
+            int billId = bookingDAO.checkOutBookings(bookingIds, currentUser.getId(), targetRoomStatus);
             if (billId > 0) {
+                for (Integer bId : bookingIds) {
+                    Booking b = bookingDAO.getBookingById(bId);
+                    if (b != null && b.getRoom() != null) {
+                        roomDAO.updateRoomStatus(b.getRoom().getId(), targetRoomStatus);
+                    }
+                }
                 response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId);
             } else {
                 response.sendRedirect(request.getContextPath()
@@ -255,11 +285,9 @@ public class BookingServlet extends HttpServlet {
             String customerEmail = ParamUtil.getString(request, "customerEmail", "");
             String customerCccd = ParamUtil.getString(request, "customerCccd", "");
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            sdf.setLenient(false);
             try {
-                Date checkInDate = sdf.parse(checkInStr);
-                Date checkOutDate = sdf.parse(checkOutStr);
+                Date checkInDate = parseFlexibleDate(checkInStr);
+                Date checkOutDate = parseFlexibleDate(checkOutStr);
 
                 if (roomIds.isEmpty() || !checkOutDate.after(checkInDate)) {
                     response.sendRedirect(request.getContextPath()
@@ -273,6 +301,11 @@ public class BookingServlet extends HttpServlet {
                     if (room == null || !"Available".equalsIgnoreCase(room.getStatus())) {
                         response.sendRedirect(request.getContextPath()
                                 + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home"));
+                        return;
+                    }
+                    if (!bookingDAO.isRoomAvailable(roomId, checkInDate, checkOutDate)) {
+                        response.sendRedirect(request.getContextPath()
+                                + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home?error=overbooked"));
                         return;
                     }
                     selectedRooms.add(room);
@@ -385,10 +418,9 @@ public class BookingServlet extends HttpServlet {
             String customerPhone = ParamUtil.getString(request, "customerPhone", "");
             String customerCccd = ParamUtil.getString(request, "customerCccd", "");
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             try {
-                Date checkInDate = sdf.parse(checkInStr);
-                Date checkOutDate = sdf.parse(checkOutStr);
+                Date checkInDate = parseFlexibleDate(checkInStr);
+                Date checkOutDate = parseFlexibleDate(checkOutStr);
 
                 Booking booking = bookingDAO.getBookingById(bookingId);
                 Room newRoom = roomDAO.getRoomById(roomId);
@@ -418,6 +450,16 @@ public class BookingServlet extends HttpServlet {
                     booking.setRoomPrice(newRoom.getRoomType().getPricePerDay());
                     booking.setNote(note);
 
+                    if ("CheckedIn".equalsIgnoreCase(status)) {
+                        roomDAO.updateRoomStatus(newRoom.getId(), "Booked");
+                    } else if ("CheckedOut".equalsIgnoreCase(status)) {
+                        String rStatus = ParamUtil.getString(request, "roomStatus", "Maintenance");
+                        if (!"Available".equalsIgnoreCase(rStatus) && !"Maintenance".equalsIgnoreCase(rStatus)) {
+                            rStatus = "Maintenance";
+                        }
+                        roomDAO.updateRoomStatus(newRoom.getId(), rStatus);
+                    }
+
                     bookingDAO.updateBooking(booking);
                 }
                 response.sendRedirect(request.getContextPath() + "/bookings?action=list");
@@ -427,6 +469,21 @@ public class BookingServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/bookings?action=list");
             }
         }
+    }
+
+    private Date parseFlexibleDate(String dateStr) throws java.text.ParseException {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            throw new java.text.ParseException("Date string is empty", 0);
+        }
+        dateStr = dateStr.trim();
+        if (dateStr.contains("T")) {
+            try {
+                return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").parse(dateStr);
+            } catch (java.text.ParseException e) {
+                return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(dateStr);
+            }
+        }
+        return new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
     }
 
     private List<Integer> getRequestedRoomIds(HttpServletRequest request) {
