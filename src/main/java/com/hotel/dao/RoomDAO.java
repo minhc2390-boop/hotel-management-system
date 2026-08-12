@@ -25,8 +25,8 @@ public class RoomDAO {
                     .getSingleResult();
 
                 if (occupiedCount != null && occupiedCount > 0) {
-                    if (!"Occupied".equalsIgnoreCase(r.getStatus())) {
-                        r.setStatus("Occupied");
+                    if (!"Booked".equalsIgnoreCase(r.getStatus())) {
+                        r.setStatus("Booked");
                         em.merge(r);
                     }
                 } else {
@@ -95,7 +95,7 @@ public class RoomDAO {
             } else {
                 List<Room> rooms = em.createQuery("SELECT r FROM Room r WHERE r.status != 'Maintenance'", Room.class).getResultList();
                 for (Room r : rooms) {
-                    if (!"Occupied".equalsIgnoreCase(r.getStatus()) && !"Available".equalsIgnoreCase(r.getStatus())) {
+                    if (!"Booked".equalsIgnoreCase(r.getStatus()) && !"Available".equalsIgnoreCase(r.getStatus())) {
                         r.setStatus("Available");
                         em.merge(r);
                     }
@@ -131,7 +131,7 @@ public class RoomDAO {
         syncRoomStatuses();
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT r FROM Room r WHERE r.status != 'Maintenance' ORDER BY r.roomNumber ASC";
+            String jpql = "SELECT r FROM Room r WHERE r.status = 'Available' ORDER BY r.roomNumber ASC";
             TypedQuery<Room> query = em.createQuery(jpql, Room.class);
             List<Room> list = query.getResultList();
             if (list != null && !list.isEmpty()) {

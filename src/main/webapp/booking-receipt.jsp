@@ -220,7 +220,7 @@
                             <%
                                 String statusText = "Chờ xác nhận";
                                 if ("Confirmed".equals(booking.getStatus())) statusText = "Đã xác nhận";
-                                else if ("CheckedIn".equals(booking.getStatus())) statusText = "Đã nhận phòng";
+                                else if ("CheckedIn".equals(booking.getStatus())) statusText = "Đang ở";
                                 else if ("CheckedOut".equals(booking.getStatus())) statusText = "Đã trả phòng";
                                 else if ("Cancelled".equals(booking.getStatus())) statusText = "Đã hủy";
                             %>

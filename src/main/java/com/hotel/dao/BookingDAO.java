@@ -92,7 +92,7 @@ public class BookingDAO {
         try {
             String jpql = "SELECT COUNT(b) FROM Booking b " +
                           "WHERE b.room.id = :roomId " +
-                          "  AND b.status NOT IN ('Cancelled', 'CANCELLED', 'CheckedOut', 'CHECKED_OUT') " +
+                          "  AND LOWER(b.status) != 'cancelled' " +
                           "  AND :checkIn < b.checkOutDate " +
                           "  AND :checkOut > b.checkInDate";
 
@@ -257,7 +257,7 @@ public class BookingDAO {
 
             for (Booking booking : bookings) {
                 booking.setStatus("CheckedIn");
-                booking.getRoom().setStatus("Occupied");
+                booking.getRoom().setStatus("Booked");
             }
             tx.commit();
             return true;
@@ -273,12 +273,23 @@ public class BookingDAO {
     /**
      * Checks out rooms of one customer in one transaction and creates one bill
      * containing a separate room-charge detail for every selected booking.
+     * Defaults room status after check-out to "Maintenance".
      *
      * @return the generated bill id, or -1 when validation/persistence fails
      */
     public int checkOutBookings(List<Integer> bookingIds, int fallbackUserId) {
+        return checkOutBookings(bookingIds, fallbackUserId, "Maintenance");
+    }
+
+    /**
+     * Checks out rooms with customizable target room status ('Maintenance' or 'Available').
+     */
+    public int checkOutBookings(List<Integer> bookingIds, int fallbackUserId, String targetRoomStatus) {
         if (bookingIds == null || bookingIds.isEmpty()) {
             return -1;
+        }
+        if (targetRoomStatus == null || (!targetRoomStatus.equalsIgnoreCase("Available") && !targetRoomStatus.equalsIgnoreCase("Maintenance"))) {
+            targetRoomStatus = "Maintenance";
         }
 
         EntityManager em = DBContext.getEntityManager();
@@ -337,7 +348,7 @@ public class BookingDAO {
                 em.persist(roomCharge);
 
                 booking.setStatus("CheckedOut");
-                booking.getRoom().setStatus("Available");
+                booking.getRoom().setStatus(targetRoomStatus);
             }
 
             tx.commit();

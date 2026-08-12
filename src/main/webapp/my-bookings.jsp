@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Booking" %>
 <%@ page import="java.util.List" %>
@@ -80,7 +80,7 @@
                     for (Booking b : bookings) {
                         String statusText = "Chờ xác nhận";
                         if ("Confirmed".equals(b.getStatus())) statusText = "Đã xác nhận";
-                        else if ("CheckedIn".equals(b.getStatus())) statusText = "Đã nhận phòng";
+                        else if ("CheckedIn".equals(b.getStatus())) statusText = "Đang ở";
                         else if ("CheckedOut".equals(b.getStatus())) statusText = "Đã trả phòng";
                         else if ("Cancelled".equals(b.getStatus())) statusText = "Đã hủy";
                 %>

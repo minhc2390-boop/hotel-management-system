@@ -343,7 +343,7 @@
                         if (limit++ >= 5) break; // Chỉ hiển thị tối đa 5 đơn gần đây
                         String statusText = "Chờ xác nhận";
                         if ("Confirmed".equals(b.getStatus())) statusText = "Đã xác nhận";
-                        else if ("CheckedIn".equals(b.getStatus())) statusText = "Đã nhận phòng";
+                        else if ("CheckedIn".equals(b.getStatus())) statusText = "Đang ở";
                         else if ("CheckedOut".equals(b.getStatus())) statusText = "Đã trả phòng";
                         else if ("Cancelled".equals(b.getStatus())) statusText = "Đã hủy";
                 %>
