@@ -1,6 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <script>
   (function() {
+    var savedTheme = localStorage.getItem("nestora_theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
     if (localStorage.getItem("sidebarCollapsed") === "true") {
       document.documentElement.classList.add("sidebar-collapsed");
       document.documentElement.classList.add("collapsed");
@@ -106,7 +108,7 @@
   </div>
 
   <div class="sidebar-foot">
-    <a class="nav-link" href="#" data-sidebar-collapse>
+    <a class="nav-link" href="javascript:void(0)" data-sidebar-collapse>
       <span class="nav-icon collapse-icon" aria-hidden="true">‹</span>
       <span>Thu gọn menu</span>
     </a>

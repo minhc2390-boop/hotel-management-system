@@ -104,6 +104,29 @@ public class BillDAO {
         return false;
     }
 
+    public boolean markBillPaid(int id, String paymentMethod) {
+        EntityManager em = DBContext.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            Bill bill = em.find(Bill.class, id);
+            if (bill == null || !"Unpaid".equals(bill.getStatus())) {
+                tx.rollback();
+                return false;
+            }
+            bill.setPaymentMethod(paymentMethod);
+            bill.setStatus("Paid");
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
     public boolean updateBillTotal(int id, double total) {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();

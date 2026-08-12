@@ -1,6 +1,8 @@
 package com.hotel.dao;
 
 import com.hotel.model.User;
+import com.hotel.util.AuthUtil;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
@@ -19,11 +21,14 @@ public class UserDAO {
     }
 
     public User findByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) return null;
+        String searchEmail = email.trim().toLowerCase();
+        
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT u FROM User u WHERE u.email = :email";
+            String jpql = "SELECT u FROM User u WHERE LOWER(u.email) = :email";
             TypedQuery<User> query = em.createQuery(jpql, User.class);
-            query.setParameter("email", email);
+            query.setParameter("email", searchEmail);
             List<User> results = query.getResultList();
             if (!results.isEmpty()) {
                 return results.get(0);
@@ -32,6 +37,12 @@ public class UserDAO {
             e.printStackTrace();
         } finally {
             em.close();
+        }
+
+        for (User u : memoryUsers.values()) {
+            if (u.getEmail() != null && u.getEmail().trim().equalsIgnoreCase(searchEmail)) {
+                return u;
+            }
         }
         return null;
     }
@@ -59,12 +70,14 @@ public class UserDAO {
     public User login(String username, String password) {
         String uStr = username != null ? username.trim() : "";
         String pStr = password != null ? password.trim() : "";
+        // 1. Mã hóa mật khẩu đầu vào sang dạng SHA-256
+        String hashedInput = AuthUtil.hashPassword(pStr);
 
         if (uStr.isEmpty()) return null;
 
         String keyLower = uStr.toLowerCase();
 
-        // 1. Instant Guaranteed Admin Handling (Synced with DB)
+        // 2. Xử lý đăng nhập ưu tiên cho tài khoản Admin mặc định
         if ("admin".equals(keyLower) || "admin@nestora.com".equals(keyLower) || "admin@gmail.com".equals(keyLower) || "sa".equals(keyLower)) {
             User dbAdmin = ensureDefaultAdminAccount();
             if (dbAdmin != null) {
@@ -72,18 +85,23 @@ public class UserDAO {
             }
         }
 
-        // 2. Check DB first for username or email
+        // 3. Kiểm tra thông tin người dùng từ Database
         try {
             EntityManager em = DBContext.getEntityManager();
             try {
                 String jpql = "SELECT u FROM User u WHERE LOWER(u.username) = :key OR LOWER(u.email) = :key";
                 TypedQuery<User> query = em.createQuery(jpql, User.class);
                 query.setParameter("key", keyLower);
+                
+                // Lấy danh sách người dùng từ Database (biến results được khai báo tại đây)
                 List<User> results = query.getResultList();
+                
+                // Lặp qua từng người dùng để kiểm tra mật khẩu
                 for (User u : results) {
                     if (u.getPassword() != null) {
                         String uPass = u.getPassword().trim();
-                        if (uPass.equals(pStr) || uPass.equalsIgnoreCase(pStr)) {
+                        // So sánh mật khẩu đã hash SHA-256 (hoặc mật khẩu thô hỗ trợ dữ liệu cũ)
+                        if (uPass.equalsIgnoreCase(hashedInput) || uPass.equals(pStr) || uPass.equalsIgnoreCase(pStr)) {
                             if (u.getUsername() != null) memoryUsers.put(u.getUsername().toLowerCase(), u);
                             if (u.getEmail() != null) memoryUsers.put(u.getEmail().toLowerCase(), u);
                             return u;
@@ -97,7 +115,7 @@ public class UserDAO {
             e.printStackTrace();
         }
 
-        // 3. Check In-Memory Store for newly added users by username OR email
+        // 4. Kiểm tra trong bộ nhớ đệm tạm thời (Memory Store)
         for (User memUser : memoryUsers.values()) {
             if (memUser != null) {
                 String mUser = memUser.getUsername() != null ? memUser.getUsername().trim().toLowerCase() : "";
@@ -105,7 +123,7 @@ public class UserDAO {
                 
                 if (keyLower.equals(mUser) || keyLower.equals(mEmail)) {
                     String mPass = memUser.getPassword() != null ? memUser.getPassword().trim() : "";
-                    if (pStr.isEmpty() || mPass.equals(pStr) || mPass.equalsIgnoreCase(pStr)) {
+                    if (pStr.isEmpty() || mPass.equalsIgnoreCase(hashedInput) || mPass.equals(pStr) || mPass.equalsIgnoreCase(pStr)) {
                         return memUser;
                     }
                 }
@@ -115,6 +133,13 @@ public class UserDAO {
         return null;
     }
 
+    /**
+     * Phương thức checkLogin theo đúng yêu cầu đề bài Task 1.2
+     */
+    public User checkLogin(String username, String password) {
+        return login(username, password);
+    }
+    
     public User ensureDefaultAdminAccount() {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
@@ -122,15 +147,16 @@ public class UserDAO {
             tx.begin();
             List<User> list = em.createQuery("SELECT u FROM User u WHERE LOWER(u.username) = 'admin'", User.class).getResultList();
             User admin;
+            String defaultAdminPass = AuthUtil.hashPassword("admin123");
             if (list.isEmpty()) {
-                admin = new User("admin", "admin123", "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
+                admin = new User("admin", defaultAdminPass, "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
                 em.persist(admin);
                 em.flush();
             } else {
                 admin = list.get(0);
                 boolean changed = false;
-                if (!"admin123".equals(admin.getPassword())) {
-                    admin.setPassword("admin123");
+                if (!defaultAdminPass.equals(admin.getPassword()) && !"admin123".equals(admin.getPassword())) {
+                    admin.setPassword(defaultAdminPass);
                     changed = true;
                 }
                 if (!"Admin".equalsIgnoreCase(admin.getRole())) {
@@ -148,7 +174,8 @@ public class UserDAO {
         } catch (Exception e) {
             if (tx != null && tx.isActive()) tx.rollback();
             e.printStackTrace();
-            User defaultAdmin = new User("admin", "admin123", "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
+            String defaultAdminPass = AuthUtil.hashPassword("admin123");
+            User defaultAdmin = new User("admin", defaultAdminPass, "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
             defaultAdmin.setId(1);
             memoryUsers.put("admin", defaultAdmin);
             return defaultAdmin;
@@ -159,8 +186,14 @@ public class UserDAO {
 
     public boolean register(User user) {
         if (user == null || user.getUsername() == null) return false;
-        
-        // Store in memory cache immediately for guaranteed login availability
+
+        // Tự động mã hóa mật khẩu nếu chưa được mã hóa SHA-256 (64 ký tự hex)
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            if (user.getPassword().length() != 64) {
+                user.setPassword(AuthUtil.hashPassword(user.getPassword()));
+            }
+        }
+
         String uKey = user.getUsername().trim().toLowerCase();
         String eKey = user.getEmail() != null ? user.getEmail().trim().toLowerCase() : "";
         memoryUsers.put(uKey, user);
@@ -182,6 +215,10 @@ public class UserDAO {
             em.close();
         }
         return true;
+    }
+    
+    public boolean insertUser(User user) {
+        return register(user);
     }
 
     public User getUserById(int id) {
@@ -231,6 +268,12 @@ public class UserDAO {
     }
 
     public boolean updateUser(User user) {
+        if (user != null && user.getPassword() != null && !user.getPassword().isEmpty()) {
+            if (user.getPassword().length() != 64) {
+                user.setPassword(AuthUtil.hashPassword(user.getPassword()));
+            }
+        }
+
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {

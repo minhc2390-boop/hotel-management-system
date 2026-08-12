@@ -72,6 +72,14 @@
               <input type="search" placeholder="Tìm theo tên, email, SĐT...">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
             </div>
+            <div class="admin-filter-group">
+              <select class="admin-filter-select" data-admin-filter aria-label="Lọc theo vai trò">
+                <option value="">Tất cả vai trò</option>
+                <option value="Admin">Quản trị viên</option>
+                <option value="Lễ tân">Lễ tân</option>
+                <option value="Hội viên">Hội viên</option>
+              </select>
+            </div>
             <div class="table-meta"><%= users != null ? users.size() : 0 %> người dùng</div>
           </div>
 

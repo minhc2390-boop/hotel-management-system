@@ -45,6 +45,13 @@
                 <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
               </svg>
             </div>
+            <div class="admin-filter-group">
+              <select class="admin-filter-select" data-admin-filter aria-label="Lọc theo vai trò">
+                <option value="">Tất cả vai trò</option>
+                <option value="Quản lý">Quản lý</option>
+                <option value="Lễ tân">Lễ tân</option>
+              </select>
+            </div>
             <div class="table-meta"><%= employees != null ? employees.size() : 0 %> nhân viên</div>
           </div>
           

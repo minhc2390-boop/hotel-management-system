@@ -166,17 +166,9 @@ public class BookingServlet extends HttpServlet {
                 break;
 
             case "cancel":
-                int cancelId = ParamUtil.getInt(request, "id", 0);
-                Booking cancelBooking = bookingDAO.getBookingById(cancelId);
-                if (cancelBooking != null) {
-                    bookingDAO.updateBookingStatus(cancelId, "Cancelled");
-                    roomDAO.updateRoomStatus(cancelBooking.getRoom().getId(), "Available");
-                }
-                if ("Customer".equals(currentUser.getRole())) {
-                    response.sendRedirect(request.getContextPath() + "/bookings?action=mybookings");
-                } else {
-                    response.sendRedirect(request.getContextPath() + "/bookings?action=list");
-                }
+                String cancelReturnAction = "Customer".equals(currentUser.getRole()) ? "mybookings" : "list";
+                response.sendRedirect(request.getContextPath()
+                        + "/bookings?action=" + cancelReturnAction + "&error=cancelReasonRequired");
                 break;
 
             default:
@@ -199,6 +191,36 @@ public class BookingServlet extends HttpServlet {
         }
 
         User currentUser = AuthUtil.getUser(request);
+
+        if ("cancel".equals(action)) {
+            int bookingId = ParamUtil.getInt(request, "bookingId", 0);
+            String cancellationReason = ParamUtil.getString(request, "cancellationReason", "");
+            Booking booking = bookingDAO.getBookingById(bookingId);
+            boolean isManager = currentUser != null
+                    && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()));
+            boolean isOwner = currentUser != null && booking != null
+                    && ((booking.getCreatedBy() != null
+                            && booking.getCreatedBy().getId() == currentUser.getId())
+                        || (booking.getCustomer() != null && currentUser.getEmail() != null
+                            && currentUser.getEmail().equalsIgnoreCase(booking.getCustomer().getCustomerEmail())));
+            String returnAction = isManager ? "list" : "mybookings";
+
+            if (booking == null || (!isManager && !isOwner)) {
+                response.sendRedirect(request.getContextPath() + "/home");
+                return;
+            }
+            if (cancellationReason.length() < 3 || cancellationReason.length() > 500) {
+                response.sendRedirect(request.getContextPath()
+                        + "/bookings?action=" + returnAction + "&error=invalidCancelReason");
+                return;
+            }
+
+            boolean cancelled = bookingDAO.cancelBooking(bookingId, cancellationReason);
+            response.sendRedirect(request.getContextPath()
+                    + "/bookings?action=" + returnAction
+                    + (cancelled ? "&cancelled=1" : "&error=cancelFailed"));
+            return;
+        }
 
         if ("bulkCheckin".equals(action) || "bulkCheckout".equals(action)) {
             if (currentUser == null || (!"Admin".equals(currentUser.getRole())
@@ -315,6 +337,10 @@ public class BookingServlet extends HttpServlet {
                             }
                             if (!customerCccd.isEmpty() && !customerCccd.equals(customer.getCustomerCccd())) {
                                 customer.setCustomerCccd(customerCccd);
+                                isChanged = true;
+                            }
+                            if (!customerEmail.isEmpty() && !customerEmail.equals(customer.getCustomerEmail())) {
+                                customer.setCustomerEmail(customerEmail);
                                 isChanged = true;
                             }
                             if (isChanged) {

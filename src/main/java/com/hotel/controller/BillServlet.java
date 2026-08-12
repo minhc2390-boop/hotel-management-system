@@ -5,6 +5,7 @@ import com.hotel.dao.BillDetailDAO;
 import com.hotel.dao.RoomDAO;
 import com.hotel.dao.ServiceDAO;
 import com.hotel.model.*;
+import com.hotel.util.ParamUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -133,22 +134,9 @@ public class BillServlet extends HttpServlet {
                 break;
 
             case "pay":
-                // Only Admin/Receptionist can process payments
-                if (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole())) {
-                    response.sendRedirect(request.getContextPath() + "/home");
-                    return;
-                }
-                int payBillId = Integer.parseInt(request.getParameter("id"));
-                billDAO.updateBillStatus(payBillId, "Paid");
-                
-                // Revert room status to Available upon check out (payment)
-                List<BillDetail> payDetails = billDetailDAO.getBillDetailsByBillId(payBillId);
-                for (BillDetail bd : payDetails) {
-                    if (bd.getRoomId() != null) {
-                        roomDAO.updateRoomStatus(bd.getRoomId(), "Available");
-                    }
-                }
-                response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + payBillId);
+                int payBillId = ParamUtil.getInt(request, "id", 0);
+                response.sendRedirect(request.getContextPath()
+                        + "/bills?action=detail&id=" + payBillId + "&error=paymentMethodRequired");
                 break;
 
             case "cancel":
@@ -199,7 +187,35 @@ public class BillServlet extends HttpServlet {
             return;
         }
 
-        if ("createBooking".equals(action)) {
+        if ("pay".equals(action)) {
+            if (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole())) {
+                response.sendRedirect(request.getContextPath() + "/home");
+                return;
+            }
+
+            int billId = ParamUtil.getInt(request, "billId", 0);
+            String paymentMethod = ParamUtil.getString(request, "paymentMethod", "");
+            if (!"Cash".equals(paymentMethod)
+                    && !"BankTransfer".equals(paymentMethod)
+                    && !"Card".equals(paymentMethod)) {
+                response.sendRedirect(request.getContextPath()
+                        + "/bills?action=detail&id=" + billId + "&error=paymentMethodRequired");
+                return;
+            }
+
+            boolean paid = billDAO.markBillPaid(billId, paymentMethod);
+            if (paid) {
+                List<BillDetail> payDetails = billDetailDAO.getBillDetailsByBillId(billId);
+                for (BillDetail detail : payDetails) {
+                    if (detail.getRoomId() != null) {
+                        roomDAO.updateRoomStatus(detail.getRoomId(), "Available");
+                    }
+                }
+            }
+            response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId
+                    + (paid ? "&paid=1" : "&error=paymentFailed"));
+
+        } else if ("createBooking".equals(action)) {
             int roomId = Integer.parseInt(request.getParameter("roomId"));
             String checkInStr = request.getParameter("checkInDate");
             String checkOutStr = request.getParameter("checkOutDate");

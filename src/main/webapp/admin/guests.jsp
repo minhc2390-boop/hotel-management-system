@@ -70,6 +70,13 @@
               <input type="search" placeholder="Tìm theo tên, email, CCCD, SĐT...">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
             </div>
+            <div class="admin-filter-group">
+              <select class="admin-filter-select" data-admin-filter data-filter-key="emailStatus" aria-label="Lọc theo thông tin email">
+                <option value="">Tất cả hồ sơ</option>
+                <option value="has-email">Có email</option>
+                <option value="no-email">Chưa có email</option>
+              </select>
+            </div>
             <div class="table-meta"><%= customers != null ? customers.size() : 0 %> khách hàng</div>
           </div>
 
@@ -89,7 +96,7 @@
                 <% if (customers != null && !customers.isEmpty()) { 
                      for (Customer c : customers) { 
                 %>
-                  <tr>
+                  <tr data-email-status="<%=c.getCustomerEmail() != null && !c.getCustomerEmail().trim().isEmpty() ? "has-email" : "no-email"%>">
                     <td class="table-primary">#GST<%= String.format("%04d", c.getCustomerId()) %></td>
                     <td class="table-strong"><%= c.getCustomerName() %></td>
                     <td><%= c.getCustomerCccd() != null ? c.getCustomerCccd() : "-" %></td>
