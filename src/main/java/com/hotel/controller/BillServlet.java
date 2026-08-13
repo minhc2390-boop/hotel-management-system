@@ -79,6 +79,7 @@ public class BillServlet extends HttpServlet {
                 List<BillDetail> details = billDetailDAO.getBillDetailsByBillId(billId);
                 List<Service> services = serviceDAO.getAllServices();
                 
+<<<<<<< HEAD
                 com.hotel.dao.SystemSettingDAO settingDAO = new com.hotel.dao.SystemSettingDAO();
                 String bankId = settingDAO.getSetting("hotel_bank_id");
                 String bankAccount = settingDAO.getSetting("hotel_bank_account");
@@ -86,14 +87,63 @@ public class BillServlet extends HttpServlet {
                 if (bankId.isEmpty()) bankId = "MB";
                 if (bankAccount.isEmpty()) bankAccount = "1903567890123";
                 if (bankName.isEmpty()) bankName = "CONG TY NESTORA HOTEL";
+=======
+                // 1. Fetch VietQR bank info from SystemSettingDAO
+                com.hotel.dao.SystemSettingDAO systemSettingDAO = new com.hotel.dao.SystemSettingDAO();
+                String bankId = systemSettingDAO.getBankId();
+                String bankAccount = systemSettingDAO.getBankAccount();
+                String bankName = systemSettingDAO.getBankName();
+
+                // 2. Fetch Laundry list and calculate formula:
+                // Tổng tiền = (Đơn giá phòng × Số đêm) + Tiền dịch vụ đi kèm + Tiền dịch vụ giặt ủi
+                String roomNumber = "";
+                double roomTotal = 0.0;
+                double serviceTotal = 0.0;
+
+                if (details != null) {
+                    for (BillDetail bd : details) {
+                        double itemTotal = bd.getPrice() * bd.getQuantity();
+                        if (bd.getRoomId() != null || bd.getRoom() != null) {
+                            roomTotal += itemTotal;
+                            if (roomNumber.isEmpty()) {
+                                roomNumber = bd.getRoom() != null ? bd.getRoom().getRoomNumber() : String.valueOf(bd.getRoomId());
+                            }
+                        } else {
+                            serviceTotal += itemTotal;
+                        }
+                    }
+                }
+
+                com.hotel.dao.LaundryDAO laundryDAO = new com.hotel.dao.LaundryDAO();
+                List<Laundry> laundryList = laundryDAO.getLaundriesByRoomNumber(roomNumber);
+                double laundryTotal = 0.0;
+                if (laundryList != null) {
+                    for (Laundry l : laundryList) {
+                        laundryTotal += l.getTotalPrice();
+                    }
+                }
+
+                double calculatedTotal = roomTotal + serviceTotal + laundryTotal;
+                if (calculatedTotal > 0 && Math.abs(calculatedTotal - bill.getTotalAmount()) > 0.01) {
+                    bill.setTotalAmount(calculatedTotal);
+                    billDAO.updateBillTotal(billId, calculatedTotal);
+                }
+>>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
 
                 request.setAttribute("bankId", bankId);
                 request.setAttribute("bankAccount", bankAccount);
                 request.setAttribute("bankName", bankName);
+<<<<<<< HEAD
                 
+=======
+>>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
                 request.setAttribute("bill", bill);
                 request.setAttribute("details", details);
                 request.setAttribute("services", services);
+                request.setAttribute("laundryList", laundryList);
+                request.setAttribute("laundryTotal", laundryTotal);
+                request.setAttribute("roomTotal", roomTotal);
+                request.setAttribute("serviceTotal", serviceTotal);
                 request.getRequestDispatcher("/bill-details.jsp").forward(request, response);
                 break;
 

@@ -1,9 +1,10 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Booking" %>
 <%@ page import="com.hotel.model.Customer" %>
 <%@ page import="com.hotel.model.Room" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Date" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Locale" %>
@@ -17,6 +18,7 @@
     List<Room> rooms = (List<Room>) request.getAttribute("rooms");
 
     boolean isEdit = (booking != null);
+    int presetRoomId = com.hotel.util.ParamUtil.getInt(request, "roomId", 0);
     
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -33,6 +35,9 @@
             if (booking.getCustomer().getCustomerPhone() != null) phoneVal = booking.getCustomer().getCustomerPhone();
             if (booking.getCustomer().getCustomerCccd() != null) cccdVal = booking.getCustomer().getCustomerCccd();
         }
+    } else if (presetRoomId > 0) {
+        checkInVal = sdf.format(new java.util.Date());
+        checkOutVal = sdf.format(new java.util.Date(System.currentTimeMillis() + 86400000L));
     }
 %>
 <!DOCTYPE html>
@@ -411,7 +416,7 @@
                                         <select class="form-control" id="status" name="status" required>
                                             <option value="Pending" <%= "Pending".equals(booking.getStatus()) ? "selected" : "" %>>Chờ xác nhận (Pending)</option>
                                             <option value="Confirmed" <%= "Confirmed".equals(booking.getStatus()) ? "selected" : "" %>>Đã xác nhận (Confirmed)</option>
-                                            <option value="CheckedIn" <%= "CheckedIn".equals(booking.getStatus()) ? "selected" : "" %>>Đã nhận phòng (CheckedIn)</option>
+                                            <option value="CheckedIn" <%= "CheckedIn".equals(booking.getStatus()) ? "selected" : "" %>>Đang ở (CheckedIn)</option>
                                             <option value="CheckedOut" <%= "CheckedOut".equals(booking.getStatus()) ? "selected" : "" %>>Đã trả phòng (CheckedOut)</option>
                                             <option value="Cancelled" <%= "Cancelled".equals(booking.getStatus()) ? "selected" : "" %>>Đã hủy (Cancelled)</option>
                                         </select>
@@ -422,7 +427,7 @@
                             </div>
 
                             <%
-                                int selectedRoomId = isEdit && booking.getRoom() != null ? booking.getRoom().getId() : 0;
+                                int selectedRoomId = isEdit && booking.getRoom() != null ? booking.getRoom().getId() : presetRoomId;
                             %>
                             <% if (isEdit) { %>
                                 <input type="hidden" id="roomId" name="roomId" value="<%= selectedRoomId %>">
@@ -663,6 +668,14 @@
                     roomPicker.scrollIntoView({ behavior: "smooth", block: "center" });
                 }
             });
+        }
+
+        if (!isEditMode && <%= presetRoomId %> > 0) {
+            var presetCard = document.querySelector('.booking-room-card[data-room-id="<%= presetRoomId %>"]');
+            if (presetCard && !presetCard.disabled) {
+                presetCard.classList.add('is-selected');
+                presetCard.setAttribute('aria-selected', 'true');
+            }
         }
 
         syncSelectedRoomInputs();

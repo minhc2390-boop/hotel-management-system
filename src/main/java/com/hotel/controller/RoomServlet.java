@@ -107,7 +107,9 @@ public class RoomServlet extends HttpServlet {
                 
             case "map":
                 List<Room> mapRooms = roomDAO.getAllRooms();
+                List<com.hotel.model.Booking> mapBookings = new com.hotel.dao.BookingDAO().getAllBookings();
                 request.setAttribute("rooms", mapRooms);
+                request.setAttribute("bookings", mapBookings);
                 request.getRequestDispatcher("/admin/room-map.jsp").forward(request, response);
                 break;
                 
