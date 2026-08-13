@@ -55,7 +55,7 @@ public class Service {
     }
 
     public String getName() {
-        return fixEncoding(name);
+        return com.hotel.util.EncodingUtil.fixEncoding(name);
     }
 
     public void setName(String name) {
@@ -71,7 +71,7 @@ public class Service {
     }
 
     public String getDescription() {
-        return fixEncoding(description);
+        return com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public void setDescription(String description) {
@@ -87,26 +87,11 @@ public class Service {
     }
 
     public String getUnit() {
-        return fixEncoding(unit);
+        return com.hotel.util.EncodingUtil.fixEncoding(unit);
     }
 
     public void setUnit(String unit) {
         this.unit = unit;
-    }
-
-    private String fixEncoding(String str) {
-        if (str == null || str.trim().isEmpty()) return "";
-        String s = str.trim();
-        try {
-            if (s.contains("Ã") || s.contains("Â") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘")) {
-                byte[] bytes = s.getBytes("ISO-8859-1");
-                String decoded = new String(bytes, "UTF-8");
-                if (!decoded.contains("ï¿½") && !decoded.contains("\uFFFD")) {
-                    return decoded;
-                }
-            }
-        } catch (Exception e) {}
-        return s;
     }
 
     @Override

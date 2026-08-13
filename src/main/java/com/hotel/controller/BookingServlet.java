@@ -39,27 +39,22 @@ public class BookingServlet extends HttpServlet {
             throws ServletException, IOException {
         String action = ParamUtil.getString(request, "action", "list");
 
-        // Cho phép truy cập không đăng nhập đối với chức năng xem hóa đơn đặt phòng (receipt)
-        if (!"receipt".equals(action)) {
-            if (!AuthUtil.isAuthenticated(request)) {
-                response.sendRedirect(request.getContextPath() + "/login");
+        // 1. Cho phép khách vãng lai (không đăng nhập) xem và đặt phòng
+        if ("book".equalsIgnoreCase(action) || "bookForm".equalsIgnoreCase(action) || "form".equalsIgnoreCase(action)) {
+            int bookRoomId = ParamUtil.getInt(request, "roomId", 0);
+            Room bookRoom = roomDAO.getRoomById(bookRoomId);
+            if (bookRoom == null) {
+                response.sendRedirect(request.getContextPath() + "/home");
                 return;
             }
+            request.setAttribute("room", bookRoom);
+            request.getRequestDispatcher("/booking.jsp").forward(request, response);
+            return;
         }
 
         User currentUser = AuthUtil.getUser(request);
 
-        // Khách hàng tự xem lịch sử đặt phòng của mình
-        if (currentUser != null && ("mybookings".equals(action) || ("list".equals(action) && "Customer".equals(currentUser.getRole())))) {
-            List<Booking> myBookings = bookingDAO.getBookingsByUserId(currentUser.getId(), currentUser.getEmail());
-            request.setAttribute("bookings", myBookings);
-            request.setAttribute("reviewedBookingIds",
-                    feedbackDAO.getReviewedBookingIdsForUser(currentUser.getId()));
-            request.getRequestDispatcher("/my-bookings.jsp").forward(request, response);
-            return;
-        }
-
-        // Xem phiếu đặt phòng (cả Admin và Khách hàng đều xem được phiếu của họ)
+        // 2. Cho phép xem phiếu đặt phòng (receipt) cho cả khách vãng lai lẫn người dùng đã đăng nhập
         if ("receipt".equals(action)) {
             int id = ParamUtil.getInt(request, "id", 0);
             Booking booking = bookingDAO.getBookingById(id);
@@ -68,17 +63,39 @@ public class BookingServlet extends HttpServlet {
                 return;
             }
             // Bảo mật: Nếu đăng nhập dưới dạng Customer, chỉ xem được phiếu đặt của chính mình (hoặc có email khớp)
-            boolean isOwnBooking = false;
-            if (currentUser != null) {
-                isOwnBooking = (booking.getCreatedBy() != null && booking.getCreatedBy().getId() == currentUser.getId()) ||
-                               (booking.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(booking.getCustomer().getCustomerEmail()));
-            }
-            if (currentUser != null && "Customer".equals(currentUser.getRole()) && !isOwnBooking) {
-                response.sendRedirect(request.getContextPath() + "/home");
-                return;
+            if (currentUser != null && "Customer".equals(currentUser.getRole())) {
+                boolean isOwnBooking = (booking.getCreatedBy() != null && booking.getCreatedBy().getId() == currentUser.getId()) ||
+                                       (booking.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(booking.getCustomer().getCustomerEmail()));
+                if (!isOwnBooking) {
+                    response.sendRedirect(request.getContextPath() + "/home");
+                    return;
+                }
+            } else if (currentUser != null && !"Admin".equalsIgnoreCase(currentUser.getRole())) {
+                // Nhân viên (Receptionist/Staff) chỉ được xem phiếu của đơn do chính mình tạo
+                boolean isOwnBooking = booking.getCreatedBy() != null && booking.getCreatedBy().getId() == currentUser.getId();
+                if (!isOwnBooking) {
+                    response.sendRedirect(request.getContextPath() + "/bookings?action=list&error=permissionDenied");
+                    return;
+                }
             }
             request.setAttribute("booking", booking);
             request.getRequestDispatcher("/booking-receipt.jsp").forward(request, response);
+            return;
+        }
+
+        // Kiểm tra đăng nhập cho các chức năng còn lại
+        if (!AuthUtil.isAuthenticated(request)) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        // Khách hàng tự xem lịch sử đặt phòng của mình
+        if (currentUser != null && ("mybookings".equals(action) || ("list".equals(action) && "Customer".equals(currentUser.getRole())))) {
+            List<Booking> myBookings = bookingDAO.getBookingsByUserId(currentUser.getId(), currentUser.getEmail());
+            request.setAttribute("bookings", myBookings);
+            request.setAttribute("reviewedBookingIds",
+                    feedbackDAO.getReviewedBookingIdsForUser(currentUser.getId()));
+            request.getRequestDispatcher("/my-bookings.jsp").forward(request, response);
             return;
         }
 
@@ -91,7 +108,7 @@ public class BookingServlet extends HttpServlet {
         switch (action) {
             case "list":
                 String mode = ParamUtil.getString(request, "mode", "");
-                List<Booking> allBookings = bookingDAO.getAllBookings();
+                List<Booking> allBookings = bookingDAO.getBookingsByRole(currentUser);
                 
                 if (allBookings != null) {
                     if ("checkin".equals(mode)) {
@@ -119,6 +136,16 @@ public class BookingServlet extends HttpServlet {
             case "edit":
                 int editId = ParamUtil.getInt(request, "id", 0);
                 Booking booking = bookingDAO.getBookingById(editId);
+                if (booking == null) {
+                    response.sendRedirect(request.getContextPath() + "/bookings?action=list");
+                    return;
+                }
+                if (!"Admin".equalsIgnoreCase(currentUser.getRole())) {
+                    if (booking.getCreatedBy() == null || booking.getCreatedBy().getId() != currentUser.getId()) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=list&error=permissionDenied");
+                        return;
+                    }
+                }
                 request.setAttribute("booking", booking);
                 request.setAttribute("customers", customerDAO.getAllCustomers());
                 request.setAttribute("rooms", roomDAO.getAllRooms()); // Lấy tất cả phòng để Admin có thể đổi phòng
@@ -129,6 +156,12 @@ public class BookingServlet extends HttpServlet {
                 int deleteId = ParamUtil.getInt(request, "id", 0);
                 Booking deleteBooking = bookingDAO.getBookingById(deleteId);
                 if (deleteBooking != null) {
+                    if (!"Admin".equalsIgnoreCase(currentUser.getRole())) {
+                        if (deleteBooking.getCreatedBy() == null || deleteBooking.getCreatedBy().getId() != currentUser.getId()) {
+                            response.sendRedirect(request.getContextPath() + "/bookings?action=list&error=permissionDenied");
+                            return;
+                        }
+                    }
                     bookingDAO.deleteBooking(deleteId);
                     roomDAO.updateRoomStatus(deleteBooking.getRoom().getId(), "Available");
                 }
@@ -137,12 +170,26 @@ public class BookingServlet extends HttpServlet {
 
             case "checkin":
                 int checkinId = ParamUtil.getInt(request, "id", 0);
+                Booking checkinBooking = bookingDAO.getBookingById(checkinId);
+                if (checkinBooking != null && !"Admin".equalsIgnoreCase(currentUser.getRole())) {
+                    if (checkinBooking.getCreatedBy() == null || checkinBooking.getCreatedBy().getId() != currentUser.getId()) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=list&mode=checkin&error=permissionDenied");
+                        return;
+                    }
+                }
                 bookingDAO.checkInBookings(java.util.Collections.singletonList(checkinId));
                 response.sendRedirect(request.getContextPath() + "/bookings?action=list&mode=checkin");
                 break;
 
             case "checkout":
                 int checkoutId = ParamUtil.getInt(request, "id", 0);
+                Booking checkoutBooking = bookingDAO.getBookingById(checkoutId);
+                if (checkoutBooking != null && !"Admin".equalsIgnoreCase(currentUser.getRole())) {
+                    if (checkoutBooking.getCreatedBy() == null || checkoutBooking.getCreatedBy().getId() != currentUser.getId()) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=list&mode=checkout&error=permissionDenied");
+                        return;
+                    }
+                }
                 int singleBillId = bookingDAO.checkOutBookings(
                         java.util.Collections.singletonList(checkoutId), currentUser.getId());
                 if (singleBillId > 0) {
@@ -225,6 +272,23 @@ public class BookingServlet extends HttpServlet {
                 return;
             }
 
+            // Phân quyền: Nhân viên chỉ được xử lý hàng loạt các đơn do chính mình tạo
+            if (!"Admin".equalsIgnoreCase(currentUser.getRole())) {
+                List<Integer> allowedIds = new ArrayList<>();
+                for (Integer bId : bookingIds) {
+                    Booking b = bookingDAO.getBookingById(bId);
+                    if (b != null && b.getCreatedBy() != null && b.getCreatedBy().getId() == currentUser.getId()) {
+                        allowedIds.add(bId);
+                    }
+                }
+                bookingIds = allowedIds;
+                if (bookingIds.isEmpty()) {
+                    response.sendRedirect(request.getContextPath()
+                            + "/bookings?action=list&mode=" + mode + "&error=permissionDenied");
+                    return;
+                }
+            }
+
             if ("bulkCheckin".equals(action)) {
                 boolean success = bookingDAO.checkInBookings(bookingIds);
                 response.sendRedirect(request.getContextPath()
@@ -255,24 +319,34 @@ public class BookingServlet extends HttpServlet {
             String customerEmail = ParamUtil.getString(request, "customerEmail", "");
             String customerCccd = ParamUtil.getString(request, "customerCccd", "");
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            sdf.setLenient(false);
             try {
-                Date checkInDate = sdf.parse(checkInStr);
-                Date checkOutDate = sdf.parse(checkOutStr);
+                Date checkInDate = parseFlexibleDate(checkInStr);
+                Date checkOutDate = parseFlexibleDate(checkOutStr);
 
-                if (roomIds.isEmpty() || !checkOutDate.after(checkInDate)) {
-                    response.sendRedirect(request.getContextPath()
-                            + (currentUser != null ? "/bookings?action=add&error=invalidSelection" : "/home"));
+                int firstRoomId = !roomIds.isEmpty() ? roomIds.get(0) : 0;
+
+                if (roomIds.isEmpty() || checkInDate == null || checkOutDate == null || !checkOutDate.after(checkInDate)) {
+                    if (currentUser != null && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()))) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=add&error=invalidSelection");
+                    } else if (firstRoomId > 0) {
+                        response.sendRedirect(request.getContextPath() + "/rooms?action=bookForm&roomId=" + firstRoomId + "&error=invalidDate");
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/home");
+                    }
                     return;
                 }
 
                 List<Room> selectedRooms = new ArrayList<>();
                 for (Integer roomId : roomIds) {
                     Room room = roomDAO.getRoomById(roomId);
-                    if (room == null || !"Available".equalsIgnoreCase(room.getStatus())) {
-                        response.sendRedirect(request.getContextPath()
-                                + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home"));
+                    if (room == null || !bookingDAO.isRoomAvailable(roomId, checkInDate, checkOutDate)) {
+                        if (currentUser != null && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()))) {
+                            response.sendRedirect(request.getContextPath() + "/bookings?action=add&error=roomsUnavailable");
+                        } else if (firstRoomId > 0) {
+                            response.sendRedirect(request.getContextPath() + "/rooms?action=bookForm&roomId=" + firstRoomId + "&error=roomUnavailable");
+                        } else {
+                            response.sendRedirect(request.getContextPath() + "/home");
+                        }
                         return;
                     }
                     selectedRooms.add(room);
@@ -283,13 +357,21 @@ public class BookingServlet extends HttpServlet {
                 User creator = currentUser;
 
                 if (currentUser == null || "Customer".equals(currentUser.getRole())) {
-                    // Khách tự đặt phòng online (vãng lai hoặc hội viên)
-                    String finalName = (currentUser != null) ? currentUser.getFullName() : customerName;
-                    String finalEmail = (currentUser != null) ? currentUser.getEmail() : customerEmail;
+                    // Khách tự đặt phòng online (khách vãng lai chưa đăng nhập hoặc khách có tài khoản)
+                    String finalName = (currentUser != null && currentUser.getFullName() != null && !currentUser.getFullName().isEmpty())
+                            ? currentUser.getFullName() : customerName;
+                    if (finalName == null || finalName.trim().isEmpty()) {
+                        finalName = "Khách vãng lai";
+                    }
+                    String finalEmail = (currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty())
+                            ? currentUser.getEmail() : customerEmail;
                     
                     customer = customerDAO.findOrCreateCustomer(finalName, customerPhone, finalEmail, customerCccd);
                     if (creator == null) {
                         creator = userDAO.getUserById(1); // Gán admin (ID = 1) làm người tạo mặc định cho đặt phòng vãng lai
+                        if (creator == null) {
+                            creator = userDAO.findByEmailOrUsername("admin");
+                        }
                     }
                 } else {
                     // Admin/Receptionist đặt phòng hộ khách hàng
@@ -357,13 +439,23 @@ public class BookingServlet extends HttpServlet {
                                 + "/bookings?action=receipt&id=" + bookings.get(0).getBookingId());
                     }
                 } else {
-                    response.sendRedirect(request.getContextPath()
-                            + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home"));
+                    if (currentUser != null && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()))) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=add&error=roomsUnavailable");
+                    } else if (firstRoomId > 0) {
+                        response.sendRedirect(request.getContextPath() + "/rooms?action=bookForm&roomId=" + firstRoomId + "&error=roomsUnavailable");
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/home");
+                    }
                 }
 
             } catch (Exception e) {
                 e.printStackTrace();
-                response.sendRedirect(request.getContextPath() + "/home");
+                int firstRoomId = !roomIds.isEmpty() ? roomIds.get(0) : 0;
+                if (firstRoomId > 0) {
+                    response.sendRedirect(request.getContextPath() + "/rooms?action=bookForm&roomId=" + firstRoomId + "&error=serverError");
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/home");
+                }
             }
 
         } else if ("update".equals(action)) {
@@ -391,10 +483,22 @@ public class BookingServlet extends HttpServlet {
                 Date checkOutDate = sdf.parse(checkOutStr);
 
                 Booking booking = bookingDAO.getBookingById(bookingId);
+                if (booking == null) {
+                    response.sendRedirect(request.getContextPath() + "/bookings?action=list");
+                    return;
+                }
+
+                if (!"Admin".equalsIgnoreCase(currentUser.getRole())) {
+                    if (booking.getCreatedBy() == null || booking.getCreatedBy().getId() != currentUser.getId()) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=list&error=permissionDenied");
+                        return;
+                    }
+                }
+
                 Room newRoom = roomDAO.getRoomById(roomId);
                 Customer customer = customerDAO.getCustomerById(customerId);
 
-                if (booking != null && newRoom != null && customer != null) {
+                if (newRoom != null && customer != null) {
                     // Cập nhật SĐT/CCCD
                     if (!customerPhone.isEmpty()) {
                         customer.setCustomerPhone(customerPhone);
@@ -473,5 +577,27 @@ public class BookingServlet extends HttpServlet {
             }
         }
         return new ArrayList<>(uniqueIds);
+    }
+
+    private Date parseFlexibleDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+        String cleaned = dateStr.trim();
+        String[] patterns = {
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd",
+            "dd/MM/yyyy HH:mm",
+            "dd/MM/yyyy"
+        };
+        for (String p : patterns) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(p);
+                sdf.setLenient(true);
+                return sdf.parse(cleaned);
+            } catch (Exception ignored) {}
+        }
+        return null;
     }
 }

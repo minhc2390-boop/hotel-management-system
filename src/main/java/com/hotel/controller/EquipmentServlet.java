@@ -1,8 +1,11 @@
 package com.hotel.controller;
 
 import com.hotel.dao.EquipmentDAO;
+import com.hotel.dao.RoomDAO;
 import com.hotel.model.Equipment;
+import com.hotel.model.Room;
 import com.hotel.model.User;
+import com.hotel.util.ParamUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -16,60 +19,74 @@ import java.util.List;
 @WebServlet(name = "EquipmentServlet", urlPatterns = {"/equipments"})
 public class EquipmentServlet extends HttpServlet {
     private final EquipmentDAO equipmentDAO = new EquipmentDAO();
+    private final RoomDAO roomDAO = new RoomDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String action = request.getParameter("action");
-        if (action == null) {
-            action = "list";
-        }
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
+        String action = ParamUtil.getString(request, "action", "list");
 
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
 
-        if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
 
+        List<Room> allRooms = roomDAO.getAllRooms();
+        request.setAttribute("rooms", allRooms);
+
         switch (action) {
             case "list":
-                String keyword = request.getParameter("keyword");
-                List<Equipment> listEquipments;
-                if (keyword != null && !keyword.trim().isEmpty()) {
-                    listEquipments = equipmentDAO.searchEquipments(keyword.trim());
-                    request.setAttribute("keyword", keyword.trim());
-                } else {
-                    listEquipments = equipmentDAO.getAllEquipments();
-                }
+                String keyword = ParamUtil.getString(request, "keyword", "");
+                int filterRoomId = ParamUtil.getInt(request, "roomId", 0);
+                String filterStatus = ParamUtil.getString(request, "status", "");
+
+                List<Equipment> listEquipments = equipmentDAO.searchEquipments(
+                        keyword,
+                        filterRoomId != 0 ? filterRoomId : null,
+                        !filterStatus.isEmpty() ? filterStatus : null
+                );
+
+                request.setAttribute("keyword", keyword);
+                request.setAttribute("selectedRoomId", filterRoomId);
+                request.setAttribute("selectedStatus", filterStatus);
                 request.setAttribute("equipments", listEquipments);
                 request.getRequestDispatcher("/admin/equipments.jsp").forward(request, response);
                 break;
 
             case "add":
+                int defaultRoomId = ParamUtil.getInt(request, "roomId", 0);
+                request.setAttribute("defaultRoomId", defaultRoomId);
                 request.getRequestDispatcher("/admin/equipment-form.jsp").forward(request, response);
                 break;
 
             case "edit":
-                try {
-                    int editId = Integer.parseInt(request.getParameter("id"));
-                    Equipment existingEquipment = equipmentDAO.getEquipmentById(editId);
-                    request.setAttribute("equipment", existingEquipment);
-                    request.getRequestDispatcher("/admin/equipment-form.jsp").forward(request, response);
-                } catch (NumberFormatException e) {
+                int editId = ParamUtil.getInt(request, "id", 0);
+                Equipment existingEquipment = equipmentDAO.getEquipmentById(editId);
+                if (existingEquipment == null) {
                     response.sendRedirect(request.getContextPath() + "/equipments?action=list");
+                    return;
                 }
+                request.setAttribute("equipment", existingEquipment);
+                request.getRequestDispatcher("/admin/equipment-form.jsp").forward(request, response);
                 break;
 
             case "delete":
-                try {
-                    int deleteId = Integer.parseInt(request.getParameter("id"));
+                int deleteId = ParamUtil.getInt(request, "id", 0);
+                int returnRoomId = ParamUtil.getInt(request, "roomId", 0);
+                if (deleteId > 0) {
                     equipmentDAO.deleteEquipment(deleteId);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
                 }
-                response.sendRedirect(request.getContextPath() + "/equipments?action=list");
+                if (returnRoomId > 0) {
+                    response.sendRedirect(request.getContextPath() + "/rooms?action=edit&id=" + returnRoomId + "#equipments");
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/equipments?action=list");
+                }
                 break;
 
             default:
@@ -82,41 +99,58 @@ public class EquipmentServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        String action = request.getParameter("action");
+        response.setCharacterEncoding("UTF-8");
+
+        String action = ParamUtil.getString(request, "action", "");
 
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
 
-        if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
 
-        String name = request.getParameter("name");
-        String unit = request.getParameter("unit");
-        String status = request.getParameter("status");
-        String description = request.getParameter("description");
-        
-        int totalQuantity = 0;
-        try {
-            totalQuantity = Integer.parseInt(request.getParameter("totalQuantity"));
-        } catch (NumberFormatException e) {
-            totalQuantity = 0;
+        String name = ParamUtil.getString(request, "name", "");
+        String unit = ParamUtil.getString(request, "unit", "Cái");
+        String status = ParamUtil.getString(request, "status", "Hoạt động tốt");
+        String description = ParamUtil.getString(request, "description", "");
+        int totalQuantity = Math.max(1, ParamUtil.getInt(request, "totalQuantity", 1));
+        int roomId = ParamUtil.getInt(request, "roomId", 0);
+        String returnTo = ParamUtil.getString(request, "returnTo", "");
+
+        Room assignedRoom = null;
+        if (roomId > 0) {
+            assignedRoom = roomDAO.getRoomById(roomId);
         }
 
         if ("insert".equals(action)) {
-            Equipment equipment = new Equipment(name, totalQuantity, unit, status, description);
-            equipmentDAO.insertEquipment(equipment);
-            response.sendRedirect(request.getContextPath() + "/equipments?action=list");
+            if (!name.isEmpty()) {
+                Equipment equipment = new Equipment(assignedRoom, name, totalQuantity, unit, status, description);
+                equipmentDAO.insertEquipment(equipment);
+            }
+            if ("room".equals(returnTo) && roomId > 0) {
+                response.sendRedirect(request.getContextPath() + "/rooms?action=edit&id=" + roomId + "#equipments");
+            } else if (roomId > 0) {
+                response.sendRedirect(request.getContextPath() + "/equipments?action=list&roomId=" + roomId);
+            } else {
+                response.sendRedirect(request.getContextPath() + "/equipments?action=list");
+            }
 
         } else if ("update".equals(action)) {
-            try {
-                int id = Integer.parseInt(request.getParameter("id"));
-                Equipment equipment = new Equipment(id, name, totalQuantity, unit, status, description);
+            int id = ParamUtil.getInt(request, "id", 0);
+            if (id > 0 && !name.isEmpty()) {
+                Equipment equipment = new Equipment(id, assignedRoom, name, totalQuantity, unit, status, description);
                 equipmentDAO.updateEquipment(equipment);
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
             }
+            if ("room".equals(returnTo) && roomId > 0) {
+                response.sendRedirect(request.getContextPath() + "/rooms?action=edit&id=" + roomId + "#equipments");
+            } else if (roomId > 0) {
+                response.sendRedirect(request.getContextPath() + "/equipments?action=list&roomId=" + roomId);
+            } else {
+                response.sendRedirect(request.getContextPath() + "/equipments?action=list");
+            }
+        } else {
             response.sendRedirect(request.getContextPath() + "/equipments?action=list");
         }
     }

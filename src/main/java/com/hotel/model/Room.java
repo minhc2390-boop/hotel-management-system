@@ -86,7 +86,7 @@ public class Room {
     }
 
     public String getDescription() {
-        return description;
+        return com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public void setDescription(String description) {

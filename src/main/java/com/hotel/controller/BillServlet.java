@@ -79,6 +79,18 @@ public class BillServlet extends HttpServlet {
                 List<BillDetail> details = billDetailDAO.getBillDetailsByBillId(billId);
                 List<Service> services = serviceDAO.getAllServices();
                 
+                com.hotel.dao.SystemSettingDAO settingDAO = new com.hotel.dao.SystemSettingDAO();
+                String bankId = settingDAO.getSetting("hotel_bank_id");
+                String bankAccount = settingDAO.getSetting("hotel_bank_account");
+                String bankName = settingDAO.getSetting("hotel_bank_name");
+                if (bankId.isEmpty()) bankId = "MB";
+                if (bankAccount.isEmpty()) bankAccount = "1903567890123";
+                if (bankName.isEmpty()) bankName = "CONG TY NESTORA HOTEL";
+
+                request.setAttribute("bankId", bankId);
+                request.setAttribute("bankAccount", bankAccount);
+                request.setAttribute("bankName", bankName);
+                
                 request.setAttribute("bill", bill);
                 request.setAttribute("details", details);
                 request.setAttribute("services", services);

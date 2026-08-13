@@ -27,68 +27,64 @@
   List<Bill> paidBills = new java.util.ArrayList<>();
   if (allBills != null) {
       for (Bill b : allBills) {
-          if ("Paid".equals(b.getStatus())) {
+          if ("Paid".equals(b.getStatus()) && b.getCreatedAt() != null) {
               paidBills.add(b);
           }
       }
   }
 
+  String rangeParam = request.getParameter("range");
+  String fromDateParam = request.getParameter("fromDate");
+  String toDateParam = request.getParameter("toDate");
+
+  LocalDate endDate = LocalDate.now();
+  LocalDate startDate = endDate.minusDays(13); // Mặc định 14 ngày
+
+  if ("7".equals(rangeParam)) {
+      startDate = endDate.minusDays(6);
+  } else if ("30".equals(rangeParam)) {
+      startDate = endDate.minusDays(29);
+  } else if ("month".equals(rangeParam)) {
+      startDate = endDate.withDayOfMonth(1);
+  }
+
+  if (fromDateParam != null && !fromDateParam.trim().isEmpty()) {
+      try {
+          startDate = LocalDate.parse(fromDateParam.trim());
+      } catch (Exception ignored) {}
+  }
+  if (toDateParam != null && !toDateParam.trim().isEmpty()) {
+      try {
+          endDate = LocalDate.parse(toDateParam.trim());
+      } catch (Exception ignored) {}
+  }
+
+  if (endDate.isBefore(startDate)) {
+      LocalDate temp = startDate;
+      startDate = endDate;
+      endDate = temp;
+  }
+
+  long totalDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
+  if (totalDays <= 0) totalDays = 1;
+
+  double[] dailyRoom = new double[(int) totalDays];
+  double[] dailyService = new double[(int) totalDays];
+  String[] dailyLabels = new String[(int) totalDays];
+  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
+  DateTimeFormatter fullFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
   double totalRevenue = 0;
   double roomRevenue = 0;
   double serviceRevenue = 0;
 
-  for (Bill b : paidBills) {
-      totalRevenue += b.getTotalAmount();
-      List<BillDetail> details = billDetailDAO.getBillDetailsByBillId(b.getId());
-      if (details != null) {
-          for (BillDetail bd : details) {
-              if (bd.getRoom() != null) {
-                  roomRevenue += bd.getPrice() * bd.getQuantity();
-              } else if (bd.getService() != null) {
-                  serviceRevenue += bd.getPrice() * bd.getQuantity();
-              }
-          }
-      }
-  }
-
-  long daysCount = 30; // Mặc định 30 ngày
-  if (!paidBills.isEmpty()) {
-      Timestamp minTime = paidBills.get(paidBills.size() - 1).getCreatedAt();
-      Timestamp maxTime = paidBills.get(0).getCreatedAt();
-      if (minTime != null && maxTime != null) {
-          long diffMs = maxTime.getTime() - minTime.getTime();
-          long diffDays = diffMs / (1000 * 60 * 60 * 24) + 1;
-          if (diffDays > 0) {
-              daysCount = diffDays;
-          }
-      }
-  }
-  double averagePerDay = totalRevenue / daysCount;
-
-  NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi","VN"));
-
-  String dateRangeStr = "30 ngày gần đây";
-  if (!paidBills.isEmpty()) {
-      SimpleDateFormat dateFmt = new SimpleDateFormat("dd/MM/yyyy");
-      dateRangeStr = dateFmt.format(paidBills.get(paidBills.size() - 1).getCreatedAt()) + " - " + dateFmt.format(paidBills.get(0).getCreatedAt());
-  }
-
-  // Thống kê doanh thu 14 ngày qua
-  LocalDate today = LocalDate.now();
-  double[] dailyRoom = new double[14];
-  double[] dailyService = new double[14];
-  String[] dailyLabels = new String[14];
-  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
-
-  double maxDayRevenue = 100000; // Để chia tỉ lệ
-
-  for (int i = 0; i < 14; i++) {
-      LocalDate date = today.minusDays(13 - i);
+  for (int i = 0; i < totalDays; i++) {
+      LocalDate date = startDate.plusDays(i);
       dailyLabels[i] = date.format(formatter);
-      
+
       double dayRoomRev = 0;
       double dayServRev = 0;
-      
+
       for (Bill b : paidBills) {
           LocalDate billDate = b.getCreatedAt().toLocalDateTime().toLocalDate();
           if (billDate.equals(date)) {
@@ -106,12 +102,15 @@
       }
       dailyRoom[i] = dayRoomRev;
       dailyService[i] = dayServRev;
-      
-      double dayTotal = dayRoomRev + dayServRev;
-      if (dayTotal > maxDayRevenue) {
-          maxDayRevenue = dayTotal;
-      }
+      roomRevenue += dayRoomRev;
+      serviceRevenue += dayServRev;
   }
+
+  totalRevenue = roomRevenue + serviceRevenue;
+  double averagePerDay = totalRevenue / totalDays;
+
+  NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi","VN"));
+  String dateRangeStr = startDate.format(fullFmt) + " - " + endDate.format(fullFmt);
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -159,16 +158,35 @@
             <p class="page-desc">Theo dõi doanh thu theo thời gian và nguồn thu.</p>
           </div>
           <div class="page-actions">
-            <button class="btn btn-outline"><%= dateRangeStr %></button>
-            <button class="btn btn-primary">Xuất Excel</button>
+            <button class="btn btn-outline" onclick="window.print()">🖨️ In Báo cáo PDF</button>
+            <button class="btn btn-primary" onclick="exportToExcel()">📊 Xuất Excel</button>
           </div>
         </div>
+
+        <form method="get" action="<%= request.getContextPath() %>/admin/profits.jsp" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; background: var(--surface); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--line);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-weight: 600; font-size: 13px; color: var(--text);">Từ ngày:</label>
+                <input type="date" name="fromDate" value="<%= startDate %>" class="form-control" style="width: auto; padding: 6px 12px; height: 38px;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-weight: 600; font-size: 13px; color: var(--text);">Đến ngày:</label>
+                <input type="date" name="toDate" value="<%= endDate %>" class="form-control" style="width: auto; padding: 6px 12px; height: 38px;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 18px;">🔍 Lọc dữ liệu</button>
+
+            <div style="margin-left: auto; display: flex; gap: 6px;">
+                <a href="<%= request.getContextPath() %>/admin/profits.jsp?range=7" class="btn btn-outline" style="height: 34px; padding: 0 12px; font-size: 12px; <%= "7".equals(rangeParam) ? "background: var(--brand); color: #fff;" : "" %>">7 ngày gần nhất</a>
+                <a href="<%= request.getContextPath() %>/admin/profits.jsp?range=14" class="btn btn-outline" style="height: 34px; padding: 0 12px; font-size: 12px; <%= "14".equals(rangeParam) || (rangeParam == null && fromDateParam == null) ? "background: var(--brand); color: #fff;" : "" %>">14 ngày gần nhất</a>
+                <a href="<%= request.getContextPath() %>/admin/profits.jsp?range=30" class="btn btn-outline" style="height: 34px; padding: 0 12px; font-size: 12px; <%= "30".equals(rangeParam) ? "background: var(--brand); color: #fff;" : "" %>">30 ngày</a>
+                <a href="<%= request.getContextPath() %>/admin/profits.jsp?range=month" class="btn btn-outline" style="height: 34px; padding: 0 12px; font-size: 12px; <%= "month".equals(rangeParam) ? "background: var(--brand); color: #fff;" : "" %>">Tháng này</a>
+            </div>
+        </form>
 
         <div class="stat-grid">
           <div class="stat-card">
             <div class="stat-label">Tổng doanh thu</div>
             <div class="stat-value"><%= money.format(totalRevenue) %></div>
-            <div class="stat-change">Từ hóa đơn đã thanh toán</div>
+            <div class="stat-change">Khoảng thời gian: <%= dateRangeStr %></div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Doanh thu phòng</div>
@@ -183,15 +201,15 @@
           <div class="stat-card">
             <div class="stat-label">Trung bình / ngày</div>
             <div class="stat-value"><%= money.format(averagePerDay) %></div>
-            <div class="stat-change"><%= daysCount %> ngày thống kê</div>
+            <div class="stat-change"><%= totalDays %> ngày thống kê</div>
           </div>
         </div>
 
         <section class="surface">
           <div class="surface-head">
             <div>
-              <h2 class="surface-title">Xu hướng doanh thu (14 ngày qua)</h2>
-              <p class="surface-subtitle">Doanh thu phòng (xanh đậm) và dịch vụ (xanh nhạt) thực tế theo từng ngày</p>
+              <h2 class="surface-title">Xu hướng doanh thu (<%= dateRangeStr %>)</h2>
+              <p class="surface-subtitle">Doanh thu phòng (xanh đậm) và dịch vụ (vàng đồng) thực tế theo từng ngày trong kỳ</p>
             </div>
           </div>
           
@@ -199,18 +217,102 @@
               <canvas id="revenueChart"></canvas>
           </div>
         </section>
+
+        <section class="surface" style="margin-top: 20px;">
+          <div class="surface-head">
+            <div>
+              <h2 class="surface-title">Bảng chi tiết doanh thu từng ngày</h2>
+              <p class="surface-subtitle">Bảng kê doanh thu tiền phòng và dịch vụ phát sinh theo từng ngày trong kỳ chọn</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>STT</th>
+                  <th>NGÀY THỐNG KÊ</th>
+                  <th>DOANH THU PHÒNG</th>
+                  <th>DOANH THU DỊCH VỤ</th>
+                  <th>TỔNG DOANH THU / NGÀY</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% for (int i = 0; i < totalDays; i++) {
+                     double dayTotal = dailyRoom[i] + dailyService[i];
+                %>
+                <tr>
+                  <td><%= i + 1 %></td>
+                  <td class="table-strong"><%= dailyLabels[i] %></td>
+                  <td><%= money.format(dailyRoom[i]) %></td>
+                  <td><%= money.format(dailyService[i]) %></td>
+                  <td class="table-strong text-primary"><%= money.format(dayTotal) %></td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </section>
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="<%=request.getContextPath()%>/js/app.js"></script>
 <script>
+  const dailyLabels = [<%= String.join(",", java.util.Arrays.stream(dailyLabels).map(s -> "'" + s + "'").toArray(String[]::new)) %>];
+  const dailyRoomData = [<%= java.util.Arrays.stream(dailyRoom).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
+  const dailyServiceData = [<%= java.util.Arrays.stream(dailyService).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
+
+  function exportToExcel() {
+      const fmtMoney = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+      const todayStr = new Date().toLocaleDateString('vi-VN');
+
+      const data = [
+          ["KHÁCH SẠN NESTORA HOTEL & RESORT"],
+          ["BÁO CÁO THỐNG KÊ DOANH THU CHI TIẾT"],
+          ["Kỳ báo cáo:", "<%= dateRangeStr %>"],
+          ["Ngày xuất file:", todayStr],
+          [],
+          ["STT", "NGÀY THỐNG KÊ", "DOANH THU PHÒNG (VNĐ)", "DOANH THU DỊCH VỤ (VNĐ)", "TỔNG DOANH THU (VNĐ)"]
+      ];
+
+      for (let i = 0; i < dailyLabels.length; i++) {
+          const roomRev = dailyRoomData[i];
+          const servRev = dailyServiceData[i];
+          const totalRev = roomRev + servRev;
+          data.push([
+              i + 1,
+              dailyLabels[i],
+              fmtMoney(roomRev),
+              fmtMoney(servRev),
+              fmtMoney(totalRev)
+          ]);
+      }
+
+      data.push([]);
+      data.push(["", "TỔNG CỘNG DOANH THU KỲ BÁO CÁO:", "", "", fmtMoney(<%= totalRevenue %>)]);
+      data.push(["", "Trong đó - Doanh thu Phòng:", "", "", fmtMoney(<%= roomRevenue %>)]);
+      data.push(["", "Trong đó - Doanh thu Dịch vụ:", "", "", fmtMoney(<%= serviceRevenue %>)]);
+      data.push(["", "Doanh thu Trung bình / Ngày:", "", "", fmtMoney(<%= averagePerDay %>)]);
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+
+      // Cài đặt độ rộng cột tự động căn chỉnh đẹp mắt
+      ws['!cols'] = [
+          { wch: 8 },  // STT
+          { wch: 20 }, // NGÀY THỐNG KÊ
+          { wch: 28 }, // DOANH THU PHÒNG
+          { wch: 28 }, // DOANH THU DỊCH VỤ
+          { wch: 32 }  // TỔNG DOANH THU
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Báo Cáo Doanh Thu");
+      XLSX.writeFile(wb, "Bao_Cao_Doanh_Thu_Nestora.xlsx");
+  }
+
   (function() {
-    const dailyLabels = [<%= String.join(",", java.util.Arrays.stream(dailyLabels).map(s -> "'" + s + "'").toArray(String[]::new)) %>];
-    const dailyRoomData = [<%= java.util.Arrays.stream(dailyRoom).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
-    const dailyServiceData = [<%= java.util.Arrays.stream(dailyService).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
-    
     const ctx = document.getElementById('revenueChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
@@ -220,7 +322,7 @@
                 {
                     label: 'Doanh thu phòng',
                     data: dailyRoomData,
-                    backgroundColor: '#0f172a', // Navy đậm quý tộc
+                    backgroundColor: '#0f172a',
                     borderColor: '#0f172a',
                     borderWidth: 1,
                     borderRadius: 4
@@ -228,7 +330,7 @@
                 {
                     label: 'Doanh thu dịch vụ',
                     data: dailyServiceData,
-                    backgroundColor: '#c5a880', // Gold/Bronze sang trọng
+                    backgroundColor: '#c5a880',
                     borderColor: '#c5a880',
                     borderWidth: 1,
                     borderRadius: 4
@@ -239,9 +341,7 @@
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                x: {
-                    stacked: true // Stacked Bar Chart
-                },
+                x: { stacked: true },
                 y: {
                     stacked: true,
                     beginAtZero: true,
@@ -256,19 +356,14 @@
                 legend: {
                     position: 'top',
                     labels: {
-                        font: {
-                            family: 'Outfit, Inter, sans-serif',
-                            weight: 'bold'
-                        }
+                        font: { family: 'Outfit, Inter, sans-serif', weight: 'bold' }
                     }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
+                            if (label) label += ': ';
                             if (context.parsed.y !== null) {
                                 label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
                             }

@@ -153,13 +153,20 @@ public class ProfileServlet extends HttpServlet {
 
         // Validate password change if requested
         if (!currentPassword.isEmpty() || !newPassword.isEmpty() || !confirmPassword.isEmpty()) {
-            if (!userToUpdate.getPassword().equals(currentPassword)) {
+            String hashedCurrent = AuthUtil.hashPassword(currentPassword);
+            String dbPass = userToUpdate.getPassword() != null ? userToUpdate.getPassword().trim() : "";
+            if (!dbPass.equalsIgnoreCase(hashedCurrent) && !dbPass.equals(currentPassword) && !dbPass.equalsIgnoreCase(currentPassword)) {
                 request.setAttribute("error", "Mật khẩu hiện tại không chính xác!");
                 doGet(request, response);
                 return;
             }
             if (newPassword.isEmpty()) {
                 request.setAttribute("error", "Mật khẩu mới không được để trống!");
+                doGet(request, response);
+                return;
+            }
+            if (newPassword.length() < 6) {
+                request.setAttribute("error", "Mật khẩu mới phải có ít nhất 6 ký tự!");
                 doGet(request, response);
                 return;
             }

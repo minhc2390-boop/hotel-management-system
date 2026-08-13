@@ -70,22 +70,12 @@ public class UserDAO {
     public User login(String username, String password) {
         String uStr = username != null ? username.trim() : "";
         String pStr = password != null ? password.trim() : "";
-        // 1. Mã hóa mật khẩu đầu vào sang dạng SHA-256
+        if (uStr.isEmpty() || pStr.isEmpty()) return null;
+
         String hashedInput = AuthUtil.hashPassword(pStr);
-
-        if (uStr.isEmpty()) return null;
-
         String keyLower = uStr.toLowerCase();
 
-        // 2. Xử lý đăng nhập ưu tiên cho tài khoản Admin mặc định
-        if ("admin".equals(keyLower) || "admin@nestora.com".equals(keyLower) || "admin@gmail.com".equals(keyLower) || "sa".equals(keyLower)) {
-            User dbAdmin = ensureDefaultAdminAccount();
-            if (dbAdmin != null) {
-                return dbAdmin;
-            }
-        }
-
-        // 3. Kiểm tra thông tin người dùng từ Database
+        // 1. Kiểm tra thông tin người dùng từ Database
         try {
             EntityManager em = DBContext.getEntityManager();
             try {
@@ -93,14 +83,11 @@ public class UserDAO {
                 TypedQuery<User> query = em.createQuery(jpql, User.class);
                 query.setParameter("key", keyLower);
                 
-                // Lấy danh sách người dùng từ Database (biến results được khai báo tại đây)
                 List<User> results = query.getResultList();
-                
-                // Lặp qua từng người dùng để kiểm tra mật khẩu
                 for (User u : results) {
                     if (u.getPassword() != null) {
                         String uPass = u.getPassword().trim();
-                        // So sánh mật khẩu đã hash SHA-256 (hoặc mật khẩu thô hỗ trợ dữ liệu cũ)
+                        // So sánh mật khẩu đã hash SHA-256 hoặc plain text tương thích
                         if (uPass.equalsIgnoreCase(hashedInput) || uPass.equals(pStr) || uPass.equalsIgnoreCase(pStr)) {
                             if (u.getUsername() != null) memoryUsers.put(u.getUsername().toLowerCase(), u);
                             if (u.getEmail() != null) memoryUsers.put(u.getEmail().toLowerCase(), u);
@@ -115,7 +102,7 @@ public class UserDAO {
             e.printStackTrace();
         }
 
-        // 4. Kiểm tra trong bộ nhớ đệm tạm thời (Memory Store)
+        // 2. Kiểm tra trong bộ nhớ đệm tạm thời (Memory Store)
         for (User memUser : memoryUsers.values()) {
             if (memUser != null) {
                 String mUser = memUser.getUsername() != null ? memUser.getUsername().trim().toLowerCase() : "";
@@ -123,9 +110,20 @@ public class UserDAO {
                 
                 if (keyLower.equals(mUser) || keyLower.equals(mEmail)) {
                     String mPass = memUser.getPassword() != null ? memUser.getPassword().trim() : "";
-                    if (pStr.isEmpty() || mPass.equalsIgnoreCase(hashedInput) || mPass.equals(pStr) || mPass.equalsIgnoreCase(pStr)) {
+                    if (mPass.equalsIgnoreCase(hashedInput) || mPass.equals(pStr) || mPass.equalsIgnoreCase(pStr)) {
                         return memUser;
                     }
+                }
+            }
+        }
+
+        // 3. Fallback khởi tạo admin mặc định nếu DB chưa có tài khoản nào
+        if ("admin".equals(keyLower) || "admin@nestora.com".equals(keyLower)) {
+            User admin = ensureDefaultAdminAccount();
+            if (admin != null && admin.getPassword() != null) {
+                String aPass = admin.getPassword().trim();
+                if (aPass.equalsIgnoreCase(hashedInput) || aPass.equals(pStr) || aPass.equalsIgnoreCase(pStr)) {
+                    return admin;
                 }
             }
         }
@@ -147,18 +145,14 @@ public class UserDAO {
             tx.begin();
             List<User> list = em.createQuery("SELECT u FROM User u WHERE LOWER(u.username) = 'admin'", User.class).getResultList();
             User admin;
-            String defaultAdminPass = AuthUtil.hashPassword("admin123");
             if (list.isEmpty()) {
+                String defaultAdminPass = AuthUtil.hashPassword("admin123");
                 admin = new User("admin", defaultAdminPass, "Nguyễn Văn Admin", "admin@nestora.com", "0901234567", "Admin");
                 em.persist(admin);
                 em.flush();
             } else {
                 admin = list.get(0);
                 boolean changed = false;
-                if (!defaultAdminPass.equals(admin.getPassword()) && !"admin123".equals(admin.getPassword())) {
-                    admin.setPassword(defaultAdminPass);
-                    changed = true;
-                }
                 if (!"Admin".equalsIgnoreCase(admin.getRole())) {
                     admin.setRole("Admin");
                     changed = true;
@@ -268,11 +262,18 @@ public class UserDAO {
     }
 
     public boolean updateUser(User user) {
-        if (user != null && user.getPassword() != null && !user.getPassword().isEmpty()) {
+        if (user == null) return false;
+
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             if (user.getPassword().length() != 64) {
                 user.setPassword(AuthUtil.hashPassword(user.getPassword()));
             }
         }
+
+        String uKey = user.getUsername() != null ? user.getUsername().trim().toLowerCase() : "";
+        String eKey = user.getEmail() != null ? user.getEmail().trim().toLowerCase() : "";
+        if (!uKey.isEmpty()) memoryUsers.put(uKey, user);
+        if (!eKey.isEmpty()) memoryUsers.put(eKey, user);
 
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();

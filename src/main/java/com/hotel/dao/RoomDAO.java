@@ -15,7 +15,7 @@ public class RoomDAO {
             tx.begin();
             List<Room> rooms = em.createQuery("SELECT r FROM Room r", Room.class).getResultList();
             for (Room r : rooms) {
-                if ("Maintenance".equalsIgnoreCase(r.getStatus())) {
+                if ("Maintenance".equalsIgnoreCase(r.getStatus()) || "Cleaning".equalsIgnoreCase(r.getStatus())) {
                     continue;
                 }
 
@@ -24,9 +24,19 @@ public class RoomDAO {
                     .setParameter("rid", r.getId())
                     .getSingleResult();
 
+                Long bookedCount = em.createQuery(
+                    "SELECT COUNT(b) FROM Booking b WHERE b.room.id = :rid AND (b.status = 'Pending' OR b.status = 'Confirmed')", Long.class)
+                    .setParameter("rid", r.getId())
+                    .getSingleResult();
+
                 if (occupiedCount != null && occupiedCount > 0) {
                     if (!"Occupied".equalsIgnoreCase(r.getStatus())) {
                         r.setStatus("Occupied");
+                        em.merge(r);
+                    }
+                } else if (bookedCount != null && bookedCount > 0) {
+                    if (!"Booked".equalsIgnoreCase(r.getStatus())) {
+                        r.setStatus("Booked");
                         em.merge(r);
                     }
                 } else {
@@ -131,10 +141,10 @@ public class RoomDAO {
         syncRoomStatuses();
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT r FROM Room r WHERE r.status != 'Maintenance' ORDER BY r.roomNumber ASC";
+            String jpql = "SELECT r FROM Room r WHERE UPPER(r.status) = 'AVAILABLE' ORDER BY r.roomNumber ASC";
             TypedQuery<Room> query = em.createQuery(jpql, Room.class);
             List<Room> list = query.getResultList();
-            if (list != null && !list.isEmpty()) {
+            if (list != null) {
                 return list;
             }
         } catch (Exception e) {
@@ -142,7 +152,7 @@ public class RoomDAO {
         } finally {
             em.close();
         }
-        return getAllRooms();
+        return java.util.Collections.emptyList();
     }
 
     public Room getRoomById(int id) {
@@ -163,7 +173,7 @@ public class RoomDAO {
         return null;
     }
 
-    public boolean insertRoom(Room room) {
+    public boolean insertRoomWithEquipments(Room room, List<com.hotel.model.Equipment> equipments) {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
@@ -172,15 +182,29 @@ public class RoomDAO {
                 room.setRoomType(em.find(com.hotel.model.RoomType.class, room.getRoomType().getId()));
             }
             em.persist(room);
+            em.flush();
+
+            if (equipments != null && !equipments.isEmpty()) {
+                for (com.hotel.model.Equipment eq : equipments) {
+                    if (eq.getEquipmentName() != null && !eq.getEquipmentName().trim().isEmpty()) {
+                        eq.setRoom(room);
+                        em.persist(eq);
+                    }
+                }
+            }
             tx.commit();
             return true;
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             e.printStackTrace();
+            return false;
         } finally {
             em.close();
         }
-        return false;
+    }
+
+    public boolean insertRoom(Room room) {
+        return insertRoomWithEquipments(room, null);
     }
 
     public boolean updateRoom(Room room) {
@@ -223,6 +247,25 @@ public class RoomDAO {
         return false;
     }
 
+    public Room getRoomByNumber(String roomNumber) {
+        if (roomNumber == null || roomNumber.trim().isEmpty()) return null;
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT r FROM Room r WHERE LOWER(TRIM(r.roomNumber)) = LOWER(TRIM(:num))";
+            TypedQuery<Room> query = em.createQuery(jpql, Room.class);
+            query.setParameter("num", roomNumber.trim());
+            List<Room> list = query.getResultList();
+            if (list != null && !list.isEmpty()) {
+                return list.get(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+        return null;
+    }
+
     public boolean deleteRoom(int id) {
         EntityManager em = DBContext.getEntityManager();
         EntityTransaction tx = em.getTransaction();
@@ -230,6 +273,9 @@ public class RoomDAO {
             tx.begin();
             Room room = em.find(Room.class, id);
             if (room != null) {
+                em.createNativeQuery("DELETE FROM Equipments WHERE room_id = :rid")
+                  .setParameter("rid", id)
+                  .executeUpdate();
                 em.remove(room);
                 tx.commit();
                 return true;

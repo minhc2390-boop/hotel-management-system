@@ -25,7 +25,15 @@ public class NotificationServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
-        if (!isAdminOrManager(request)) {
+
+        if (!AuthUtil.isAuthenticated(request)) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        User currentUser = AuthUtil.getUser(request);
+        String role = currentUser != null ? currentUser.getRole() : "";
+        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
@@ -34,24 +42,25 @@ public class NotificationServlet extends HttpServlet {
 
         switch (action) {
             case "list":
-                List<HotelNotification> notifications = notificationDAO.getAllNotifications();
+                String keyword = ParamUtil.getString(request, "keyword", "");
+                String type = ParamUtil.getString(request, "type", "ALL");
+                String status = ParamUtil.getString(request, "status", "ALL");
+
+                List<HotelNotification> notifications = notificationDAO.searchNotifications(keyword, type, status);
                 request.setAttribute("notifications", notifications);
+                request.setAttribute("keyword", keyword);
+                request.setAttribute("type", type);
+                request.setAttribute("status", status);
                 request.getRequestDispatcher("/admin/notification-list.jsp").forward(request, response);
                 break;
+
             case "add":
-                if (!isAdminOrManager(request)) {
-                    response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&denied=1");
-                    return;
-                }
                 request.setAttribute("notification", new HotelNotification());
                 request.setAttribute("isEdit", false);
                 request.getRequestDispatcher("/admin/notification-form.jsp").forward(request, response);
                 break;
+
             case "edit":
-                if (!isAdminOrManager(request)) {
-                    response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&denied=1");
-                    return;
-                }
                 int id = ParamUtil.getInt(request, "id", 0);
                 HotelNotification item = notificationDAO.getById(id);
                 if (item == null) {
@@ -62,6 +71,23 @@ public class NotificationServlet extends HttpServlet {
                 request.setAttribute("isEdit", true);
                 request.getRequestDispatcher("/admin/notification-form.jsp").forward(request, response);
                 break;
+
+            case "toggle":
+                int toggleId = ParamUtil.getInt(request, "id", 0);
+                if (toggleId > 0) {
+                    notificationDAO.toggleActive(toggleId);
+                }
+                response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&toggled=1");
+                break;
+
+            case "delete":
+                int deleteId = ParamUtil.getInt(request, "id", 0);
+                if (deleteId > 0) {
+                    notificationDAO.delete(deleteId);
+                }
+                response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&deleted=1");
+                break;
+
             default:
                 response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list");
                 break;
@@ -73,8 +99,16 @@ public class NotificationServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
-        if (!isAdminOrManager(request)) {
-            response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&denied=1");
+
+        if (!AuthUtil.isAuthenticated(request)) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        User currentUser = AuthUtil.getUser(request);
+        String role = currentUser != null ? currentUser.getRole() : "";
+        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
+            response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
 
@@ -82,8 +116,19 @@ public class NotificationServlet extends HttpServlet {
 
         if ("delete".equals(action)) {
             int id = ParamUtil.getInt(request, "id", 0);
-            notificationDAO.delete(id);
+            if (id > 0) {
+                notificationDAO.delete(id);
+            }
             response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&deleted=1");
+            return;
+        }
+
+        if ("toggle".equals(action)) {
+            int id = ParamUtil.getInt(request, "id", 0);
+            if (id > 0) {
+                notificationDAO.toggleActive(id);
+            }
+            response.sendRedirect(request.getContextPath() + "/admin/notifications?action=list&toggled=1");
             return;
         }
 
@@ -93,7 +138,6 @@ public class NotificationServlet extends HttpServlet {
             item = new HotelNotification();
         }
 
-        User currentUser = AuthUtil.getUser(request);
         String title = ParamUtil.getString(request, "title", "");
         String content = ParamUtil.getString(request, "content", "");
         String type = ParamUtil.getString(request, "type", "INFO");
@@ -158,21 +202,10 @@ public class NotificationServlet extends HttpServlet {
         if (item.getContent() == null || item.getContent().trim().isEmpty()) {
             return "Vui lòng nhập nội dung thông báo.";
         }
-        if (!"INFO".equals(item.getType()) && !"WARNING".equals(item.getType()) &&
-            !"SUCCESS".equals(item.getType()) && !"ERROR".equals(item.getType())) {
+        if (!"INFO".equalsIgnoreCase(item.getType()) && !"WARNING".equalsIgnoreCase(item.getType()) &&
+            !"SUCCESS".equalsIgnoreCase(item.getType()) && !"ERROR".equalsIgnoreCase(item.getType())) {
             return "Loại thông báo không hợp lệ (Phải là INFO, WARNING, SUCCESS, hoặc ERROR).";
         }
         return null;
-    }    private boolean isAdmin(HttpServletRequest request) {
-        User user = AuthUtil.getUser(request);
-        return user != null && "Admin".equalsIgnoreCase(user.getRole());
-    }
-
-
-
-    private boolean isAdminOrManager(HttpServletRequest request) {
-        User user = AuthUtil.getUser(request);
-        return user != null && ("Admin".equalsIgnoreCase(user.getRole()) || "Receptionist".equalsIgnoreCase(user.getRole()));
     }
 }
-

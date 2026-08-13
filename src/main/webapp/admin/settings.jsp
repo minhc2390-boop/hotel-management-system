@@ -150,33 +150,70 @@
     }
     .form-group label {
       display: block;
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 8px;
       font-size: 14px;
-      color: var(--text);
-      text-indent: 4px;
+      color: var(--text) !important;
     }
-    .form-group input, .form-group select {
+
+    .form-control,
+    .form-group input, 
+    .form-group select {
       width: 100%;
       padding: 12px 16px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--surface);
-      color: var(--text);
-      transition: border-color 0.2s;
+      background-color: var(--surface) !important;
+      color: var(--text) !important;
+      transition: all 0.2s ease;
       font-size: 14px;
+      font-weight: 500;
     }
-    .form-group input:focus, .form-group select:focus {
-      border-color: var(--brand);
+
+    .form-control:focus,
+    .form-group input:focus, 
+    .form-group select:focus {
+      border-color: var(--brand) !important;
+      box-shadow: 0 0 0 3px rgba(23, 105, 224, 0.15) !important;
       outline: none;
     }
+
+    .form-control option,
+    .form-group select option {
+      background-color: var(--surface) !important;
+      color: var(--text) !important;
+    }
+
+    [data-theme="dark"] .form-control,
+    [data-theme="dark"] .form-group input,
+    [data-theme="dark"] .form-group select,
+    [data-theme="cyberpunk"] .form-control,
+    [data-theme="cyberpunk"] .form-group input,
+    [data-theme="cyberpunk"] .form-group select {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+
+    [data-theme="dark"] .form-control option,
+    [data-theme="cyberpunk"] .form-control option {
+      background-color: #1e293b !important;
+      color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .form-group label,
+    [data-theme="cyberpunk"] .form-group label,
+    [data-theme="dark"] .theme-title,
+    [data-theme="cyberpunk"] .theme-title {
+      color: #ffffff !important;
+    }
+
     .content-inner p,
     .surface p,
     .settings-page p,
     .settings-card p,
     .setting-desc,
     .page-desc {
-        text-indent: 24px !important;
         line-height: 1.6;
         font-family: "Segoe UI", Arial, sans-serif;
         padding-left: 4px;
@@ -260,22 +297,22 @@
 
               <div class="form-group" style="margin-top: 24px;">
                 <label for="hotel-name-input">Tên khách sạn hiển thị (Branding)</label>
-                <input type="text" id="hotel-name-input" placeholder="Tên khách sạn (ví dụ: Nestora Hotel)">
+                <input type="text" class="form-control" id="hotel-name-input" placeholder="Tên khách sạn (ví dụ: Nestora Hotel)">
               </div>
 
               <div class="form-group">
                 <label for="hotel-address-input">Địa chỉ khách sạn</label>
-                <input type="text" id="hotel-address-input" placeholder="Địa chỉ chi tiết">
+                <input type="text" class="form-control" id="hotel-address-input" placeholder="Địa chỉ chi tiết">
               </div>
 
               <div class="form-group">
                 <label for="hotel-phone-input">Số điện thoại liên hệ</label>
-                <input type="text" id="hotel-phone-input" placeholder="Số điện thoại bàn / Hotline">
+                <input type="text" class="form-control" id="hotel-phone-input" placeholder="Số điện thoại bàn / Hotline">
               </div>
 
               <div class="form-group">
                 <label for="hotel-email-input">Email khách sạn</label>
-                <input type="email" id="hotel-email-input" placeholder="Địa chỉ email nhận thông tin">
+                <input type="email" class="form-control" id="hotel-email-input" placeholder="Địa chỉ email nhận thông tin">
               </div>
             </div>
           </div>
@@ -292,7 +329,7 @@
 
               <div class="form-group">
                 <label for="bank-id-select">Ngân hàng thụ hưởng</label>
-                <select id="bank-id-select">
+                <select class="form-control" id="bank-id-select">
                   <option value="MB">MB Bank (Ngân hàng Quân Đội)</option>
                   <option value="VCB">Vietcombank</option>
                   <option value="TCB">Techcombank</option>
@@ -308,12 +345,12 @@
 
               <div class="form-group">
                 <label for="bank-account-input">Số tài khoản ngân hàng</label>
-                <input type="text" id="bank-account-input" placeholder="Nhập chính xác số tài khoản">
+                <input type="text" class="form-control" id="bank-account-input" placeholder="Nhập chính xác số tài khoản">
               </div>
 
               <div class="form-group">
                 <label for="bank-name-input">Tên chủ tài khoản (Viết hoa không dấu)</label>
-                <input type="text" id="bank-name-input" placeholder="Ví dụ: CONG TY NESTORA HOTEL">
+                <input type="text" class="form-control" id="bank-name-input" placeholder="Ví dụ: CONG TY NESTORA HOTEL">
               </div>
 
               <div style="margin-top: 30px; display: flex; gap: 10px;">

@@ -12,17 +12,7 @@ public class ParamUtil {
         if (val == null || val.trim().isEmpty()) {
             return defaultValue;
         }
-        String str = val.trim();
-        try {
-            if (str.contains("Ã") || str.contains("Â") || str.contains("áº") || str.contains("á»") || str.contains("Æ°") || str.contains("Ä‘")) {
-                byte[] bytes = str.getBytes("ISO-8859-1");
-                String decoded = new String(bytes, "UTF-8");
-                if (!decoded.contains("ï¿½") && !decoded.contains("\uFFFD")) {
-                    return decoded;
-                }
-            }
-        } catch (Exception e) {}
-        return str;
+        return EncodingUtil.fixEncoding(val.trim());
     }
 
     /**

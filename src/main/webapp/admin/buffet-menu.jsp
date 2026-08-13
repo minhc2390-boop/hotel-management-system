@@ -97,7 +97,7 @@
                     <td>
                       <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
                            String adminRawImage = item.getImageUrl();
-                           String adminImageSrc = adminRawImage.startsWith("https://")
+                           String adminImageSrc = (adminRawImage.startsWith("https://") || adminRawImage.startsWith("http://") || adminRawImage.startsWith("data:"))
                                ? adminRawImage
                                : request.getContextPath() + "/"
                                    + (adminRawImage.startsWith("/") ? adminRawImage.substring(1) : adminRawImage);

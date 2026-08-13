@@ -50,7 +50,7 @@ public class RoomType {
     }
 
     public String getName() {
-        return name;
+        return com.hotel.util.EncodingUtil.fixEncoding(name);
     }
 
     public void setName(String name) {
@@ -74,7 +74,7 @@ public class RoomType {
     }
 
     public String getDescription() {
-        return description;
+        return com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public void setDescription(String description) {

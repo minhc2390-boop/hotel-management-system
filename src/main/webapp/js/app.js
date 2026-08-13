@@ -47,6 +47,18 @@
     document.documentElement.classList.add('collapsed');
   }
 
+  // Preserve sidebar scroll position across page navigation without scroll jumping
+  const sidebarScroll = document.querySelector('.sidebar-scroll');
+  if (sidebarScroll) {
+    const savedScrollPos = localStorage.getItem('nestora_sidebar_scroll');
+    if (savedScrollPos !== null) {
+      sidebarScroll.scrollTop = parseInt(savedScrollPos, 10);
+    }
+    sidebarScroll.addEventListener('scroll', function () {
+      localStorage.setItem('nestora_sidebar_scroll', sidebarScroll.scrollTop);
+    });
+  }
+
   if (mobileToggle && sidebar) {
     mobileToggle.addEventListener('click', function () {
       sidebar.classList.toggle('open');

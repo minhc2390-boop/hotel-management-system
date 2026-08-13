@@ -42,6 +42,38 @@ public class NotificationDAO {
         return list;
     }
 
+    public List<HotelNotification> searchNotifications(String keyword, String type, String status) {
+        List<HotelNotification> all = getAllNotifications();
+        if ((keyword == null || keyword.trim().isEmpty())
+                && (type == null || type.trim().isEmpty() || "ALL".equalsIgnoreCase(type))
+                && (status == null || status.trim().isEmpty() || "ALL".equalsIgnoreCase(status))) {
+            return all;
+        }
+
+        String kw = keyword != null ? keyword.trim().toLowerCase() : "";
+        List<HotelNotification> filtered = new ArrayList<>();
+        for (HotelNotification n : all) {
+            boolean matchesKw = kw.isEmpty()
+                    || (n.getTitle() != null && n.getTitle().toLowerCase().contains(kw))
+                    || (n.getContent() != null && n.getContent().toLowerCase().contains(kw));
+
+            boolean matchesType = type == null || type.isEmpty() || "ALL".equalsIgnoreCase(type)
+                    || (n.getType() != null && n.getType().equalsIgnoreCase(type));
+
+            boolean matchesStatus = true;
+            if ("ACTIVE".equalsIgnoreCase(status)) {
+                matchesStatus = n.getIsActive() != null && n.getIsActive();
+            } else if ("HIDDEN".equalsIgnoreCase(status)) {
+                matchesStatus = n.getIsActive() == null || !n.getIsActive();
+            }
+
+            if (matchesKw && matchesType && matchesStatus) {
+                filtered.add(n);
+            }
+        }
+        return filtered;
+    }
+
     public List<HotelNotification> getTop5Newest() {
         List<HotelNotification> all = getAllNotifications();
         List<HotelNotification> result = new ArrayList<>();
@@ -137,6 +169,16 @@ public class NotificationDAO {
         } finally {
             em.close();
         }
+    }
+
+    public boolean toggleActive(int id) {
+        HotelNotification item = getById(id);
+        if (item != null) {
+            boolean current = item.getIsActive() != null ? item.getIsActive() : false;
+            item.setIsActive(!current);
+            return update(item);
+        }
+        return false;
     }
 
     public boolean delete(int id) {

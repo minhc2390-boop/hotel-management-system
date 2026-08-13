@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
 
-@WebServlet(name = "SettingServlet", urlPatterns = {"/admin/settings", "/admin/settings.jsp", "/admin/setting-update"})
+@WebServlet(name = "SettingServlet", urlPatterns = {"/admin/settings", "/admin/setting-update"})
 public class SettingServlet extends HttpServlet {
 
     private final SystemSettingDAO settingDAO = new SystemSettingDAO();

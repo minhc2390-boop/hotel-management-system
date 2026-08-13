@@ -11,17 +11,21 @@ public class Equipment {
     @Column(name = "equipment_id")
     private int equipmentId;
 
-    @Column(name = "equipment_name", nullable = false, unique = true, columnDefinition = "NVARCHAR(100)")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "room_id", nullable = true)
+    private Room room;
+
+    @Column(name = "equipment_name", nullable = false, columnDefinition = "NVARCHAR(150)")
     private String equipmentName;
 
     @Column(name = "total_quantity", nullable = false)
-    private int totalQuantity;
+    private int totalQuantity = 1;
 
     @Column(name = "unit", columnDefinition = "NVARCHAR(20)")
-    private String unit;
+    private String unit = "Cái";
 
-    @Column(name = "status")
-    private String status; // Active, Maintenance, OutOfStock
+    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
+    private String status = "Hoạt động tốt"; // Hoạt động tốt, Cần kiểm tra, Bảo trì, Hỏng
 
     @Column(name = "description", columnDefinition = "NVARCHAR(500)")
     private String description;
@@ -29,6 +33,25 @@ public class Equipment {
     public Equipment() {}
 
     public Equipment(String equipmentName, int totalQuantity, String unit, String status, String description) {
+        this.equipmentName = equipmentName;
+        this.totalQuantity = totalQuantity;
+        this.unit = unit;
+        this.status = status;
+        this.description = description;
+    }
+
+    public Equipment(Room room, String equipmentName, int totalQuantity, String unit, String status, String description) {
+        this.room = room;
+        this.equipmentName = equipmentName;
+        this.totalQuantity = totalQuantity;
+        this.unit = unit;
+        this.status = status;
+        this.description = description;
+    }
+
+    public Equipment(int equipmentId, Room room, String equipmentName, int totalQuantity, String unit, String status, String description) {
+        this.equipmentId = equipmentId;
+        this.room = room;
         this.equipmentName = equipmentName;
         this.totalQuantity = totalQuantity;
         this.unit = unit;
@@ -53,8 +76,24 @@ public class Equipment {
         this.equipmentId = equipmentId;
     }
 
+    public Room getRoom() {
+        return room;
+    }
+
+    public void setRoom(Room room) {
+        this.room = room;
+    }
+
+    public Integer getRoomId() {
+        return room != null ? room.getId() : null;
+    }
+
+    public String getRoomNumber() {
+        return room != null ? room.getRoomNumber() : null;
+    }
+
     public String getEquipmentName() {
-        return equipmentName;
+        return com.hotel.util.EncodingUtil.fixEncoding(equipmentName);
     }
 
     public void setEquipmentName(String equipmentName) {
@@ -70,7 +109,7 @@ public class Equipment {
     }
 
     public String getUnit() {
-        return unit;
+        return com.hotel.util.EncodingUtil.fixEncoding(unit);
     }
 
     public void setUnit(String unit) {
@@ -78,7 +117,7 @@ public class Equipment {
     }
 
     public String getStatus() {
-        return status;
+        return com.hotel.util.EncodingUtil.fixEncoding(status);
     }
 
     public void setStatus(String status) {
@@ -86,7 +125,7 @@ public class Equipment {
     }
 
     public String getDescription() {
-        return description;
+        return com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public void setDescription(String description) {

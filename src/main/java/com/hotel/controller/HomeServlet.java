@@ -57,7 +57,7 @@ public class HomeServlet extends HttpServlet {
             if (latestNotifications == null) latestNotifications = java.util.Collections.emptyList();
             
             long availableCount = rooms.stream().filter(r -> r != null && "Available".equalsIgnoreCase(r.getStatus())).count();
-            long bookedCount = rooms.stream().filter(r -> r != null && "Booked".equalsIgnoreCase(r.getStatus())).count();
+            long bookedCount = rooms.stream().filter(r -> r != null && ("Booked".equalsIgnoreCase(r.getStatus()) || "Occupied".equalsIgnoreCase(r.getStatus()))).count();
             long maintenanceCount = rooms.stream().filter(r -> r != null && "Maintenance".equalsIgnoreCase(r.getStatus())).count();
             double totalRevenue = bills.stream().filter(b -> b != null && "Paid".equalsIgnoreCase(b.getStatus())).mapToDouble(Bill::getTotalAmount).sum();
 
@@ -74,14 +74,17 @@ public class HomeServlet extends HttpServlet {
             
             request.getRequestDispatcher("/admin/dashboard.jsp").forward(request, response);
         } else {
-            // Public / Customer page: list available rooms and services
+            // Public / Customer page: list available rooms, services and customer feedbacks
             List<Room> availableRooms = roomDAO.getAvailableRooms();
             List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
             List<Service> services = serviceDAO.getAllServices();
+            com.hotel.dao.FeedbackDAO feedbackDAO = new com.hotel.dao.FeedbackDAO();
+            List<com.hotel.model.Feedback> feedbacks = feedbackDAO.getAll();
             
             request.setAttribute("availableRooms", availableRooms);
             request.setAttribute("roomTypes", roomTypes);
             request.setAttribute("services", services);
+            request.setAttribute("feedbacks", feedbacks);
             
             request.getRequestDispatcher("/index.jsp").forward(request, response);
         }

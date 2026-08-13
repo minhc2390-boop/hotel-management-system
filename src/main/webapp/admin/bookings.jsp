@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Booking" %>
 <%@ page import="java.util.List" %>
@@ -119,6 +119,8 @@
                     <div class="alert alert-error">Lý do hủy phải có từ 3 đến 500 ký tự.</div>
                 <% } else if ("cancelFailed".equals(request.getParameter("error"))) { %>
                     <div class="alert alert-error">Không thể hủy đặt phòng ở trạng thái hiện tại.</div>
+                <% } else if ("permissionDenied".equals(request.getParameter("error"))) { %>
+                    <div class="alert alert-error">Bạn không có quyền xem hoặc thao tác trên đơn đặt phòng của nhân viên khác.</div>
                 <% } else if ("bulkFailed".equals(request.getParameter("error"))) { %>
                     <div class="alert alert-error">Không thể xử lý. Các phòng phải cùng một khách hàng và có trạng thái phù hợp.</div>
                 <% } %>
@@ -172,6 +174,7 @@
                                 <th>KHÁCH HÀNG</th>
                                 <th>PHÒNG</th>
                                 <th>GIÁ ĐẶT</th>
+                                <th>NGƯỜI TẠO</th>
                                 <th>NHẬN PHÒNG</th>
                                 <th>TRẢ PHÒNG</th>
                                 <th>TRẠNG THÁI</th>
@@ -203,6 +206,7 @@
                                         String cPhone = (b.getCustomer() != null && b.getCustomer().getCustomerPhone() != null) ? b.getCustomer().getCustomerPhone() : "";
                                         String rNum = (b.getRoom() != null) ? b.getRoom().getRoomNumber() : "N/A";
                                         String rType = (b.getRoom() != null && b.getRoom().getRoomType() != null) ? b.getRoom().getRoomType().getName() : "";
+                                        String creatorName = (b.getCreatedBy() != null && b.getCreatedBy().getFullName() != null) ? b.getCreatedBy().getFullName() : "Khách online";
                             %>
                             <tr data-customer-id="<%= cId %>">
                                 <% if (bulkModeAvailable) { %>
@@ -227,6 +231,11 @@
                                     <div style="font-size:11px; color:var(--muted);"><%= rType %></div>
                                 </td>
                                 <td class="table-strong text-primary"><%= money.format(b.getRoomPrice()) %></td>
+                                <td>
+                                    <span style="font-size:12px; font-weight:600; color:var(--navy); display:inline-flex; align-items:center; gap:4px;">
+                                        👤 <%= creatorName %>
+                                    </span>
+                                </td>
                                 <td><%= sdf.format(b.getCheckInDate()) %></td>
                                 <td><%= sdf.format(b.getCheckOutDate()) %></td>
                                 <td>
@@ -237,7 +246,7 @@
                                         <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=receipt&id=<%= b.getBookingId() %>">📄 Phiếu</a>
                                         
                                         <% if ("Pending".equals(b.getStatus()) || "Confirmed".equals(b.getStatus())) { %>
-                                            <a class="btn btn-primary" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=checkin&id=<%= b.getBookingId() %>">Nhận phòng</a>
+                                             <a class="btn btn-primary" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=checkin&id=<%= b.getBookingId() %>">Nhận phòng</a>
                                         <% } else if ("CheckedIn".equals(b.getStatus())) { %>
                                             <a class="btn btn-success" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=checkout&id=<%= b.getBookingId() %>">Trả phòng</a>
                                         <% } %>
@@ -258,7 +267,7 @@
                                 } else {
                             %>
                             <tr>
-                                <td colspan="<%= bulkModeAvailable ? 9 : 8 %>" style="text-align: center; color: var(--muted); padding: 20px;">Không có dữ liệu đặt phòng nào.</td>
+                                <td colspan="<%= bulkModeAvailable ? 10 : 9 %>" style="text-align: center; color: var(--muted); padding: 20px;">Không có dữ liệu đặt phòng nào.</td>
                             </tr>
                             <% } %>
                             </tbody>

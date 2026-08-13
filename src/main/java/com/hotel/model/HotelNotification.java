@@ -12,12 +12,10 @@ public class HotelNotification {
     @Column(name = "notification_id")
     private int notificationId;
 
-    @org.hibernate.annotations.Nationalized
-    @Column(name = "title", nullable = false, length = 200, columnDefinition = "NVARCHAR(200)")
+    @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @org.hibernate.annotations.Nationalized
-    @Column(name = "content", nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "content", nullable = false)
     private String content;
 
     @Column(name = "type", nullable = false, length = 30)
@@ -68,7 +66,7 @@ public class HotelNotification {
 
     public String getTitle() {
         if (title == null || title.trim().isEmpty()) return "Thông báo";
-        return fixEncoding(title);
+        return com.hotel.util.EncodingUtil.fixEncoding(title);
     }
 
     public void setTitle(String title) {
@@ -77,36 +75,11 @@ public class HotelNotification {
 
     public String getContent() {
         if (content == null) return "";
-        return fixEncoding(content);
+        return com.hotel.util.EncodingUtil.fixEncoding(content);
     }
 
     public void setContent(String content) {
         this.content = content;
-    }
-
-    private String fixEncoding(String str) {
-        if (str == null || str.trim().isEmpty()) return "";
-        String s = str.trim();
-
-        if (containsVietnamese(s) && !s.contains("Ã") && !s.contains("áº") && !s.contains("á»") && !s.contains("Æ°") && !s.contains("Ä‘")) {
-            return s;
-        }
-
-        if (s.contains("Ã") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘")) {
-            try {
-                byte[] b1 = s.getBytes("ISO-8859-1");
-                String d1 = new String(b1, "UTF-8");
-                if (!d1.contains("ï¿½") && !d1.contains("\uFFFD") && containsVietnamese(d1)) {
-                    return d1;
-                }
-            } catch (Exception e) {}
-        }
-        return s;
-    }
-
-    private boolean containsVietnamese(String str) {
-        if (str == null) return false;
-        return str.matches(".*[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđĐ].*");
     }
 
     public String getType() {

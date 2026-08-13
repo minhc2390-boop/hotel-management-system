@@ -260,6 +260,18 @@
                             <%= room.getDescription() != null ? room.getDescription() : room.getRoomType().getDescription() %>
                         </strong>
                     </div>
+                    <div class="summary-line" style="flex-direction: column; align-items: flex-start; gap: 6px; border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 6px;">
+                        <span style="font-weight: 700; color: var(--luxury-navy);">Trang bị cố định trong phòng:</span>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">📺 Smart TV 4K</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">❄️ Máy lạnh Inverter</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">💨 Máy sấy tóc</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🧊 Tủ lạnh Mini Bar</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">☕ Bình đun siêu tốc</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🔒 Két sắt điện tử</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🚿 Bình nóng lạnh 24/7</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -391,8 +403,8 @@
 <%@ include file="WEB-INF/jspf/client-footer.jspf" %>
 
 <script>
-    const pricePerDay = <%= room.getRoomType().getPricePerDay() %>;
-    const roomNo = '<%= room.getRoomNumber() %>';
+    const pricePerDay = <%= (long) (room != null && room.getRoomType() != null ? room.getRoomType().getPricePerDay() : 0) %>;
+    const roomNo = '<%= room != null && room.getRoomNumber() != null ? room.getRoomNumber() : "" %>';
 
     const checkInInput = document.getElementById('checkInDate');
     const checkOutInput = document.getElementById('checkOutDate');
@@ -405,7 +417,28 @@
     const transferCard = document.getElementById('transferConfirmCard');
     const transferNotice = document.getElementById('transferNotice');
 
+    // Khởi tạo min date từ thời điểm hiện tại
+    try {
+        let now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        let currentIso = now.toISOString().slice(0, 16);
+        if (checkInInput) checkInInput.min = currentIso;
+        if (checkOutInput) checkOutInput.min = currentIso;
+    } catch (e) {
+        console.error(e);
+    }
+
+    if (checkInInput) {
+        checkInInput.addEventListener('input', calculateBooking);
+        checkInInput.addEventListener('change', calculateBooking);
+    }
+    if (checkOutInput) {
+        checkOutInput.addEventListener('input', calculateBooking);
+        checkOutInput.addEventListener('change', calculateBooking);
+    }
+
     function toggleSubmitButton() {
+        if (!checkInInput || !checkOutInput || !btnSubmit) return;
         let checkInVal = checkInInput.value;
         let checkOutVal = checkOutInput.value;
         let isDateValid = checkInVal && checkOutVal && (new Date(checkOutVal) > new Date(checkInVal));
@@ -440,10 +473,12 @@
     }
 
     function calculateBooking() {
+        if (!checkInInput || !checkOutInput || !totalEl || !depositEl || !errorEl || !qrContainer) return;
+
         let checkInVal = checkInInput.value;
         let checkOutVal = checkOutInput.value;
 
-        // Nếu chưa chọn đủ 2 ngày thì không làm gì hết và ẩn QR
+        // Nếu chưa chọn đủ 2 ngày thì ẩn báo lỗi và ẩn QR
         if (!checkInVal || !checkOutVal) {
             errorEl.classList.add('hidden');
             totalEl.textContent = '0 ₫';
@@ -457,7 +492,7 @@
         let checkInDate = new Date(checkInVal);
         let checkOutDate = new Date(checkOutVal);
 
-        if (isNaN(checkInDate) || isNaN(checkOutDate) || checkOutDate <= checkInDate) {
+        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime()) || checkOutDate <= checkInDate) {
             errorEl.classList.remove('hidden');
             totalEl.textContent = '0 ₫';
             depositEl.textContent = '0 ₫';
@@ -469,7 +504,7 @@
 
         errorEl.classList.add('hidden');
 
-        // Tính số đêm
+        // Tính số đêm lưu trú
         let diffMs = checkOutDate - checkInDate;
         let days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
         if (days <= 0) days = 1;
@@ -481,7 +516,7 @@
         totalEl.textContent = fmt.format(total) + ' (' + days + ' đêm)';
         depositEl.textContent = fmt.format(deposit);
 
-        // --- CẤU HÌNH TẠO MÃ VIETQR DỰA TRÊN PAYMENT.JSP ---
+        // --- CẤU HÌNH TẠO MÃ VIETQR TỰ ĐỘNG CHUẨN ---
         var bankId = 'MB';
         var accountNo = '1903567890123';
         var accountName = 'CONG TY NESTORA HOTEL';
@@ -493,10 +528,19 @@
                   + '&addInfo=' + encodeURIComponent(addInfoText) 
                   + '&accountName=' + encodeURIComponent(accountName);
 
-        document.getElementById('vietqr-image').src = qrUrl;
+        var qrImg = document.getElementById('vietqr-image');
+        if (qrImg) {
+            qrImg.src = qrUrl;
+        }
         qrContainer.style.display = 'block';
         toggleSubmitButton();
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (checkInInput && checkOutInput && checkInInput.value && checkOutInput.value) {
+            calculateBooking();
+        }
+    });
 </script>
 </body>
 </html>

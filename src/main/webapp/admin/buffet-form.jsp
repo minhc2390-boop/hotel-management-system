@@ -51,7 +51,7 @@
           <% if (request.getAttribute("error") != null) { %>
             <div class="alert alert-error"><%= buffetFormEscape((String) request.getAttribute("error")) %></div>
           <% } %>
-          <form method="post" action="<%= request.getContextPath() %>/buffet?action=<%= isEdit ? "update" : "insert" %>">
+          <form method="post" action="<%= request.getContextPath() %>/buffet?action=<%= isEdit ? "update" : "insert" %>" enctype="multipart/form-data" id="buffetDishForm">
             <% if (isEdit) { %><input type="hidden" name="id" value="<%= item.getId() %>"><% } %>
             <div class="form-grid">
               <div class="form-group">
@@ -95,30 +95,90 @@
               </div>
               <div class="form-group full">
                 <label class="form-label" for="description">Mô tả</label>
-                <textarea class="form-control" id="description" name="description" rows="4" maxlength="1000"
+                <textarea class="form-control" id="description" name="description" rows="3" maxlength="1000"
                           placeholder="Thành phần nổi bật hoặc mô tả ngắn về món..."><%= item != null ? buffetFormEscape(item.getDescription()) : "" %></textarea>
               </div>
+
+              <!-- Upload ảnh món ăn: Kéo thả hoặc Nhấn chọn file tự động -->
               <div class="form-group full">
-                <label class="form-label" for="imageUrl">Ảnh món ăn</label>
-                <input class="form-control" id="imageUrl" name="imageUrl" maxlength="500"
-                       list="buffet-image-suggestions"
-                       placeholder="images/buffet/buffet-breakfast.png hoặc URL HTTPS"
-                       value="<%= item != null ? buffetFormEscape(item.getImageUrl()) : "" %>">
-                <datalist id="buffet-image-suggestions">
-                  <option value="images/buffet/buffet-breakfast.png">Ảnh buffet sáng</option>
-                  <option value="images/buffet/buffet-lunch.png">Ảnh buffet trưa</option>
-                  <option value="images/buffet/buffet-dinner.png">Ảnh buffet tối</option>
-                </datalist>
-                <small class="form-hint">Chọn ảnh demo có sẵn hoặc nhập URL ảnh bắt đầu bằng https://.</small>
-                <div class="buffet-image-preview-wrap">
-                  <img id="buffet-image-preview" alt="Xem trước ảnh món ăn">
-                  <span id="buffet-image-preview-empty">Chưa chọn ảnh</span>
+                <label class="form-label">Ảnh món ăn</label>
+                <input type="hidden" name="imageUrl" id="imageUrl"
+                       value="<%= item != null && item.getImageUrl() != null ? buffetFormEscape(item.getImageUrl()) : "" %>">
+                <input type="file" id="dishFileInput" name="imageFile"
+                       accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
+
+                <div class="dish-upload-container">
+                  <!-- Trạng thái đang tải lên -->
+                  <div class="dish-upload-loader" id="dishUploadLoader">
+                    <div class="dish-spinner"></div>
+                    <div>Đang tải ảnh món ăn lên máy chủ...</div>
+                  </div>
+
+                  <!-- Khu vực Kéo & Thả / Nhấn để chọn ảnh -->
+                  <div class="dish-dropzone" id="dishDropzone" tabindex="0" role="button" aria-label="Tải lên ảnh món ăn">
+                    <div class="dish-dropzone-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                    <div class="dish-dropzone-title">
+                      Kéo thả ảnh vào đây hoặc <span class="dish-dropzone-btn">chọn file từ máy</span>
+                    </div>
+                    <p class="dish-dropzone-hint">
+                      Hỗ trợ định dạng JPG, PNG, WEBP, GIF (tối đa 10MB). Ảnh sẽ tự động tải lên và lưu vào hệ thống.
+                    </p>
+                  </div>
+
+                  <!-- Khung Xem trước ảnh khi đã có ảnh -->
+                  <div class="dish-preview-card" id="dishPreviewCard" style="display:none">
+                    <div class="dish-preview-img-box">
+                      <img id="dishPreviewImg" src="" alt="Xem trước món ăn">
+                      <div class="dish-preview-overlay">
+                        <span class="dish-status-tag active-tag" id="dishPreviewTag">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                          Ảnh món ăn sẵn sàng
+                        </span>
+                      </div>
+                    </div>
+                    <div class="dish-preview-actions">
+                      <div class="dish-preview-info">
+                        <span class="dish-preview-filename" id="dishFileName">anh_mon_an.png</span>
+                        <span class="dish-preview-meta" id="dishFileMeta">Đã lưu trong thư mục ảnh món ăn</span>
+                      </div>
+                      <div class="dish-preview-btns">
+                        <button type="button" class="btn btn-outline" id="btnChangeDishImage" style="font-size:12px;padding:6px 12px;min-height:auto">
+                          Thay đổi ảnh
+                        </button>
+                        <button type="button" class="btn btn-danger" id="btnRemoveDishImage" style="font-size:12px;padding:6px 12px;min-height:auto">
+                          Xóa ảnh
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Thanh gợi ý ảnh mẫu nhanh nếu không muốn tìm file -->
+                  <div class="dish-preset-box">
+                    <span class="dish-preset-label">Gợi ý ảnh mẫu:</span>
+                    <button type="button" class="dish-preset-btn" data-preset="images/buffet/buffet-breakfast.png">
+                      🍳 Buffet sáng
+                    </button>
+                    <button type="button" class="dish-preset-btn" data-preset="images/buffet/buffet-lunch.png">
+                      🍛 Buffet trưa
+                    </button>
+                    <button type="button" class="dish-preset-btn" data-preset="images/buffet/buffet-dinner.png">
+                      🥩 Buffet tối
+                    </button>
+                  </div>
+
+                  <div id="dishUploadError" class="alert alert-error" style="display:none;margin-top:4px"></div>
                 </div>
               </div>
             </div>
             <div style="display:flex;gap:10px;margin-top:20px">
               <a class="btn btn-outline" href="<%= request.getContextPath() %>/buffet?action=list">Hủy</a>
-              <button class="btn btn-primary" type="submit"><%= isEdit ? "Lưu thay đổi" : "Thêm món" %></button>
+              <button class="btn btn-primary" type="submit" id="btnSubmitDish"><%= isEdit ? "Lưu thay đổi" : "Thêm món" %></button>
             </div>
           </form>
         </section>
@@ -129,37 +189,215 @@
 <script src="<%= request.getContextPath() %>/js/app.js"></script>
 <script>
   (function () {
-    const input = document.getElementById('imageUrl');
-    const preview = document.getElementById('buffet-image-preview');
-    const empty = document.getElementById('buffet-image-preview-empty');
     const contextPath = '<%= request.getContextPath() %>';
+    const imageUrlInput = document.getElementById('imageUrl');
+    const fileInput = document.getElementById('dishFileInput');
+    const dropzone = document.getElementById('dishDropzone');
+    const previewCard = document.getElementById('dishPreviewCard');
+    const previewImg = document.getElementById('dishPreviewImg');
+    const previewTag = document.getElementById('dishPreviewTag');
+    const fileNameSpan = document.getElementById('dishFileName');
+    const fileMetaSpan = document.getElementById('dishFileMeta');
+    const loader = document.getElementById('dishUploadLoader');
+    const errorBox = document.getElementById('dishUploadError');
+    const btnChange = document.getElementById('btnChangeDishImage');
+    const btnRemove = document.getElementById('btnRemoveDishImage');
+    const presetBtns = document.querySelectorAll('.dish-preset-btn');
 
-    function updatePreview() {
-      const value = input.value.trim();
-      if (!value) {
-        preview.removeAttribute('src');
-        preview.style.display = 'none';
-        empty.textContent = 'Chưa chọn ảnh';
-        empty.style.display = '';
-        return;
+    function showError(msg) {
+      if (errorBox) {
+        errorBox.textContent = msg;
+        errorBox.style.display = 'block';
       }
-      preview.src = value.startsWith('https://')
-          ? value
-          : contextPath + '/' + value.replace(/^\//, '');
-      preview.style.display = 'block';
-      empty.style.display = 'none';
     }
 
-    input.addEventListener('input', updatePreview);
-    preview.addEventListener('error', function () {
-      preview.style.display = 'none';
-      empty.textContent = 'Không tải được ảnh từ đường dẫn này';
-      empty.style.display = '';
+    function clearError() {
+      if (errorBox) {
+        errorBox.textContent = '';
+        errorBox.style.display = 'none';
+      }
+    }
+
+    function resolveSrc(url) {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+        return url;
+      }
+      return contextPath + '/' + url.replace(/^\//, '');
+    }
+
+    function renderState() {
+      const currentUrl = imageUrlInput.value.trim();
+      if (currentUrl) {
+        previewImg.src = resolveSrc(currentUrl);
+        const namePart = currentUrl.split('/').pop() || 'Ảnh món ăn';
+        fileNameSpan.textContent = decodeURIComponent(namePart);
+        fileMetaSpan.textContent = 'Ảnh đã sẵn sàng lưu cùng món';
+        dropzone.style.display = 'none';
+        previewCard.style.display = 'block';
+      } else {
+        previewImg.removeAttribute('src');
+        dropzone.style.display = 'flex';
+        previewCard.style.display = 'none';
+      }
+    }
+
+    function uploadFile(file) {
+      if (!file) return;
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+        showError('Chỉ hỗ trợ file ảnh (JPG, PNG, WEBP, GIF).');
+        return;
+      }
+
+      // Validate size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        showError('Dung lượng ảnh không được vượt quá 10MB.');
+        return;
+      }
+
+      clearError();
+
+      // Instant local preview
+      const localUrl = URL.createObjectURL(file);
+      previewImg.src = localUrl;
+      fileNameSpan.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+      fileMetaSpan.textContent = 'Đang tự động lưu lên máy chủ...';
+      dropzone.style.display = 'none';
+      previewCard.style.display = 'block';
+
+      // Show loader
+      if (loader) loader.style.display = 'flex';
+
+      // Upload via AJAX
+      const formData = new FormData();
+      formData.append('imageFile', file);
+
+      fetch(contextPath + '/buffet?action=upload-image', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (data) {
+        if (loader) loader.style.display = 'none';
+        if (data.success && data.imageUrl) {
+          imageUrlInput.value = data.imageUrl;
+          fileMetaSpan.textContent = 'Đã tải lên và lưu vào hệ thống thành công';
+          previewTag.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Đã tải lên máy chủ';
+        } else {
+          showError(data.message || 'Không thể tải ảnh lên máy chủ. Vui lòng thử lại.');
+          imageUrlInput.value = '';
+          renderState();
+        }
+      })
+      .catch(function (err) {
+        if (loader) loader.style.display = 'none';
+        // If AJAX upload failed, we still have the file in input for multipart submission fallback
+        fileMetaSpan.textContent = 'Ảnh đã chọn (sẽ lưu khi nhấn nút Lưu/Thêm món)';
+      });
+    }
+
+    // Click dropzone to open file dialog
+    dropzone.addEventListener('click', function () {
+      fileInput.click();
     });
-    preview.addEventListener('load', function () {
-      empty.textContent = 'Chưa chọn ảnh';
+
+    dropzone.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
     });
-    updatePreview();
+
+    // File input change
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files && fileInput.files[0]) {
+        uploadFile(fileInput.files[0]);
+      }
+    });
+
+    // Drag & Drop events
+    ['dragenter', 'dragover'].forEach(function (eventName) {
+      dropzone.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('is-dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(function (eventName) {
+      dropzone.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('is-dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', function (e) {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        fileInput.files = dt.files;
+        uploadFile(dt.files[0]);
+      }
+    });
+
+    // Allow dropping directly onto the preview card as well
+    ['dragenter', 'dragover'].forEach(function (eventName) {
+      previewCard.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        previewCard.style.outline = '2px dashed var(--brand)';
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(function (eventName) {
+      previewCard.addEventListener(eventName, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        previewCard.style.outline = 'none';
+      });
+    });
+
+    previewCard.addEventListener('drop', function (e) {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        fileInput.files = dt.files;
+        uploadFile(dt.files[0]);
+      }
+    });
+
+    // Change button
+    btnChange.addEventListener('click', function () {
+      fileInput.click();
+    });
+
+    // Remove button
+    btnRemove.addEventListener('click', function () {
+      imageUrlInput.value = '';
+      fileInput.value = '';
+      clearError();
+      renderState();
+    });
+
+    // Preset buttons
+    presetBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const presetPath = btn.getAttribute('data-preset');
+        if (presetPath) {
+          imageUrlInput.value = presetPath;
+          fileInput.value = '';
+          clearError();
+          renderState();
+        }
+      });
+    });
+
+    // Initial load
+    renderState();
   })();
 </script>
 </body>

@@ -49,7 +49,7 @@ public class Customer {
     }
 
     public String getCustomerName() {
-        return customerName;
+        return com.hotel.util.EncodingUtil.fixEncoding(customerName);
     }
 
     public void setCustomerName(String customerName) {

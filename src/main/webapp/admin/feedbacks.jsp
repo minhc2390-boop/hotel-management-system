@@ -27,7 +27,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Đánh giá & Góp ý - Nestora</title>
+  <title>Đánh giá & Góp ý - Matrix</title>
   <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
 </head>
 <body>

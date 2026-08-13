@@ -12,15 +12,13 @@ public class Laundry {
     @Column(name = "id")
     private int id;
 
-    @org.hibernate.annotations.Nationalized
-    @Column(name = "customer_name", nullable = false, length = 150, columnDefinition = "NVARCHAR(150)")
+    @Column(name = "customer_name", nullable = false, length = 150)
     private String customerName;
 
     @Column(name = "room_number", nullable = false, length = 20)
     private String roomNumber;
 
-    @org.hibernate.annotations.Nationalized
-    @Column(name = "service_type", length = 100, columnDefinition = "NVARCHAR(100)")
+    @Column(name = "service_type", length = 100)
     private String serviceType;
 
     @Column(name = "quantity")
@@ -29,12 +27,10 @@ public class Laundry {
     @Column(name = "total_price")
     private double totalPrice = 0.0;
 
-    @org.hibernate.annotations.Nationalized
-    @Column(name = "processing_status", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
+    @Column(name = "processing_status", nullable = false, length = 100)
     private String processingStatus = "PENDING";
 
-    @org.hibernate.annotations.Nationalized
-    @Column(name = "notes", length = 500, columnDefinition = "NVARCHAR(500)")
+    @Column(name = "notes", length = 500)
     private String notes;
 
     @Column(name = "created_date")
@@ -75,7 +71,7 @@ public class Laundry {
     }
 
     public String getCustomerName() {
-        return fixEncoding(customerName);
+        return com.hotel.util.EncodingUtil.fixEncoding(customerName);
     }
 
     public void setCustomerName(String customerName) {
@@ -94,7 +90,7 @@ public class Laundry {
         if (serviceType == null || serviceType.trim().isEmpty()) {
             return "Giặt sấy thông thường";
         }
-        String str = fixEncoding(serviceType.trim());
+        String str = com.hotel.util.EncodingUtil.fixEncoding(serviceType.trim());
 
         String lower = str.toLowerCase();
         if (lower.contains("sấy") || lower.contains("say") || lower.contains("thông thường") || lower.contains("thong thuong")) {
@@ -139,7 +135,7 @@ public class Laundry {
         if (processingStatus == null || processingStatus.trim().isEmpty()) {
             return "Chưa hoàn thành";
         }
-        String s = fixEncoding(processingStatus.trim()).toUpperCase();
+        String s = com.hotel.util.EncodingUtil.fixEncoding(processingStatus.trim()).toUpperCase();
         if (s.contains("CHƯA") || s.contains("CHUA") || s.contains("PENDING") || s.contains("UNCOMPLETED")) {
             return "Chưa hoàn thành";
         }
@@ -169,34 +165,11 @@ public class Laundry {
     }
 
     public String getNotes() {
-        return fixEncoding(notes);
+        return com.hotel.util.EncodingUtil.fixEncoding(notes);
     }
 
     public void setNotes(String notes) {
         this.notes = notes;
-    }
-
-    private String fixEncoding(String str) {
-        if (str == null || str.trim().isEmpty()) return "";
-        String s = str.trim();
-        if (containsVietnamese(s) && !s.contains("Ã") && !s.contains("áº") && !s.contains("á»") && !s.contains("Æ°") && !s.contains("Ä‘")) {
-            return s;
-        }
-        try {
-            if (s.contains("Ã") || s.contains("áº") || s.contains("á»") || s.contains("Æ°") || s.contains("Ä‘")) {
-                byte[] bytes = s.getBytes("ISO-8859-1");
-                String decoded = new String(bytes, "UTF-8");
-                if (!decoded.contains("ï¿½") && !decoded.contains("\uFFFD") && containsVietnamese(decoded)) {
-                    return decoded;
-                }
-            }
-        } catch (Exception e) {}
-        return s;
-    }
-
-    private boolean containsVietnamese(String str) {
-        if (str == null) return false;
-        return str.matches(".*[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđĐ].*");
     }
 
     public LocalDateTime getCreatedDate() {

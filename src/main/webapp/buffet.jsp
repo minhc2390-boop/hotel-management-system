@@ -98,7 +98,7 @@
               <div class="buffet-dish <%= item.getImageUrl() != null && !item.getImageUrl().isEmpty() ? "has-image" : "" %>">
                 <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
                      String rawImageUrl = item.getImageUrl();
-                     String resolvedImageUrl = rawImageUrl.startsWith("https://")
+                     String resolvedImageUrl = (rawImageUrl.startsWith("https://") || rawImageUrl.startsWith("http://") || rawImageUrl.startsWith("data:"))
                          ? rawImageUrl
                          : request.getContextPath() + "/"
                              + (rawImageUrl.startsWith("/") ? rawImageUrl.substring(1) : rawImageUrl);

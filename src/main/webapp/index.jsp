@@ -610,7 +610,9 @@
                                 String statusBadgeText = isAvailable ? "Còn phòng" : "Kín phòng";
                                 String badgeBgColor = isAvailable ? "rgba(22, 163, 106, 0.9)" : "rgba(217, 119, 6, 0.9)";
                             %>
-                            <span class="luxury-card-badge" style="background: <%= badgeBgColor %>;"><%= statusBadgeText %></span>
+                            <span class="luxury-card-badge" style="background: <%= badgeBgColor %>;">
+                            <%= statusBadgeText %>
+                            </span>
                         </div>
                         <div class="luxury-card-body">
                             <div>
@@ -629,6 +631,14 @@
                                     </span>
                                 </div>
                                 <p class="luxury-card-desc"><%= r.getDescription() != null ? r.getDescription() : r.getRoomType().getDescription() %></p>
+                                <div class="equipment-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;">
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">📺 Smart TV 4K</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">❄️ Máy lạnh Inverter</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">💨 Máy sấy tóc</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🧊 Tủ lạnh Mini Bar</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">☕ Bình đun siêu tốc</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🔒 Két sắt</span>
+                                </div>
                             </div>
                             <div class="luxury-card-foot">
                                 <div class="luxury-card-price-wrap">
