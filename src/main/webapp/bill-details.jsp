@@ -19,6 +19,12 @@ User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null
 Bill bill = (Bill) request.getAttribute("bill");
 List<BillDetail> details = (List<BillDetail>) request.getAttribute("details");
 List<Service> services = (List<Service>) request.getAttribute("services");
+String reqBankId = (String) request.getAttribute("bankId");
+String reqBankAccount = (String) request.getAttribute("bankAccount");
+String reqBankName = (String) request.getAttribute("bankName");
+if (reqBankId == null || reqBankId.isEmpty()) reqBankId = "MB";
+if (reqBankAccount == null || reqBankAccount.isEmpty()) reqBankAccount = "1903567890123";
+if (reqBankName == null || reqBankName.isEmpty()) reqBankName = "CONG TY NESTORA HOTEL";
 if (currentUser == null || bill == null) {
 	response.sendRedirect(request.getContextPath() + "/login");
 	return;
@@ -312,9 +318,9 @@ else if ("Card".equals(bill.getPaymentMethod())) paymentMethodLabel = "Th·∫ª ng√
 	      
 	      if (select.value === 'BankTransfer') {
 	          var amount = '<%= (long)bill.getTotalAmount() %>';
-	          var bankId = localStorage.getItem('hotel_bank_id') || 'MB';
-	          var accountNo = localStorage.getItem('hotel_bank_account') || '1903567890123';
-	          var accountName = localStorage.getItem('hotel_bank_name') || 'CONG TY NESTORA HOTEL';
+	          var bankId = '<%= reqBankId %>';
+	          var accountNo = '<%= reqBankAccount %>';
+	          var accountName = '<%= reqBankName %>';
 	          
 	          // Update display texts
 	          document.getElementById('display-bank-id').innerText = bankId;

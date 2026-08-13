@@ -2,14 +2,33 @@
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Room" %>
 <%@ page import="com.hotel.model.Service" %>
+<%@ page import="com.hotel.model.Feedback" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.Locale" %>
+<%!
+    private String indexEscape(String value) {
+        if (value == null) return "";
+        return value.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
+    }
+
+    private String indexInitials(String fullName) {
+        if (fullName == null || fullName.trim().isEmpty()) return "NK";
+        String[] parts = fullName.trim().split("\\s+");
+        String first = parts[0].substring(0, 1);
+        String last = parts.length > 1 ? parts[parts.length - 1].substring(0, 1) : "";
+        return (first + last).toUpperCase(Locale.forLanguageTag("vi-VN"));
+    }
+%>
 <%
     HttpSession sess = request.getSession(false);
     User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
     List<Room> availableRooms = (List<Room>) request.getAttribute("availableRooms");
     List<Service> services = (List<Service>) request.getAttribute("services");
+    List<Feedback> excellentFeedbacks = (List<Feedback>) request.getAttribute("excellentFeedbacks");
+    if (excellentFeedbacks == null) excellentFeedbacks = Collections.emptyList();
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 %>
 <!DOCTYPE html>
@@ -460,9 +479,74 @@
             margin: 0;
         }
 
+        /* Đánh giá thực tế của khách hàng */
+        .testimonial-section {
+            position: relative;
+            margin: 0 0 56px;
+            padding: clamp(30px, 5vw, 52px);
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at 90% 10%, rgba(23, 105, 224, .13), transparent 34%),
+                linear-gradient(145deg, var(--surface), var(--canvas));
+            box-shadow: var(--shadow);
+        }
+        .testimonial-heading {
+            max-width: 650px;
+            margin-bottom: 28px;
+        }
+        .testimonial-heading .section-header { margin: 0; text-align: left; }
+        .testimonial-heading p { margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+        .testimonial-viewport { overflow: hidden; border-radius: 16px; }
+        .testimonial-track { display: flex; transition: transform .55s cubic-bezier(.22,.61,.36,1); }
+        .testimonial-slide { min-width: 100%; padding: 2px; }
+        .testimonial-card {
+            min-height: 260px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 250px;
+            gap: clamp(24px, 5vw, 58px);
+            align-items: center;
+            padding: clamp(24px, 4vw, 42px);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--surface);
+        }
+        .testimonial-quote-mark { color: var(--brand); font-family: Georgia, serif; font-size: 58px; line-height: .65; opacity: .3; }
+        .testimonial-stars { display: flex; gap: 4px; margin: 16px 0; color: #f5a623; font-size: 20px; letter-spacing: .05em; }
+        .testimonial-content { margin: 0; color: var(--text); font-size: clamp(17px, 2vw, 22px); line-height: 1.65; font-weight: 600; }
+        .testimonial-person {
+            padding: 24px;
+            border-radius: 14px;
+            color: #fff;
+            background: linear-gradient(145deg, var(--luxury-navy), var(--brand-dark));
+        }
+        .testimonial-avatar {
+            width: 58px; height: 58px; display: grid; place-items: center;
+            margin-bottom: 16px; border-radius: 50%; color: var(--luxury-navy);
+            background: linear-gradient(145deg, #fff, #dbeafe); font-size: 18px; font-weight: 800;
+        }
+        .testimonial-person strong { display: block; font-size: 16px; }
+        .testimonial-person span { display: block; margin-top: 6px; color: rgba(255,255,255,.72); font-size: 12px; line-height: 1.6; }
+        .testimonial-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; }
+        .testimonial-arrows { display: flex; gap: 8px; }
+        .testimonial-arrow {
+            width: 42px; height: 42px; display: grid; place-items: center;
+            border: 1px solid var(--line); border-radius: 50%; color: var(--text);
+            background: var(--surface); transition: .2s ease;
+        }
+        .testimonial-arrow:hover { color: #fff; border-color: var(--brand); background: var(--brand); }
+        .testimonial-dots { display: flex; justify-content: center; flex-wrap: wrap; gap: 7px; }
+        .testimonial-dot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 99px; background: var(--line); transition: .2s ease; }
+        .testimonial-dot.active { width: 26px; background: var(--brand); }
+        .testimonial-empty { padding: 40px 20px; text-align: center; color: var(--muted); }
+
         @media (max-width: 900px) {
             .features-grid { grid-template-columns: repeat(2, 1fr); }
             .services-grid { grid-template-columns: 1fr; }
+            .testimonial-card { grid-template-columns: 1fr; }
+            .testimonial-person { display: grid; grid-template-columns: 58px 1fr; align-items: center; column-gap: 16px; }
+            .testimonial-avatar { margin: 0; grid-row: span 2; }
         }
         @media (max-width: 640px) {
             .features-grid { grid-template-columns: 1fr; }
@@ -610,7 +694,9 @@
                                 String statusBadgeText = isAvailable ? "Còn phòng" : "Kín phòng";
                                 String badgeBgColor = isAvailable ? "rgba(22, 163, 106, 0.9)" : "rgba(217, 119, 6, 0.9)";
                             %>
-                            <span class="luxury-card-badge" style="background: <%= badgeBgColor %>;"><%= statusBadgeText %></span>
+                            <span class="luxury-card-badge" style="background: <%= badgeBgColor %>;">
+                            <%= statusBadgeText %>
+                            </span>
                         </div>
                         <div class="luxury-card-body">
                             <div>
@@ -629,6 +715,14 @@
                                     </span>
                                 </div>
                                 <p class="luxury-card-desc"><%= r.getDescription() != null ? r.getDescription() : r.getRoomType().getDescription() %></p>
+                                <div class="equipment-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;">
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">📺 Smart TV 4K</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">❄️ Máy lạnh Inverter</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">💨 Máy sấy tóc</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🧊 Tủ lạnh Mini Bar</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">☕ Bình đun siêu tốc</span>
+                                    <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🔒 Két sắt</span>
+                                </div>
                             </div>
                             <div class="luxury-card-foot">
                                 <div class="luxury-card-price-wrap">
@@ -693,6 +787,70 @@
         </section>
     <% } %>
 
+    <section class="testimonial-section" id="danh-gia" aria-labelledby="testimonial-title" data-testimonial-carousel>
+        <div class="testimonial-heading">
+            <div class="section-header">
+                <span class="section-subtitle">Trải nghiệm thực tế</span>
+                <h2 class="section-title" id="testimonial-title">Khách hàng nói gì về Nestora?</h2>
+            </div>
+            <p>Những chia sẻ được gửi bởi khách hàng sau khi hoàn tất kỳ lưu trú tại khách sạn.</p>
+        </div>
+
+        <% if (!excellentFeedbacks.isEmpty()) { %>
+            <div class="testimonial-viewport" aria-live="polite">
+                <div class="testimonial-track">
+                    <% for (int feedbackIndex = 0; feedbackIndex < excellentFeedbacks.size(); feedbackIndex++) {
+                           Feedback feedback = excellentFeedbacks.get(feedbackIndex);
+                           String reviewerName = feedback.getCustomerUser() != null
+                                   ? feedback.getCustomerUser().getFullName() : "Khách hàng Nestora";
+                           String roomLabel = feedback.getBooking() != null && feedback.getBooking().getRoom() != null
+                                   ? "Phòng " + feedback.getBooking().getRoom().getRoomNumber() : "Kỳ nghỉ tại Nestora";
+                           String roomTypeLabel = feedback.getBooking() != null
+                                   && feedback.getBooking().getRoom() != null
+                                   && feedback.getBooking().getRoom().getRoomType() != null
+                                   ? feedback.getBooking().getRoom().getRoomType().getName() : "";
+                    %>
+                        <article class="testimonial-slide" aria-hidden="<%= feedbackIndex == 0 ? "false" : "true" %>">
+                            <div class="testimonial-card">
+                                <div>
+                                    <div class="testimonial-quote-mark" aria-hidden="true">“</div>
+                                    <div class="testimonial-stars" aria-label="<%= feedback.getRating() %> trên 5 sao">
+                                        <% for (int star = 1; star <= 5; star++) { %><span aria-hidden="true"><%= star <= feedback.getRating() ? "★" : "☆" %></span><% } %>
+                                    </div>
+                                    <blockquote class="testimonial-content">“<%= indexEscape(feedback.getContent()) %>”</blockquote>
+                                </div>
+                                <div class="testimonial-person">
+                                    <div class="testimonial-avatar" aria-hidden="true"><%= indexEscape(indexInitials(reviewerName)) %></div>
+                                    <strong><%= indexEscape(reviewerName) %></strong>
+                                    <span><%= indexEscape(roomLabel) %><%= roomTypeLabel.isEmpty() ? "" : " · " + indexEscape(roomTypeLabel) %></span>
+                                </div>
+                            </div>
+                        </article>
+                    <% } %>
+                </div>
+            </div>
+            <div class="testimonial-controls">
+                <div class="testimonial-arrows">
+                    <button class="testimonial-arrow" type="button" data-testimonial-prev aria-label="Đánh giá trước">←</button>
+                    <button class="testimonial-arrow" type="button" data-testimonial-next aria-label="Đánh giá tiếp theo">→</button>
+                </div>
+                <div class="testimonial-dots" role="tablist" aria-label="Chọn đánh giá">
+                    <% for (int dotIndex = 0; dotIndex < excellentFeedbacks.size(); dotIndex++) { %>
+                        <button class="testimonial-dot <%= dotIndex == 0 ? "active" : "" %>" type="button"
+                                data-testimonial-dot="<%= dotIndex %>" role="tab"
+                                aria-label="Xem đánh giá <%= dotIndex + 1 %>"
+                                aria-selected="<%= dotIndex == 0 ? "true" : "false" %>"></button>
+                    <% } %>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="testimonial-empty">
+                <strong>Đánh giá xuất sắc đang được cập nhật</strong>
+                <p>Những trải nghiệm mới nhất của khách hàng sẽ sớm xuất hiện tại đây.</p>
+            </div>
+        <% } %>
+    </section>
+
 </main>
 
 <%@ include file="WEB-INF/jspf/client-footer.jspf" %>
@@ -729,6 +887,58 @@
     function resetTimer() {
         clearInterval(slideTimer);
         slideTimer = setInterval(nextSlide, 5000);
+    }
+
+    // Carousel đánh giá thực tế từ FeedbackDAO
+    const testimonialCarousel = document.querySelector('[data-testimonial-carousel]');
+    if (testimonialCarousel) {
+        const testimonialTrack = testimonialCarousel.querySelector('.testimonial-track');
+        const testimonialSlides = Array.from(testimonialCarousel.querySelectorAll('.testimonial-slide'));
+        const testimonialDots = Array.from(testimonialCarousel.querySelectorAll('[data-testimonial-dot]'));
+        const testimonialPrev = testimonialCarousel.querySelector('[data-testimonial-prev]');
+        const testimonialNext = testimonialCarousel.querySelector('[data-testimonial-next]');
+        let testimonialIndex = 0;
+        let testimonialTimer = null;
+
+        function showTestimonial(index) {
+            if (!testimonialTrack || testimonialSlides.length === 0) return;
+            testimonialIndex = (index + testimonialSlides.length) % testimonialSlides.length;
+            testimonialTrack.style.transform = 'translateX(-' + (testimonialIndex * 100) + '%)';
+            testimonialSlides.forEach((slide, itemIndex) => {
+                slide.setAttribute('aria-hidden', itemIndex === testimonialIndex ? 'false' : 'true');
+            });
+            testimonialDots.forEach((dot, itemIndex) => {
+                const active = itemIndex === testimonialIndex;
+                dot.classList.toggle('active', active);
+                dot.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+        }
+
+        function restartTestimonialTimer() {
+            if (testimonialTimer) clearInterval(testimonialTimer);
+            if (testimonialSlides.length > 1) {
+                testimonialTimer = setInterval(() => showTestimonial(testimonialIndex + 1), 6500);
+            }
+        }
+
+        if (testimonialPrev) testimonialPrev.addEventListener('click', () => {
+            showTestimonial(testimonialIndex - 1);
+            restartTestimonialTimer();
+        });
+        if (testimonialNext) testimonialNext.addEventListener('click', () => {
+            showTestimonial(testimonialIndex + 1);
+            restartTestimonialTimer();
+        });
+        testimonialDots.forEach(dot => dot.addEventListener('click', () => {
+            showTestimonial(Number(dot.dataset.testimonialDot));
+            restartTestimonialTimer();
+        }));
+        testimonialCarousel.addEventListener('mouseenter', () => {
+            if (testimonialTimer) clearInterval(testimonialTimer);
+        });
+        testimonialCarousel.addEventListener('mouseleave', restartTestimonialTimer);
+        showTestimonial(0);
+        restartTestimonialTimer();
     }
 </script>
 </body>

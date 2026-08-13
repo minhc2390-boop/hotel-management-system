@@ -20,6 +20,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * ============================================================================
+ * [NHIỆM VỤ THÀNH VIÊN 5] - Phân hệ Hóa đơn, Thanh toán & Thống kê Doanh thu
+ * - Quản lý quy trình tính tổng hóa đơn, tạo hóa đơn khi Check-out.
+ * - Xác nhận Thanh toán Hóa đơn (Tiền mặt, QR Code, Thẻ).
+ * - Báo cáo Thống kê Doanh thu & Lợi nhuận (Profits & Analytics).
+ * ============================================================================
+ */
 @WebServlet(name = "BillServlet", urlPatterns = {"/bills"})
 public class BillServlet extends HttpServlet {
     private final BillDAO billDAO = new BillDAO();
@@ -78,6 +86,18 @@ public class BillServlet extends HttpServlet {
                 
                 List<BillDetail> details = billDetailDAO.getBillDetailsByBillId(billId);
                 List<Service> services = serviceDAO.getAllServices();
+                
+                com.hotel.dao.SystemSettingDAO settingDAO = new com.hotel.dao.SystemSettingDAO();
+                String bankId = settingDAO.getSetting("hotel_bank_id");
+                String bankAccount = settingDAO.getSetting("hotel_bank_account");
+                String bankName = settingDAO.getSetting("hotel_bank_name");
+                if (bankId.isEmpty()) bankId = "MB";
+                if (bankAccount.isEmpty()) bankAccount = "1903567890123";
+                if (bankName.isEmpty()) bankName = "CONG TY NESTORA HOTEL";
+
+                request.setAttribute("bankId", bankId);
+                request.setAttribute("bankAccount", bankAccount);
+                request.setAttribute("bankName", bankName);
                 
                 request.setAttribute("bill", bill);
                 request.setAttribute("details", details);

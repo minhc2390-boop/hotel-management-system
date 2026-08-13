@@ -1,9 +1,25 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
+<%@ page import="com.hotel.model.Room" %>
+<%@ page import="com.hotel.dao.RoomDAO" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.text.NumberFormat" %>
+<%@ page import="java.util.Locale" %>
 <%
     HttpSession sess = request.getSession(false);
     User currentUser = sess != null ? (User)sess.getAttribute("currentUser") : null;
+    if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        response.sendRedirect(request.getContextPath() + "/home");
+        return;
+    }
     String activeMenu = "roomMap";
+    RoomDAO roomDAO = new RoomDAO();
+    roomDAO.syncRoomStatuses();
+    List<Room> rooms = (List<Room>) request.getAttribute("rooms");
+    if (rooms == null) {
+        rooms = roomDAO.getAllRooms();
+    }
+    NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -24,113 +40,52 @@
               <div>
                 <div class="breadcrumb">Vận hành / Sơ đồ phòng</div>
                 <h1 class="page-title">Sơ đồ phòng</h1>
-                <p class="page-desc">Theo dõi trạng thái phòng theo từng tầng.</p>
+                <p class="page-desc">Theo dõi trạng thái phòng theo từng tầng và cập nhật dọn dẹp, bảo trì.</p>
               </div>
               <div class="page-actions">
                 <a class="btn btn-primary" href="<%= request.getContextPath() %>/rooms?action=add">＋ Thêm phòng</a>
               </div>
             </div>
-            <div class="tabs">
-              <button class="tab active">Tất cả</button>
-              <button class="tab">Phòng trống</button>
-              <button class="tab">Đang sử dụng</button>
-              <button class="tab">Đang dọn</button>
-              <button class="tab">Bảo trì</button>
-            </div>
             <section class="surface surface-pad">
               <div class="surface-head" style="padding: 0 0 16px">
                 <div>
-                  <h2 class="surface-title">Tầng 1 & 2</h2>
-                  <p class="surface-subtitle">12 phòng đang hiển thị</p>
+                  <h2 class="surface-title">Danh sách phòng thực tế</h2>
+                  <p class="surface-subtitle"><%= rooms != null ? rooms.size() : 0 %> phòng đang quản lý trên hệ thống</p>
                 </div>
               </div>
               <div class="room-map-grid">
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #16a36a"></span>
-                  <div class="room-no">101</div>
-                  <div class="room-type">Deluxe King</div>
-                  <div class="room-person">Trống</div>
-                  <div class="room-price">1.200.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #1769e0"></span>
-                  <div class="room-no">102</div>
-                  <div class="room-type">Deluxe Twin</div>
-                  <div class="room-person">Nguyễn Văn A</div>
-                  <div class="room-price">1.200.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #16a36a"></span>
-                  <div class="room-no">103</div>
-                  <div class="room-type">Superior</div>
-                  <div class="room-person">Trống</div>
-                  <div class="room-price">950.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #f59e0b"></span>
-                  <div class="room-no">104</div>
-                  <div class="room-type">Suite</div>
-                  <div class="room-person">Đang dọn</div>
-                  <div class="room-price">2.400.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #16a36a"></span>
-                  <div class="room-no">105</div>
-                  <div class="room-type">Superior</div>
-                  <div class="room-person">Trống</div>
-                  <div class="room-price">950.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #1769e0"></span>
-                  <div class="room-no">106</div>
-                  <div class="room-type">Deluxe King</div>
-                  <div class="room-person">Trần Minh Huy</div>
-                  <div class="room-price">1.200.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #16a36a"></span>
-                  <div class="room-no">201</div>
-                  <div class="room-type">Deluxe Twin</div>
-                  <div class="room-person">Trống</div>
-                  <div class="room-price">1.200.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #ff4163"></span>
-                  <div class="room-no">202</div>
-                  <div class="room-type">Suite</div>
-                  <div class="room-person">Bảo trì</div>
-                  <div class="room-price">2.400.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #1769e0"></span>
-                  <div class="room-no">203</div>
-                  <div class="room-type">Superior</div>
-                  <div class="room-person">Lê Ngọc Anh</div>
-                  <div class="room-price">950.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #16a36a"></span>
-                  <div class="room-no">204</div>
-                  <div class="room-type">Deluxe King</div>
-                  <div class="room-person">Trống</div>
-                  <div class="room-price">1.200.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #f59e0b"></span>
-                  <div class="room-no">205</div>
-                  <div class="room-type">Deluxe Twin</div>
-                  <div class="room-person">Đang dọn</div>
-                  <div class="room-price">1.200.000 đ</div>
-                </div>
-                <div class="room-tile">
-                  <span class="room-dot" style="background: #16a36a"></span>
-                  <div class="room-no">206</div>
-                  <div class="room-type">Suite</div>
-                  <div class="room-person">Trống</div>
-                  <div class="room-price">2.400.000 đ</div>
-                </div>
+                <% if (rooms != null && !rooms.isEmpty()) {
+                    for (Room r : rooms) {
+                        String dotColor = "#16a36a"; // Available
+                        String statusLabel = "Trống";
+                        if ("Occupied".equalsIgnoreCase(r.getStatus())) {
+                            dotColor = "#1769e0";
+                            statusLabel = "Đang sử dụng";
+                        } else if ("Cleaning".equalsIgnoreCase(r.getStatus())) {
+                            dotColor = "#f59e0b";
+                            statusLabel = "Dọn dẹp";
+                        } else if ("Maintenance".equalsIgnoreCase(r.getStatus())) {
+                            dotColor = "#ff4163";
+                            statusLabel = "Bảo trì";
+                        } else if ("Booked".equalsIgnoreCase(r.getStatus())) {
+                            dotColor = "#8b5cf6";
+                            statusLabel = "Đã đặt";
+                        }
+                %>
+                  <a href="<%= request.getContextPath() %>/rooms?action=edit&id=<%= r.getId() %>" class="room-tile" style="text-decoration: none; color: inherit;">
+                    <span class="room-dot" style="background: <%= dotColor %>"></span>
+                    <div class="room-no">Phòng <%= r.getRoomNumber() %></div>
+                    <div class="room-type"><%= r.getRoomType() != null ? r.getRoomType().getName() : "-" %></div>
+                    <div class="room-person" style="font-weight: 700; color: <%= dotColor %>"><%= statusLabel %></div>
+                    <div class="room-price"><%= r.getRoomType() != null ? money.format(r.getRoomType().getPricePerDay()) : "-" %></div>
+                  </a>
+                <% } } else { %>
+                  <div class="empty">Chưa có phòng nào trong hệ thống</div>
+                <% } %>
               </div>
             </section>
+          </div>
+        </section>
           </div>
         </section>
       </main>

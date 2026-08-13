@@ -75,5 +75,12 @@
       <artifactId>jstl</artifactId>
       <version>1.2</version>
     </dependency>
+
+    <!-- JavaMail API & Implementation for sending emails -->
+    <dependency>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>javax.mail</artifactId>
+      <version>1.6.2</version>
+    </dependency>
   </dependencies>
 </project>

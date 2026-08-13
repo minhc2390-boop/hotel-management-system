@@ -7,6 +7,13 @@
   const savedTheme = localStorage.getItem('nestora_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
 
+  // Sync theme changes across tabs in real-time
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'nestora_theme' && e.newValue) {
+      document.documentElement.setAttribute('data-theme', e.newValue);
+    }
+  });
+
   const savedHotelName = localStorage.getItem('hotel_name') || 'NESTORA';
   const brandNameStrong = document.querySelectorAll('.brand-name strong, [data-hotel-name]');
   if (brandNameStrong.length > 0) {
@@ -38,6 +45,18 @@
   if (sidebarCollapsed) {
     document.documentElement.classList.add('sidebar-collapsed');
     document.documentElement.classList.add('collapsed');
+  }
+
+  // Preserve sidebar scroll position across page navigation without scroll jumping
+  const sidebarScroll = document.querySelector('.sidebar-scroll');
+  if (sidebarScroll) {
+    const savedScrollPos = localStorage.getItem('nestora_sidebar_scroll');
+    if (savedScrollPos !== null) {
+      sidebarScroll.scrollTop = parseInt(savedScrollPos, 10);
+    }
+    sidebarScroll.addEventListener('scroll', function () {
+      localStorage.setItem('nestora_sidebar_scroll', sidebarScroll.scrollTop);
+    });
   }
 
   if (mobileToggle && sidebar) {

@@ -14,6 +14,32 @@ import java.util.Set;
 
 public class FeedbackDAO {
 
+    /**
+     * Lấy các đánh giá nổi bật để hiển thị tại khu vực khách hàng.
+     * Chỉ chọn nội dung có ý nghĩa và giới hạn số bản ghi để trang chủ tải gọn.
+     */
+    public List<Feedback> getExcellentFeedbacks(int maxResults) {
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT f FROM Feedback f "
+                    + "JOIN FETCH f.booking b "
+                    + "JOIN FETCH b.room r "
+                    + "JOIN FETCH r.roomType "
+                    + "JOIN FETCH b.customer "
+                    + "JOIN FETCH f.customerUser "
+                    + "WHERE f.rating >= 4 AND LENGTH(TRIM(f.content)) >= 10 "
+                    + "ORDER BY f.rating DESC, f.createdAt DESC";
+            return em.createQuery(jpql, Feedback.class)
+                    .setMaxResults(Math.max(1, maxResults))
+                    .getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        } finally {
+            em.close();
+        }
+    }
+
     public List<Feedback> getAll() {
         EntityManager em = DBContext.getEntityManager();
         try {

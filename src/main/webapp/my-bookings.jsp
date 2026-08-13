@@ -19,6 +19,18 @@
     if (reviewedBookingIds == null) reviewedBookingIds = Collections.emptySet();
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
     SimpleDateFormat d = new SimpleDateFormat("dd/MM/yyyy");
+    int bookingTotal = bookings != null ? bookings.size() : 0;
+    int bookingActive = 0;
+    int bookingCompleted = 0;
+    int bookingCancelled = 0;
+    if (bookings != null) {
+        for (Booking summaryBooking : bookings) {
+            String summaryStatus = summaryBooking.getStatus();
+            if ("Cancelled".equalsIgnoreCase(summaryStatus)) bookingCancelled++;
+            else if ("CheckedOut".equalsIgnoreCase(summaryStatus) || "Completed".equalsIgnoreCase(summaryStatus)) bookingCompleted++;
+            else bookingActive++;
+        }
+    }
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -28,17 +40,63 @@
     <title>Phòng đã đặt - Nestora</title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/style.css">
     <style>
-        .badge-status {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
+        .booking-history-header { align-items: flex-end; }
+        .history-overview {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin: 22px 0;
         }
-        .badge-Pending { background: #fef3c7; color: #d97706; }
-        .badge-Confirmed { background: #d1fae5; color: #059669; }
-        .badge-CheckedIn { background: #dbeafe; color: #2563eb; }
-        .badge-CheckedOut { background: #f3f4f6; color: #4b5563; }
-        .badge-Cancelled { background: #fee2e2; color: #dc2626; }
+        .history-stat {
+            padding: 18px 20px;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+        .history-stat span { display: block; color: var(--muted); font-size: 11px; font-weight: 600; }
+        .history-stat strong { display: block; margin-top: 6px; color: var(--text); font-size: 25px; }
+        .history-stat.primary { border-color: color-mix(in srgb, var(--brand) 26%, var(--line)); background: var(--brand-soft); }
+        .history-stat.primary strong { color: var(--brand); }
+        .booking-history-surface { overflow: hidden; border-radius: 15px; }
+        .booking-history-table { min-width: 980px; }
+        .booking-history-table th { padding-top: 15px; padding-bottom: 15px; }
+        .booking-history-table td { padding-top: 18px; padding-bottom: 18px; }
+        .booking-code { display: inline-flex; color: var(--brand); font-weight: 800; letter-spacing: .02em; }
+        .booking-room { display: flex; align-items: center; gap: 11px; min-width: 142px; }
+        .booking-room-icon {
+            width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 38px;
+            border-radius: 10px; color: var(--brand); background: var(--brand-soft); font-weight: 800;
+        }
+        .booking-room strong { display: block; }
+        .booking-date { white-space: nowrap; color: var(--text); font-weight: 600; }
+        .booking-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 28px;
+            padding: 0 10px;
+            border: 1px solid transparent;
+            border-radius: 99px;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .booking-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .booking-status.pending { color: var(--warning); background: var(--warning-bg); border-color: color-mix(in srgb, var(--warning) 22%, transparent); }
+        .booking-status.confirmed { color: var(--success); background: var(--success-bg); border-color: color-mix(in srgb, var(--success) 22%, transparent); }
+        .booking-status.checked-in { color: var(--brand); background: var(--brand-soft); border-color: color-mix(in srgb, var(--brand) 22%, transparent); }
+        .booking-status.completed { color: var(--muted); background: var(--canvas); border-color: var(--line); }
+        .booking-status.cancelled { color: var(--danger); background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 22%, transparent); }
+        .history-actions { display: flex; gap: 7px; flex-wrap: wrap; min-width: 155px; }
+        .history-action { min-height: 34px; padding: 0 11px; font-size: 10px; }
+        @media (max-width: 760px) {
+            .history-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .booking-history-header { align-items: flex-start; flex-direction: column; }
+        }
+        @media (max-width: 430px) {
+            .history-overview { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body class="client-body">
@@ -60,17 +118,26 @@
     <% } else if ("cancelFailed".equals(request.getParameter("error"))) { %>
         <div class="alert alert-error">Không thể hủy đặt phòng ở trạng thái hiện tại.</div>
     <% } %>
-    <div class="page-head">
+    <div class="client-page-head booking-history-header">
         <div>
-            <h1 class="page-title">Đơn đặt phòng của bạn</h1>
-            <p class="page-desc">Theo dõi các phòng đã đặt và trạng thái xử lý lưu trú.</p>
+            <p class="client-eyebrow">Tài khoản khách hàng</p>
+            <h1 class="client-page-title">Đơn đặt phòng của bạn</h1>
+            <p class="client-page-desc">Theo dõi lịch sử đặt phòng, trạng thái thanh toán và kỳ lưu trú tại Nestora.</p>
         </div>
+        <a class="btn btn-primary" href="<%= request.getContextPath() %>/home#phong-nghi">+ Đặt thêm phòng</a>
+    </div>
+
+    <div class="history-overview" aria-label="Tổng quan lịch sử đặt phòng">
+        <div class="history-stat primary"><span>Tổng đặt phòng</span><strong><%= bookingTotal %></strong></div>
+        <div class="history-stat"><span>Đang xử lý / lưu trú</span><strong><%= bookingActive %></strong></div>
+        <div class="history-stat"><span>Đã hoàn tất</span><strong><%= bookingCompleted %></strong></div>
+        <div class="history-stat"><span>Đã hủy</span><strong><%= bookingCancelled %></strong></div>
     </div>
     
-    <section class="surface">
+    <section class="surface booking-history-surface">
         <% if (bookings != null && !bookings.isEmpty()) { %>
         <div class="table-wrap">
-            <table>
+            <table class="booking-history-table">
                 <thead>
                 <tr>
                     <th>MÃ ĐẶT PHÒNG</th>
@@ -86,33 +153,48 @@
                 <tbody>
                 <%
                     for (Booking b : bookings) {
-                        String statusText = "Chờ xác nhận";
-                        if ("Confirmed".equals(b.getStatus())) statusText = "Đã xác nhận";
-                        else if ("CheckedIn".equals(b.getStatus())) statusText = "Đã nhận phòng";
-                        else if ("CheckedOut".equals(b.getStatus())) statusText = "Đã trả phòng";
-                        else if ("Cancelled".equals(b.getStatus())) statusText = "Đã hủy";
+                        String statusText = "Chưa thanh toán";
+                        String statusClass = "pending";
+                        if ("Confirmed".equalsIgnoreCase(b.getStatus())) {
+                            statusText = "Đã xác nhận";
+                            statusClass = "confirmed";
+                        } else if ("CheckedIn".equalsIgnoreCase(b.getStatus())) {
+                            statusText = "Đang lưu trú";
+                            statusClass = "checked-in";
+                        } else if ("CheckedOut".equalsIgnoreCase(b.getStatus()) || "Completed".equalsIgnoreCase(b.getStatus())) {
+                            statusText = "Đã trả phòng";
+                            statusClass = "completed";
+                        } else if ("Cancelled".equalsIgnoreCase(b.getStatus())) {
+                            statusText = "Đã hủy";
+                            statusClass = "cancelled";
+                        }
                 %>
                 <tr>
-                    <td class="table-primary">#DP<%= b.getBookingId() %></td>
-                    <td class="table-strong">Phòng <%= b.getRoom().getRoomNumber() %></td>
+                    <td><span class="booking-code">#DP<%= b.getBookingId() %></span></td>
+                    <td>
+                        <div class="booking-room">
+                            <span class="booking-room-icon" aria-hidden="true">P</span>
+                            <strong>Phòng <%= b.getRoom().getRoomNumber() %></strong>
+                        </div>
+                    </td>
                     <td><%= b.getRoom().getRoomType().getName() %></td>
                     <td class="table-strong text-primary"><%= money.format(b.getRoomPrice()) %></td>
-                    <td><%= d.format(b.getCheckInDate()) %></td>
-                    <td><%= d.format(b.getCheckOutDate()) %></td>
+                    <td><span class="booking-date"><%= d.format(b.getCheckInDate()) %></span></td>
+                    <td><span class="booking-date"><%= d.format(b.getCheckOutDate()) %></span></td>
                     <td>
-                        <span class="badge-status badge-<%= b.getStatus() %>"><%= statusText %></span>
+                        <span class="booking-status <%= statusClass %>"><%= statusText %></span>
                     </td>
                     <td>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/bookings?action=receipt&id=<%= b.getBookingId() %>">Xem phiếu</a>
-                            <% if ("Pending".equals(b.getStatus()) || "Confirmed".equals(b.getStatus())) { %>
-                                <button class="btn btn-danger" type="button" style="padding: 4px 8px; font-size:12px;"
+                        <div class="history-actions">
+                            <a class="btn btn-outline history-action" href="<%= request.getContextPath() %>/bookings?action=receipt&id=<%= b.getBookingId() %>">Xem phiếu</a>
+                            <% if ("Pending".equalsIgnoreCase(b.getStatus()) || "Confirmed".equalsIgnoreCase(b.getStatus())) { %>
+                                <button class="btn btn-danger history-action" type="button"
                                         data-cancel-booking data-booking-id="<%= b.getBookingId() %>"
                                         data-cancel-url="<%= request.getContextPath() %>/bookings">Hủy</button>
-                            <% } else if ("CheckedOut".equals(b.getStatus()) && reviewedBookingIds.contains(b.getBookingId())) { %>
-                                <a class="btn btn-outline" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/feedbacks?action=view&bookingId=<%= b.getBookingId() %>">Xem đánh giá</a>
-                            <% } else if ("CheckedOut".equals(b.getStatus())) { %>
-                                <a class="btn btn-primary" style="padding: 4px 8px; font-size:12px;" href="<%= request.getContextPath() %>/feedbacks?action=add&bookingId=<%= b.getBookingId() %>">Đánh giá</a>
+                            <% } else if ("CheckedOut".equalsIgnoreCase(b.getStatus()) && reviewedBookingIds.contains(b.getBookingId())) { %>
+                                <a class="btn btn-outline history-action" href="<%= request.getContextPath() %>/feedbacks?action=view&bookingId=<%= b.getBookingId() %>">Xem đánh giá</a>
+                            <% } else if ("CheckedOut".equalsIgnoreCase(b.getStatus())) { %>
+                                <a class="btn btn-primary history-action" href="<%= request.getContextPath() %>/feedbacks?action=add&bookingId=<%= b.getBookingId() %>">Đánh giá</a>
                             <% } %>
                         </div>
                     </td>

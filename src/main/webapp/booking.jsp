@@ -11,6 +11,9 @@
         response.sendRedirect(request.getContextPath() + "/home");
         return;
     }
+    String bookingRoomNumber = room.getRoomNumber() != null ? room.getRoomNumber() : "";
+    String bookingRoomNumberAttribute = bookingRoomNumber.replace("&", "&amp;")
+            .replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;");
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 %>
 <!DOCTYPE html>
@@ -132,6 +135,8 @@
             gap: 8px;
         }
         .payment-row { display: flex; justify-content: space-between; align-items: center; }
+        .nights-row { padding-bottom: 8px; border-bottom: 1px dashed color-mix(in srgb, var(--brand) 24%, transparent); }
+        .nights-amount { color: var(--text); font-size: 15px; font-weight: 800; }
         .total-amount { font-size: 16px; font-weight: 700; color: var(--luxury-navy); }
         .deposit-row { border-top: 1px dashed rgba(23, 105, 224, 0.2); padding-top: 6px; }
         .deposit-amount { font-size: 20px; font-weight: 800; color: #dc2626; }
@@ -260,6 +265,18 @@
                             <%= room.getDescription() != null ? room.getDescription() : room.getRoomType().getDescription() %>
                         </strong>
                     </div>
+                    <div class="summary-line" style="flex-direction: column; align-items: flex-start; gap: 6px; border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 6px;">
+                        <span style="font-weight: 700; color: var(--luxury-navy);">Trang bị cố định trong phòng:</span>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">📺 Smart TV 4K</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">❄️ Máy lạnh Inverter</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">💨 Máy sấy tóc</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🧊 Tủ lạnh Mini Bar</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">☕ Bình đun siêu tốc</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🔒 Két sắt điện tử</span>
+                            <span style="font-size: 11px; background: rgba(23, 105, 224, 0.08); color: var(--brand); padding: 3px 8px; border-radius: 4px; font-weight: 600;">🚿 Bình nóng lạnh 24/7</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -269,7 +286,10 @@
             <h2 class="form-card-title">Chi tiết Đặt phòng</h2>
             <p class="form-card-desc">Quý khách thực hiện đặt chỗ trực tuyến nhanh chóng.</p>
 
-            <form action="<%= request.getContextPath() %>/bookings" method="post" id="bookingForm" onsubmit="return validateBookingSubmission()">
+            <form action="<%= request.getContextPath() %>/bookings" method="post" id="bookingForm"
+                  data-price-per-night="<%= room.getRoomType().getPricePerDay() %>"
+                  data-room-number="<%= bookingRoomNumberAttribute %>"
+                  onsubmit="return validateBookingSubmission()">
                 <input type="hidden" name="action" value="insert">
                 <input type="hidden" name="roomId" value="<%= room.getId() %>">
 
@@ -296,7 +316,7 @@
                     <div class="form-group">
                         <label class="form-label" for="checkInDate">Thời gian nhận phòng *</label>
                         <div class="input-icon-group">
-                            <input class="form-control" type="datetime-local" id="checkInDate" name="checkInDate" required onchange="calculateBooking()">
+                            <input class="form-control" type="datetime-local" id="checkInDate" name="checkInDate" required>
                             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
                     </div>
@@ -304,7 +324,7 @@
                     <div class="form-group">
                         <label class="form-label" for="checkOutDate">Thời gian trả phòng *</label>
                         <div class="input-icon-group">
-                            <input class="form-control" type="datetime-local" id="checkOutDate" name="checkOutDate" required onchange="calculateBooking()">
+                            <input class="form-control" type="datetime-local" id="checkOutDate" name="checkOutDate" required>
                             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
                     </div>
@@ -340,12 +360,16 @@
                 </div>
 
                 <!-- Báo lỗi thời gian -->
-                <div id="dateError" class="alert alert-error hidden" style="margin-top: 14px;">
+                <div id="dateError" class="alert alert-error hidden" role="alert" aria-live="polite" style="margin-top: 14px;">
                     Thời gian trả phòng phải sau thời gian nhận phòng!
                 </div>
 
                 <!-- Tạm tính tiền phòng & Tiền cọc 20% -->
-                <div class="total-payment-box">
+                <div class="total-payment-box" aria-live="polite">
+                    <div class="payment-row nights-row">
+                        <span class="total-label">Số đêm lưu trú:</span>
+                        <strong id="estimatedNights" class="nights-amount">0 đêm</strong>
+                    </div>
                     <div class="payment-row">
                         <span class="total-label">Tổng tiền phòng ước tính:</span>
                         <strong id="estimatedTotal" class="total-amount">0 ₫</strong>
@@ -369,7 +393,7 @@
                     </div>
 
                     <div id="transferConfirmCard" class="transfer-confirm-card">
-                        <input type="checkbox" id="transferConfirmed" onchange="toggleSubmitButton()" style="width: 20px; height: 20px; cursor: pointer; accent-color: #16a34a;">
+                        <input type="checkbox" id="transferConfirmed" style="width: 20px; height: 20px; cursor: pointer; accent-color: #16a34a;">
                         <label for="transferConfirmed" style="font-weight: 700; color: var(--luxury-navy); cursor: pointer; margin: 0; font-size: 14px; user-select: none;">
                             Tôi đã chuyển khoản cọc thành công
                         </label>
@@ -391,11 +415,13 @@
 <%@ include file="WEB-INF/jspf/client-footer.jspf" %>
 
 <script>
-    const pricePerDay = <%= room.getRoomType().getPricePerDay() %>;
-    const roomNo = '<%= room.getRoomNumber() %>';
+    const bookingForm = document.getElementById('bookingForm');
+    const pricePerDay = Number(bookingForm.dataset.pricePerNight);
+    const roomNo = bookingForm.dataset.roomNumber;
 
     const checkInInput = document.getElementById('checkInDate');
     const checkOutInput = document.getElementById('checkOutDate');
+    const nightsEl = document.getElementById('estimatedNights');
     const totalEl = document.getElementById('estimatedTotal');
     const depositEl = document.getElementById('estimatedDeposit');
     const errorEl = document.getElementById('dateError');
@@ -432,6 +458,10 @@
     }
 
     function validateBookingSubmission() {
+        if (!calculateBooking()) {
+            alert('Quý khách vui lòng chọn thời gian nhận và trả phòng hợp lệ.');
+            return false;
+        }
         if (!transferCheck || !transferCheck.checked) {
             alert('Quý khách vui lòng chuyển khoản cọc và tích chọn "Tôi đã chuyển khoản cọc thành công" trước khi xác nhận đặt phòng.');
             return false;
@@ -446,39 +476,43 @@
         // Nếu chưa chọn đủ 2 ngày thì không làm gì hết và ẩn QR
         if (!checkInVal || !checkOutVal) {
             errorEl.classList.add('hidden');
+            nightsEl.textContent = '0 đêm';
             totalEl.textContent = '0 ₫';
             depositEl.textContent = '0 ₫';
             qrContainer.style.display = 'none';
             if (transferCheck) transferCheck.checked = false;
             toggleSubmitButton();
-            return;
+            return false;
         }
 
         let checkInDate = new Date(checkInVal);
         let checkOutDate = new Date(checkOutVal);
 
         if (isNaN(checkInDate) || isNaN(checkOutDate) || checkOutDate <= checkInDate) {
+            errorEl.textContent = 'Thời gian trả phòng phải sau thời gian nhận phòng!';
             errorEl.classList.remove('hidden');
+            nightsEl.textContent = '0 đêm';
             totalEl.textContent = '0 ₫';
             depositEl.textContent = '0 ₫';
             qrContainer.style.display = 'none';
             if (transferCheck) transferCheck.checked = false;
             toggleSubmitButton();
-            return;
+            return false;
         }
 
         errorEl.classList.add('hidden');
 
         // Tính số đêm
         let diffMs = checkOutDate - checkInDate;
-        let days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-        if (days <= 0) days = 1;
+        let nights = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        if (nights <= 0) nights = 1;
 
-        let total = days * pricePerDay;
+        let total = nights * pricePerDay;
         let deposit = Math.round(total * 0.20); // Cọc 20%
 
         let fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
-        totalEl.textContent = fmt.format(total) + ' (' + days + ' đêm)';
+        nightsEl.textContent = nights + ' đêm';
+        totalEl.textContent = fmt.format(total);
         depositEl.textContent = fmt.format(deposit);
 
         // --- CẤU HÌNH TẠO MÃ VIETQR DỰA TRÊN PAYMENT.JSP ---
@@ -496,7 +530,25 @@
         document.getElementById('vietqr-image').src = qrUrl;
         qrContainer.style.display = 'block';
         toggleSubmitButton();
+        return true;
     }
+
+    function toLocalDateTimeValue(date) {
+        const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return localDate.toISOString().slice(0, 16);
+    }
+
+    const minimumDateTime = toLocalDateTimeValue(new Date());
+    checkInInput.min = minimumDateTime;
+    checkOutInput.min = minimumDateTime;
+
+    checkInInput.addEventListener('input', function () {
+        checkOutInput.min = checkInInput.value || minimumDateTime;
+        calculateBooking();
+    });
+    checkOutInput.addEventListener('input', calculateBooking);
+    if (transferCheck) transferCheck.addEventListener('change', toggleSubmitButton);
+    calculateBooking();
 </script>
 </body>
 </html>

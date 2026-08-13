@@ -218,7 +218,7 @@
         </div>
         <div class="login-options">
           <label><input type="checkbox" name="remember"> Ghi nhớ đăng nhập</label>
-          <a href="#">Quên mật khẩu?</a>
+          <a href="<%= request.getContextPath() %>/forgot-password">Quên mật khẩu?</a>
         </div>
         <button class="btn btn-primary btn-submit-full" type="submit">Đăng nhập</button>
       </form>

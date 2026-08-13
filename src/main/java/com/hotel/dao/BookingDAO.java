@@ -363,7 +363,7 @@ public class BookingDAO {
                 em.persist(roomCharge);
 
                 booking.setStatus("CheckedOut");
-                booking.getRoom().setStatus("Available");
+                booking.getRoom().setStatus("Cleaning");
             }
 
             tx.commit();

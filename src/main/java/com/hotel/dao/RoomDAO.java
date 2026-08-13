@@ -15,7 +15,7 @@ public class RoomDAO {
             tx.begin();
             List<Room> rooms = em.createQuery("SELECT r FROM Room r", Room.class).getResultList();
             for (Room r : rooms) {
-                if ("Maintenance".equalsIgnoreCase(r.getStatus())) {
+                if ("Maintenance".equalsIgnoreCase(r.getStatus()) || "Cleaning".equalsIgnoreCase(r.getStatus())) {
                     continue;
                 }
 
@@ -24,9 +24,19 @@ public class RoomDAO {
                     .setParameter("rid", r.getId())
                     .getSingleResult();
 
+                Long bookedCount = em.createQuery(
+                    "SELECT COUNT(b) FROM Booking b WHERE b.room.id = :rid AND (b.status = 'Pending' OR b.status = 'Confirmed')", Long.class)
+                    .setParameter("rid", r.getId())
+                    .getSingleResult();
+
                 if (occupiedCount != null && occupiedCount > 0) {
                     if (!"Occupied".equalsIgnoreCase(r.getStatus())) {
                         r.setStatus("Occupied");
+                        em.merge(r);
+                    }
+                } else if (bookedCount != null && bookedCount > 0) {
+                    if (!"Booked".equalsIgnoreCase(r.getStatus())) {
+                        r.setStatus("Booked");
                         em.merge(r);
                     }
                 } else {
@@ -131,10 +141,10 @@ public class RoomDAO {
         syncRoomStatuses();
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT r FROM Room r WHERE r.status != 'Maintenance' ORDER BY r.roomNumber ASC";
+            String jpql = "SELECT r FROM Room r WHERE UPPER(r.status) = 'AVAILABLE' ORDER BY r.roomNumber ASC";
             TypedQuery<Room> query = em.createQuery(jpql, Room.class);
             List<Room> list = query.getResultList();
-            if (list != null && !list.isEmpty()) {
+            if (list != null) {
                 return list;
             }
         } catch (Exception e) {
@@ -142,7 +152,7 @@ public class RoomDAO {
         } finally {
             em.close();
         }
-        return getAllRooms();
+        return java.util.Collections.emptyList();
     }
 
     public Room getRoomById(int id) {

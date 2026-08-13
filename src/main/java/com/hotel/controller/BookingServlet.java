@@ -26,6 +26,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * ============================================================================
+ * [NHIỆM VỤ THÀNH VIÊN 4] - Phân hệ Quản lý Đặt phòng (Booking & Reservation)
+ * - Quản lý quy trình Tìm phòng, Đặt phòng trực tuyến & tại quầy.
+ * - Quản lý Nhận phòng (Check-in), Trả phòng (Check-out), Hủy đặt phòng.
+ * - Quản lý Sơ đồ trạng thái phòng (Room Map).
+ * ============================================================================
+ */
 @WebServlet(name = "BookingServlet", urlPatterns = {"/bookings"})
 public class BookingServlet extends HttpServlet {
     private final BookingDAO bookingDAO = new BookingDAO();
@@ -270,7 +278,7 @@ public class BookingServlet extends HttpServlet {
                 List<Room> selectedRooms = new ArrayList<>();
                 for (Integer roomId : roomIds) {
                     Room room = roomDAO.getRoomById(roomId);
-                    if (room == null || !"Available".equalsIgnoreCase(room.getStatus())) {
+                    if (room == null || !bookingDAO.isRoomAvailable(roomId, checkInDate, checkOutDate)) {
                         response.sendRedirect(request.getContextPath()
                                 + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home"));
                         return;
