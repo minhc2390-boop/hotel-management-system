@@ -5,6 +5,10 @@
 <% 
   HttpSession sess = request.getSession(false); 
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null; 
+  if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
+    response.sendRedirect(request.getContextPath() + "/home");
+    return;
+  }
   String activeMenu = "customers"; 
   List<Customer> customers = (List<Customer>) request.getAttribute("customers");
 %>
@@ -86,6 +90,7 @@
                 <tr>
                   <th>MÃ KHÁCH HÀNG</th>
                   <th>HỌ VÀ TÊN</th>
+                  <th>TÀI KHOẢN LIÊN KẾT</th>
                   <th>CCCD / HỘ CHIẾU</th>
                   <th>SỐ ĐIỆN THOẠI</th>
                   <th>EMAIL</th>
@@ -99,6 +104,13 @@
                   <tr data-email-status="<%=c.getCustomerEmail() != null && !c.getCustomerEmail().trim().isEmpty() ? "has-email" : "no-email"%>">
                     <td class="table-primary">#GST<%= String.format("%04d", c.getCustomerId()) %></td>
                     <td class="table-strong"><%= c.getCustomerName() %></td>
+                    <td>
+                      <% if (c.getUser() != null) { %>
+                        <span style="display:inline-block; padding:3px 8px; border-radius:12px; background:#e6f4ea; color:#137333; font-size:11px; font-weight:700;">@<%= c.getUser().getUsername() %></span>
+                      <% } else { %>
+                        <span style="color:var(--muted); font-size:12px; font-style:italic;">Khách vãng lai</span>
+                      <% } %>
+                    </td>
                     <td><%= c.getCustomerCccd() != null ? c.getCustomerCccd() : "-" %></td>
                     <td><%= c.getCustomerPhone() != null ? c.getCustomerPhone() : "-" %></td>
                     <td><%= c.getCustomerEmail() != null ? c.getCustomerEmail() : "-" %></td>
@@ -114,7 +126,7 @@
                    } else { 
                 %>
                   <tr>
-                    <td colspan="6" style="text-align:center; padding:20px;">Chưa có dữ liệu khách hàng nào.</td>
+                    <td colspan="7" style="text-align:center; padding:20px;">Chưa có dữ liệu khách hàng nào.</td>
                   </tr>
                 <% } %>
               </tbody>

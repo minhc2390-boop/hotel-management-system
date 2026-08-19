@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"
 	language="java"%>
 <%@ page import="com.hotel.model.User"%><%@ page
 	import="com.hotel.model.Service"%>
@@ -87,7 +87,9 @@ String activeMenu = "services";
 										<th>GIÁ DỊCH VỤ</th>
 										<th>MÔ TẢ</th>
 										<th>TRẠNG THÁI</th>
+										<% if (isAdmin) { %>
 										<th>THAO TÁC</th>
+										<% } %>
 									</tr>
 								</thead>
 								<tbody>
@@ -111,18 +113,15 @@ String activeMenu = "services";
 											}
 											%>
 										</td>
+										<% if (isAdmin) { %>
 										<td><div class="row-actions">
 												<a class="btn btn-outline btn-icon"
 													href="<%=request.getContextPath()%>/services?action=edit&id=<%=s.getId()%>">✎</a>
-												<%
-												if (isAdmin) {
-												%><a class="btn btn-danger btn-icon"
+												<a class="btn btn-danger btn-icon"
 													href="<%=request.getContextPath()%>/services?action=delete&id=<%=s.getId()%>"
 													onclick="return confirm('Xóa dịch vụ này?')">×</a>
-												<%
-												}
-												%>
 											</div></td>
+										<% } %>
 									</tr>
 									<%
 									}

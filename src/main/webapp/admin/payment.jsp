@@ -1,5 +1,15 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %>
-<% HttpSession sess=request.getSession(false); User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null; String activeMenu="checkout"; %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page import="com.hotel.model.User" %>
+<%@ page import="com.hotel.dao.SystemSettingDAO" %>
+<% 
+  HttpSession sess=request.getSession(false); 
+  User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null; 
+  String activeMenu="checkout"; 
+  SystemSettingDAO sysDAO = new SystemSettingDAO();
+  String bankId = sysDAO.getBankId();
+  String bankAccount = sysDAO.getBankAccount();
+  String bankName = sysDAO.getBankName();
+%>
 <!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trả phòng & thanh toán - Nestora</title><link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css">
 <style>
   #transfer-qr-container {
@@ -47,9 +57,9 @@
     <img id="vietqr-image" src="" alt="VietQR Payment Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
   </div>
   <div class="qr-bank-details">
-    Ngân hàng: <strong>MB Bank (Quân Đội)</strong><br>
-    Số TK: <strong>1903567890123</strong><br>
-    Chủ TK: <strong>CONG TY NESTORA HOTEL</strong>
+    Ngân hàng: <strong><%= bankId %> Bank</strong><br>
+    Số TK: <strong><%= bankAccount %></strong><br>
+    Chủ TK: <strong><%= bankName %></strong>
   </div>
 </div>
 <div class="form-actions" style="margin-top:20px"><a class="btn btn-outline" href="bookings.jsp">Hủy</a><button class="btn btn-primary" type="button" onclick="confirmPayment()">Xác nhận thanh toán</button></div></aside></div>
@@ -65,9 +75,9 @@
           var amount = totalText.replace(/[^0-9]/g, '');
           if (!amount) amount = '3900000'; // fallback
           
-          var bankId = 'MB'; // MB Bank
-          var accountNo = '1903567890123';
-          var accountName = 'CONG TY NESTORA HOTEL';
+          var bankId = '<%= bankId %>';
+          var accountNo = '<%= bankAccount %>';
+          var accountName = '<%= bankName.replace("'", "\\'") %>';
           var template = 'qr_only'; 
           
           // Generate content with Room information

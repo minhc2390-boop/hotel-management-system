@@ -71,8 +71,15 @@
                                       "WARNING".equalsIgnoreCase(n.getType()) ? "Cảnh báo" :
                                       "SUCCESS".equalsIgnoreCase(n.getType()) ? "Thành công" : "Quan trọng";
                    String dateStr = n.getCreatedAt() != null ? n.getCreatedAt().format(notifDtf) : "";
+                   String nTitle = n.getTitle() != null ? n.getTitle().replace("\"", "&quot;") : "";
+                   String nContent = n.getContent() != null ? n.getContent().replace("\"", "&quot;") : "";
               %>
-                <div class="notif-item">
+                <div class="notif-item" style="cursor: pointer;"
+                     data-title="<%= nTitle %>"
+                     data-type="<%= n.getType() %>"
+                     data-content="<%= nContent %>"
+                     data-time="<%= dateStr %>"
+                     onclick="viewNotifDetail(this)">
                   <div class="notif-item-top">
                     <span class="notif-type-tag <%= badgeClass %>"><%= typeLabel %></span>
                     <span class="notif-time"><%= dateStr %></span>
@@ -438,6 +445,26 @@
   }
 </style>
 
+<!-- Modal xem chi tiết thông báo từ thanh Topbar -->
+<div class="modal-backdrop-notif" id="notif-detail-overlay" style="display: none;">
+  <div class="modal-card-notif" style="max-width: 520px;">
+    <div class="modal-head-notif">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="notif-type-tag info" id="topbar-modal-badge" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 700;">INFO</span>
+        <h3 style="margin: 0; font-size: 16px;" id="topbar-modal-title">Tiêu đề thông báo</h3>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeTopNotifDetail()">&times;</button>
+    </div>
+    <div class="modal-body-notif" style="padding: 20px; line-height: 1.65; font-size: 14px; color: var(--text); white-space: pre-wrap;" id="topbar-modal-content">
+      Nội dung chi tiết thông báo...
+    </div>
+    <div class="modal-foot-notif" style="justify-content: space-between;">
+      <span style="font-size: 12px; color: var(--muted);" id="topbar-modal-time"></span>
+      <button type="button" class="btn-cancel-notif" onclick="closeTopNotifDetail()">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const notifBtn = document.getElementById('notif-bell-btn');
@@ -468,5 +495,36 @@
   function closeNotifModal() {
     const modal = document.getElementById('notif-modal-overlay');
     if (modal) modal.style.display = 'none';
+  }
+
+  function viewNotifDetail(el) {
+    if (!el) return;
+    const title = el.getAttribute('data-title') || '';
+    const type = el.getAttribute('data-type') || 'INFO';
+    const content = el.getAttribute('data-content') || '';
+    const time = el.getAttribute('data-time') || '';
+
+    const panel = document.getElementById('notif-dropdown-panel');
+    if (panel) panel.style.display = 'none';
+
+    document.getElementById('topbar-modal-title').textContent = title;
+    document.getElementById('topbar-modal-content').textContent = content;
+    document.getElementById('topbar-modal-time').textContent = time ? 'Đăng lúc: ' + time : '';
+    
+    const badge = document.getElementById('topbar-modal-badge');
+    badge.textContent = type;
+    badge.className = 'notif-type-tag ' + (
+      type === 'WARNING' ? 'warning' :
+      type === 'SUCCESS' ? 'success' :
+      type === 'ERROR' ? 'danger' : 'info'
+    );
+
+    const overlay = document.getElementById('notif-detail-overlay');
+    if (overlay) overlay.style.display = 'flex';
+  }
+
+  function closeTopNotifDetail() {
+    const overlay = document.getElementById('notif-detail-overlay');
+    if (overlay) overlay.style.display = 'none';
   }
 </script>

@@ -60,6 +60,12 @@ public class RoomServlet extends HttpServlet {
             return;
         }
 
+        // Nhân viên (Receptionist) chỉ có quyền xem sơ đồ phòng
+        if ("Receptionist".equalsIgnoreCase(role) && !"map".equalsIgnoreCase(action) && !"bookForm".equalsIgnoreCase(action)) {
+            response.sendRedirect(request.getContextPath() + "/rooms?action=map");
+            return;
+        }
+
         switch (action) {
             case "list":
                 List<Room> listRooms = roomDAO.getAllRooms();
@@ -114,7 +120,7 @@ public class RoomServlet extends HttpServlet {
                 break;
                 
             default:
-                response.sendRedirect(request.getContextPath() + "/rooms?action=list");
+                response.sendRedirect(request.getContextPath() + ("/Receptionist".equalsIgnoreCase(role) ? "/rooms?action=map" : "/rooms?action=list"));
                 break;
         }
     }
@@ -135,8 +141,9 @@ public class RoomServlet extends HttpServlet {
         User currentUser = AuthUtil.getUser(request);
         String role = currentUser != null ? currentUser.getRole() : "";
 
-        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        // Chỉ Admin mới có quyền thêm/sửa/xóa phòng
+        if (!"Admin".equalsIgnoreCase(role)) {
+            response.sendRedirect(request.getContextPath() + "/rooms?action=map");
             return;
         }
 
@@ -262,13 +269,13 @@ public class RoomServlet extends HttpServlet {
                     try { qty = Math.max(1, Integer.parseInt(eqQtys[i].trim())); } catch (Exception ignored) {}
                 }
                 String unit = (eqUnits != null && i < eqUnits.length && eqUnits[i] != null && !eqUnits[i].trim().isEmpty())
-                        ? eqUnits[i].trim() : "Cái";
+                        ? com.hotel.util.EncodingUtil.fixEncoding(eqUnits[i].trim()) : "Cái";
                 String status = (eqStatuses != null && i < eqStatuses.length && eqStatuses[i] != null && !eqStatuses[i].trim().isEmpty())
-                        ? eqStatuses[i].trim() : "Hoạt động tốt";
+                        ? com.hotel.util.EncodingUtil.fixEncoding(eqStatuses[i].trim()) : "Hoạt động tốt";
                 String desc = (eqDescs != null && i < eqDescs.length && eqDescs[i] != null)
-                        ? eqDescs[i].trim() : "";
+                        ? com.hotel.util.EncodingUtil.fixEncoding(eqDescs[i].trim()) : "";
 
-                list.add(new Equipment(name, qty, unit, status, desc));
+                list.add(new Equipment(com.hotel.util.EncodingUtil.fixEncoding(name), qty, unit, status, desc));
             }
         }
         return list;

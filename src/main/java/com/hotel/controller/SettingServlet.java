@@ -23,9 +23,9 @@ public class SettingServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        // Kiểm tra phân quyền truy cập (Admin hoặc Receptionist)
+        // Kiểm tra phân quyền truy cập (Chỉ Admin)
         User currentUser = AuthUtil.getUser(request);
-        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
+        if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
@@ -48,7 +48,7 @@ public class SettingServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         User currentUser = AuthUtil.getUser(request);
-        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
+        if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền thực hiện thao tác này.");
             return;
         }
@@ -80,15 +80,23 @@ public class SettingServlet extends HttpServlet {
 
         // Lưu vào CSDL thông qua SystemSettingDAO
         settingDAO.saveSetting("hotel_name", hotelName);
+        settingDAO.saveSetting("hotelName", hotelName);
         settingDAO.saveSetting("hotel_address", hotelAddress);
+        settingDAO.saveSetting("hotelAddress", hotelAddress);
         settingDAO.saveSetting("hotel_phone", hotelPhone);
+        settingDAO.saveSetting("hotelPhone", hotelPhone);
         settingDAO.saveSetting("hotel_email", hotelEmail);
+        settingDAO.saveSetting("hotelEmail", hotelEmail);
 
         settingDAO.saveSetting("hotel_bank_id", bankId);
+        settingDAO.saveSetting("bankId", bankId);
         settingDAO.saveSetting("hotel_bank_account", bankAccount);
+        settingDAO.saveSetting("bankAccount", bankAccount);
         settingDAO.saveSetting("hotel_bank_name", bankName);
+        settingDAO.saveSetting("bankName", bankName);
 
         settingDAO.saveSetting("nestora_theme", theme);
+        settingDAO.saveSetting("theme", theme);
 
         // Kiểm tra xem request có phải là AJAX không
         String requestedWith = request.getHeader("X-Requested-With");

@@ -210,4 +210,158 @@
     if (event.key === 'Escape' && cancelDialog && !cancelDialog.hidden) closeCancelDialog();
   });
 
+  // =========================================================================
+  // UNIVERSAL CUSTOM CONFIRMATION MODAL (Thay thế toàn bộ confirm() mặc định)
+  // =========================================================================
+  let confirmDialogEl = null;
+  let confirmTitleEl = null;
+  let confirmMessageEl = null;
+  let confirmBtnDeleteEl = null;
+  let confirmBtnCancelEl = null;
+  let pendingConfirmCallback = null;
+
+  function ensureCustomConfirmDialog() {
+    if (confirmDialogEl) return;
+
+    confirmDialogEl = document.createElement('div');
+    confirmDialogEl.className = 'custom-confirm-modal';
+    confirmDialogEl.hidden = true;
+    confirmDialogEl.innerHTML =
+      '<div class="custom-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="custom-confirm-title">' +
+        '<div class="confirm-icon-wrap">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"></polyline>' +
+            '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>' +
+            '<line x1="10" y1="11" x2="10" y2="17"></line>' +
+            '<line x1="14" y1="11" x2="14" y2="17"></line>' +
+          '</svg>' +
+        '</div>' +
+        '<h3 class="confirm-title" id="custom-confirm-title">Xác nhận xóa dữ liệu</h3>' +
+        '<div class="confirm-message" id="custom-confirm-message">' +
+          'Bạn có chắc chắn muốn thực hiện thao tác xóa này không?' +
+        '</div>' +
+        '<div class="confirm-actions">' +
+          '<button type="button" class="btn btn-cancel" data-confirm-cancel>Hủy bỏ</button>' +
+          '<button type="button" class="btn btn-confirm-delete" data-confirm-ok>' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+              '<polyline points="3 6 5 6 21 6"></polyline>' +
+              '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>' +
+            '</svg>' +
+            '<span>Xác nhận xóa</span>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(confirmDialogEl);
+
+    confirmTitleEl = confirmDialogEl.querySelector('#custom-confirm-title');
+    confirmMessageEl = confirmDialogEl.querySelector('#custom-confirm-message');
+    confirmBtnDeleteEl = confirmDialogEl.querySelector('[data-confirm-ok]');
+    confirmBtnCancelEl = confirmDialogEl.querySelector('[data-confirm-cancel]');
+
+    function closeConfirmModal() {
+      if (confirmDialogEl) {
+        confirmDialogEl.hidden = true;
+        document.body.classList.remove('modal-open');
+      }
+      pendingConfirmCallback = null;
+    }
+
+    confirmBtnCancelEl.addEventListener('click', closeConfirmModal);
+    confirmDialogEl.addEventListener('click', function (e) {
+      if (e.target === confirmDialogEl) {
+        closeConfirmModal();
+      }
+    });
+
+    confirmBtnDeleteEl.addEventListener('click', function () {
+      const cb = pendingConfirmCallback;
+      closeConfirmModal();
+      if (typeof cb === 'function') {
+        cb();
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && confirmDialogEl && !confirmDialogEl.hidden) {
+        closeConfirmModal();
+      }
+    });
+  }
+
+  // Cung cấp hàm toàn cục
+  window.showCustomConfirm = function (options) {
+    ensureCustomConfirmDialog();
+    const title = options.title || 'Xác nhận xóa dữ liệu';
+    let message = options.message || 'Bạn có chắc chắn muốn xóa mục này? Thao tác này không thể hoàn tác.';
+    const confirmText = options.confirmText || 'Xác nhận xóa';
+    const cancelText = options.cancelText || 'Hủy bỏ';
+
+    confirmTitleEl.textContent = title;
+    confirmMessageEl.innerHTML = message;
+    confirmBtnDeleteEl.querySelector('span').textContent = confirmText;
+    confirmBtnCancelEl.textContent = cancelText;
+
+    pendingConfirmCallback = options.onConfirm || null;
+    confirmDialogEl.hidden = false;
+    document.body.classList.add('modal-open');
+    window.setTimeout(function () {
+      confirmBtnDeleteEl.focus();
+    }, 50);
+  };
+
+  // Tự động chặn (intercept) tất cả các nút Xóa và các hàm confirm() trên toàn bộ trang
+  document.addEventListener('click', function (e) {
+    const target = e.target.closest('a, button');
+    if (!target) return;
+
+    // Bỏ qua modal cancel booking lý do riêng
+    if (target.closest('.cancel-booking-modal') || target.closest('.custom-confirm-modal')) return;
+    if (target.dataset.cancelBooking || target.dataset.noCustomConfirm) return;
+
+    const onclickAttr = target.getAttribute('onclick') || '';
+    const href = target.getAttribute('href') || '';
+    const hasConfirmAttr = target.hasAttribute('data-confirm') || target.hasAttribute('data-confirm-delete');
+    const isDeleteAction = href.includes('action=delete') || href.includes('/delete') || target.classList.contains('btn-danger') || target.classList.contains('btn-action-del');
+
+    if (onclickAttr.includes('confirm(') || hasConfirmAttr || isDeleteAction) {
+      // Ngăn chặn sự kiện mặc định và chặn confirm() gốc của trình duyệt
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      // Trích xuất nội dung thông báo từ confirm('...') hoặc data-confirm
+      let msg = target.getAttribute('data-confirm') || target.getAttribute('data-confirm-delete') || '';
+      if (!msg && onclickAttr) {
+        const match = onclickAttr.match(/confirm\s*\(\s*['"`](.*?)['"`]\s*\)/);
+        if (match && match[1]) {
+          msg = match[1];
+        }
+      }
+      if (!msg) {
+        msg = 'Bạn có chắc chắn muốn xóa dữ liệu này khỏi hệ thống không?';
+      }
+
+      msg = msg.replace(/\\'/g, "'").replace(/\\"/g, '"');
+
+      window.showCustomConfirm({
+        title: 'Xác nhận xóa dữ liệu',
+        message: '<p style="margin:0;font-size:15px;font-weight:500;color:var(--text);">' + msg + '</p>' +
+                 '<p style="margin:10px 0 0;font-size:12px;color:#dc2626;background:rgba(220,38,38,0.08);padding:6px 10px;border-radius:6px;display:inline-block;">⚠️ Thao tác này sẽ xóa dữ liệu và không thể hoàn tác.</p>',
+        confirmText: 'Xác nhận xóa',
+        cancelText: 'Hủy bỏ',
+        onConfirm: function () {
+          if (target.tagName.toLowerCase() === 'a' && href && href !== '#') {
+            window.location.href = href;
+          } else if (target.type === 'submit' && target.form) {
+            target.form.submit();
+          } else if (target.classList.contains('btn-action-del')) {
+            const tr = target.closest('tr');
+            if (tr) tr.remove();
+          }
+        }
+      });
+    }
+  }, true);
+
 })();

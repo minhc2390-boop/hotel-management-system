@@ -9,8 +9,8 @@
 <% 
   HttpSession sess = request.getSession(false); 
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null; 
-  if (currentUser == null) {
-      response.sendRedirect(request.getContextPath() + "/login");
+  if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
+      response.sendRedirect(request.getContextPath() + "/home");
       return;
   }
   
@@ -158,7 +158,16 @@
             <h2 class="guest-name"><%= guest.getCustomerName() %></h2>
             <span class="guest-tier <%= tierClass %>"><%= tierName %></span>
 
-            <div class="detail-list">
+              <div class="detail-item">
+                <div class="detail-label">Tài khoản thành viên</div>
+                <div class="detail-value">
+                  <% if (guest.getUser() != null) { %>
+                    <span style="color: var(--brand); font-weight:700;">@<%= guest.getUser().getUsername() %></span> (ID: #<%= guest.getUser().getId() %>)
+                  <% } else { %>
+                    <span style="color: var(--muted); font-style: italic;">Khách vãng lai (Chưa tạo tài khoản)</span>
+                  <% } %>
+                </div>
+              </div>
               <div class="detail-item">
                 <div class="detail-label">Mã khách hàng</div>
                 <div class="detail-value">#GST<%= String.format("%04d", guest.getCustomerId()) %></div>

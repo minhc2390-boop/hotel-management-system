@@ -43,10 +43,18 @@ public class ServiceServlet extends HttpServlet {
                 break;
                 
             case "add":
+                if (!"Admin".equalsIgnoreCase(role)) {
+                    response.sendRedirect(request.getContextPath() + "/services?action=list");
+                    return;
+                }
                 request.getRequestDispatcher("/admin/service-form.jsp").forward(request, response);
                 break;
                 
             case "edit":
+                if (!"Admin".equalsIgnoreCase(role)) {
+                    response.sendRedirect(request.getContextPath() + "/services?action=list");
+                    return;
+                }
                 int editId = ParamUtil.getInt(request, "id", 0);
                 Service existingService = serviceDAO.getServiceById(editId);
                 request.setAttribute("service", existingService);
@@ -54,8 +62,10 @@ public class ServiceServlet extends HttpServlet {
                 break;
                 
             case "delete":
-                int deleteId = ParamUtil.getInt(request, "id", 0);
-                serviceDAO.deleteService(deleteId);
+                if ("Admin".equalsIgnoreCase(role)) {
+                    int deleteId = ParamUtil.getInt(request, "id", 0);
+                    serviceDAO.deleteService(deleteId);
+                }
                 response.sendRedirect(request.getContextPath() + "/services?action=list");
                 break;
                 
@@ -77,8 +87,9 @@ public class ServiceServlet extends HttpServlet {
 
         User currentUser = AuthUtil.getUser(request);
         String role = currentUser.getRole();
-        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        // Chỉ Admin mới có quyền thêm/sửa dịch vụ
+        if (!"Admin".equalsIgnoreCase(role)) {
+            response.sendRedirect(request.getContextPath() + "/services?action=list");
             return;
         }
 

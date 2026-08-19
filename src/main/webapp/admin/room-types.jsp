@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.RoomType" %>
 <%@ page import="java.util.List" %>
@@ -30,11 +30,13 @@
           <div>
             <div class="breadcrumb">Vận hành / Loại phòng</div>
             <h1 class="page-title">Danh mục loại phòng</h1>
-            <p class="page-desc">Quản lý các loại phòng, đơn giá theo ngày và sức chứa.</p>
+            <p class="page-desc">Danh sách các loại phòng, đơn giá theo ngày và sức chứa.</p>
           </div>
+          <% if (currentUser != null && "Admin".equalsIgnoreCase(currentUser.getRole())) { %>
           <div class="page-actions">
             <a class="btn btn-primary" href="<%= request.getContextPath() %>/roomtypes?action=add">＋ Thêm loại phòng</a>
           </div>
+          <% } %>
         </div>
 
         <section class="surface">
@@ -64,7 +66,9 @@
                   <th>ĐƠN GIÁ / NGÀY</th>
                   <th>SỨC CHỨA</th>
                   <th>MÔ TẢ</th>
+                  <% if (currentUser != null && "Admin".equalsIgnoreCase(currentUser.getRole())) { %>
                   <th>THAO TÁC</th>
+                  <% } %>
                 </tr>
               </thead>
               <tbody>
@@ -77,17 +81,17 @@
                     <td><strong class="text-success"><%= money.format(rt.getPricePerDay()) %></strong></td>
                     <td><%= rt.getCapacity() %> khách</td>
                     <td><%= rt.getDescription() != null ? rt.getDescription() : "-" %></td>
+                    <% if (currentUser != null && "Admin".equalsIgnoreCase(currentUser.getRole())) { %>
                     <td>
                       <div class="row-actions">
                         <a class="btn btn-outline btn-icon" title="Sửa" href="<%= request.getContextPath() %>/roomtypes?action=edit&id=<%= rt.getId() %>">✎</a>
-                        <% if (currentUser != null && "Admin".equals(currentUser.getRole())) { %>
-                          <a class="btn btn-danger btn-icon" title="Xóa" onclick="return confirm('Bạn có chắc muốn xóa loại phòng này?')" href="<%= request.getContextPath() %>/roomtypes?action=delete&id=<%= rt.getId() %>">×</a>
-                        <% } %>
+                        <a class="btn btn-danger btn-icon" title="Xóa" onclick="return confirm('Bạn có chắc muốn xóa loại phòng này?')" href="<%= request.getContextPath() %>/roomtypes?action=delete&id=<%= rt.getId() %>">×</a>
                       </div>
                     </td>
+                    <% } %>
                   </tr>
                 <%   } 
-                   } else { 
+                   } else { %>
                 %>
                   <tr>
                     <td colspan="6" style="text-align:center; padding:20px;">Chưa có dữ liệu loại phòng nào.</td>

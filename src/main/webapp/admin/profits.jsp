@@ -14,7 +14,7 @@
 <%
   HttpSession sess = request.getSession(false);
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
-  if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+  if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
     response.sendRedirect(request.getContextPath() + "/home");
     return;
   }
@@ -27,7 +27,7 @@
   List<Bill> paidBills = new java.util.ArrayList<>();
   if (allBills != null) {
       for (Bill b : allBills) {
-          if ("Paid".equals(b.getStatus()) && b.getCreatedAt() != null) {
+          if (b != null && "Paid".equalsIgnoreCase(b.getStatus())) {
               paidBills.add(b);
           }
       }
@@ -86,17 +86,27 @@
       double dayServRev = 0;
 
       for (Bill b : paidBills) {
-          LocalDate billDate = b.getCreatedAt().toLocalDateTime().toLocalDate();
-          if (billDate.equals(date)) {
+          java.time.LocalDate billDate = null;
+          if (b.getCheckOutDate() != null) {
+              billDate = b.getCheckOutDate().toLocalDateTime().toLocalDate();
+          } else if (b.getCreatedAt() != null) {
+              billDate = b.getCreatedAt().toLocalDateTime().toLocalDate();
+          } else if (b.getCheckInDate() != null) {
+              billDate = b.getCheckInDate().toLocalDateTime().toLocalDate();
+          }
+
+          if (billDate != null && billDate.equals(date)) {
               List<BillDetail> details = billDetailDAO.getBillDetailsByBillId(b.getId());
-              if (details != null) {
+              if (details != null && !details.isEmpty()) {
                   for (BillDetail bd : details) {
                       if (bd.getRoom() != null) {
-                          dayRoomRev += bd.getPrice() * bd.getQuantity();
+                          dayRoomRev += (bd.getPrice() * bd.getQuantity()) * 1.08;
                       } else if (bd.getService() != null) {
-                          dayServRev += bd.getPrice() * bd.getQuantity();
+                          dayServRev += (bd.getPrice() * bd.getQuantity()) * 1.08;
                       }
                   }
+              } else {
+                  dayRoomRev += b.getTotalAmount();
               }
           }
       }
@@ -257,7 +267,7 @@
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="<%=request.getContextPath()%>/js/app.js"></script>
 <script>
   const dailyLabels = [<%= String.join(",", java.util.Arrays.stream(dailyLabels).map(s -> "'" + s + "'").toArray(String[]::new)) %>];
@@ -265,51 +275,340 @@
   const dailyServiceData = [<%= java.util.Arrays.stream(dailyService).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(",")) %>];
 
   function exportToExcel() {
-      const fmtMoney = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+      const thinBorder = {
+          top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      };
+
+      const headerBorder = {
+          top: { style: 'thin', color: { rgb: '475569' } },
+          bottom: { style: 'medium', color: { rgb: '0F172A' } },
+          left: { style: 'thin', color: { rgb: '475569' } },
+          right: { style: 'thin', color: { rgb: '475569' } }
+      };
+
+      const totalBorder = {
+          top: { style: 'thin', color: { rgb: 'B45309' } },
+          bottom: { style: 'double', color: { rgb: '92400E' } },
+          left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      };
+
+      const ws = {};
+      const merges = [];
+      const rowHeights = [];
+
+      function setCell(r, c, v, t, z, s) {
+          const ref = XLSX.utils.encode_cell({ r, c });
+          const cell = { v: v, t: t || (typeof v === 'number' ? 'n' : 's') };
+          if (z) cell.z = z;
+          if (s) cell.s = s;
+          ws[ref] = cell;
+      }
+
+      function mergeRange(r1, c1, r2, c2) {
+          merges.push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
+      }
+
       const todayStr = new Date().toLocaleDateString('vi-VN');
+      const numFmt = '#,##0 "₫"';
 
-      const data = [
-          ["KHÁCH SẠN NESTORA HOTEL & RESORT"],
-          ["BÁO CÁO THỐNG KÊ DOANH THU CHI TIẾT"],
-          ["Kỳ báo cáo:", "<%= dateRangeStr %>"],
-          ["Ngày xuất file:", todayStr],
-          [],
-          ["STT", "NGÀY THỐNG KÊ", "DOANH THU PHÒNG (VNĐ)", "DOANH THU DỊCH VỤ (VNĐ)", "TỔNG DOANH THU (VNĐ)"]
-      ];
+      // --- ROW 0: TITLE BANNER ---
+      mergeRange(0, 0, 0, 4);
+      for (let c = 0; c <= 4; c++) {
+          setCell(0, c, c === 0 ? 'KHÁCH SẠN NESTORA HOTEL & RESORT' : '', 's', null, {
+              font: { name: 'Calibri', sz: 16, bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: '0F172A' } },
+              alignment: { horizontal: 'center', vertical: 'center' }
+          });
+      }
+      rowHeights[0] = { hpt: 32 };
 
+      // --- ROW 1: SUBTITLE ---
+      mergeRange(1, 0, 1, 4);
+      for (let c = 0; c <= 4; c++) {
+          setCell(1, c, c === 0 ? 'BÁO CÁO THỐNG KÊ DOANH THU CHI TIẾT' : '', 's', null, {
+              font: { name: 'Calibri', sz: 13, bold: true, color: { rgb: 'F8FAFC' } },
+              fill: { fgColor: { rgb: '1E293B' } },
+              alignment: { horizontal: 'center', vertical: 'center' }
+          });
+      }
+      rowHeights[1] = { hpt: 24 };
+
+      // --- ROW 2: MOTTO ---
+      mergeRange(2, 0, 2, 4);
+      for (let c = 0; c <= 4; c++) {
+          setCell(2, c, c === 0 ? 'Hệ thống Quản trị Khách sạn Thông minh Nestora Hotel Manager' : '', 's', null, {
+              font: { name: 'Calibri', sz: 10, italic: true, color: { rgb: '94A3B8' } },
+              fill: { fgColor: { rgb: '1E293B' } },
+              alignment: { horizontal: 'center', vertical: 'center' }
+          });
+      }
+      rowHeights[2] = { hpt: 20 };
+
+      // --- ROW 3: SPACER ---
+      rowHeights[3] = { hpt: 10 };
+
+      // --- ROW 4: META ROW 1 ---
+      setCell(4, 0, 'Kỳ báo cáo:', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'F1F5F9' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      mergeRange(4, 1, 4, 2);
+      setCell(4, 1, '<%= dateRangeStr %>', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '1769E0' } },
+          fill: { fgColor: { rgb: 'F8FAFC' } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(4, 2, '', 's', null, { border: thinBorder, fill: { fgColor: { rgb: 'F8FAFC' } } });
+      setCell(4, 3, 'Ngày xuất file:', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'F1F5F9' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(4, 4, todayStr, 's', null, {
+          font: { name: 'Calibri', sz: 10, color: { rgb: '334155' } },
+          fill: { fgColor: { rgb: 'F8FAFC' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: thinBorder
+      });
+      rowHeights[4] = { hpt: 22 };
+
+      // --- ROW 5: META ROW 2 ---
+      setCell(5, 0, 'Người xuất:', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'F1F5F9' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      mergeRange(5, 1, 5, 2);
+      setCell(5, 1, '<%= (currentUser != null && currentUser.getFullName() != null) ? currentUser.getFullName() : "Ban Quản Trị" %>', 's', null, {
+          font: { name: 'Calibri', sz: 10, color: { rgb: '334155' } },
+          fill: { fgColor: { rgb: 'F8FAFC' } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(5, 2, '', 's', null, { border: thinBorder, fill: { fgColor: { rgb: 'F8FAFC' } } });
+      setCell(5, 3, 'Đơn vị tiền tệ:', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'F1F5F9' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(5, 4, 'VNĐ (Việt Nam Đồng)', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '166534' } },
+          fill: { fgColor: { rgb: 'DCFCE7' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: thinBorder
+      });
+      rowHeights[5] = { hpt: 22 };
+
+      // --- ROW 6: SPACER ---
+      rowHeights[6] = { hpt: 12 };
+
+      // --- ROW 7: KPI SUMMARY CARDS ---
+      mergeRange(7, 0, 7, 1);
+      setCell(7, 0, 'TỔNG DOANH THU: ' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(<%= totalRevenue %>), 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FDE68A' } },
+          fill: { fgColor: { rgb: '0F172A' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(7, 1, '', 's', null, { border: thinBorder, fill: { fgColor: { rgb: '0F172A' } } });
+      setCell(7, 2, 'Tiền phòng: ' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(<%= roomRevenue %>), 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '1E3A8A' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(7, 3, 'Tiền dịch vụ: ' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(<%= serviceRevenue %>), 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '92400E' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(7, 4, 'TB/Ngày: ' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(<%= averagePerDay %>), 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '065F46' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: thinBorder
+      });
+      rowHeights[7] = { hpt: 26 };
+
+      // --- ROW 8: SPACER ---
+      rowHeights[8] = { hpt: 12 };
+
+      // --- ROW 9: TABLE HEADER ---
+      const headers = ['STT', 'NGÀY THỐNG KÊ', 'DOANH THU PHÒNG (VNĐ)', 'DOANH THU DỊCH VỤ (VNĐ)', 'TỔNG DOANH THU (VNĐ)'];
+      for (let c = 0; c < headers.length; c++) {
+          setCell(9, c, headers[c], 's', null, {
+              font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: '1E293B' } },
+              alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+              border: headerBorder
+          });
+      }
+      rowHeights[9] = { hpt: 28 };
+
+      // --- DATA ROWS ---
+      let curRow = 10;
       for (let i = 0; i < dailyLabels.length; i++) {
           const roomRev = dailyRoomData[i];
           const servRev = dailyServiceData[i];
           const totalRev = roomRev + servRev;
-          data.push([
-              i + 1,
-              dailyLabels[i],
-              fmtMoney(roomRev),
-              fmtMoney(servRev),
-              fmtMoney(totalRev)
-          ]);
+          const isEven = i % 2 === 0;
+          const rowBg = isEven ? 'FFFFFF' : 'F8FAFC';
+
+          setCell(curRow, 0, i + 1, 'n', null, {
+              font: { name: 'Calibri', sz: 10, color: { rgb: '64748B' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 1, dailyLabels[i], 's', null, {
+              font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '1E293B' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 2, roomRev, 'n', numFmt, {
+              font: { name: 'Calibri', sz: 10, color: { rgb: '0F172A' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'right', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 3, servRev, 'n', numFmt, {
+              font: { name: 'Calibri', sz: 10, color: { rgb: '0F172A' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'right', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 4, totalRev, 'n', numFmt, {
+              font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '1769E0' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'right', vertical: 'center' },
+              border: thinBorder
+          });
+
+          rowHeights[curRow] = { hpt: 22 };
+          curRow++;
       }
 
-      data.push([]);
-      data.push(["", "TỔNG CỘNG DOANH THU KỲ BÁO CÁO:", "", "", fmtMoney(<%= totalRevenue %>)]);
-      data.push(["", "Trong đó - Doanh thu Phòng:", "", "", fmtMoney(<%= roomRevenue %>)]);
-      data.push(["", "Trong đó - Doanh thu Dịch vụ:", "", "", fmtMoney(<%= serviceRevenue %>)]);
-      data.push(["", "Doanh thu Trung bình / Ngày:", "", "", fmtMoney(<%= averagePerDay %>)]);
+      // --- ROW: TOTAL SUMMARY (TỔNG CỘNG) ---
+      mergeRange(curRow, 0, curRow, 1);
+      setCell(curRow, 0, 'TỔNG CỘNG DOANH THU KỲ BÁO CÁO:', 's', null, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '92400E' } },
+          fill: { fgColor: { rgb: 'FEF3C7' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: totalBorder
+      });
+      setCell(curRow, 1, '', 's', null, { border: totalBorder, fill: { fgColor: { rgb: 'FEF3C7' } } });
 
-      const ws = XLSX.utils.aoa_to_sheet(data);
+      setCell(curRow, 2, <%= roomRevenue %>, 'n', numFmt, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'FEF3C7' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: totalBorder
+      });
 
-      // Cài đặt độ rộng cột tự động căn chỉnh đẹp mắt
+      setCell(curRow, 3, <%= serviceRevenue %>, 'n', numFmt, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'FEF3C7' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: totalBorder
+      });
+
+      setCell(curRow, 4, <%= totalRevenue %>, 'n', numFmt, {
+          font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: '92400E' } },
+          fill: { fgColor: { rgb: 'FDE68A' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: totalBorder
+      });
+      rowHeights[curRow] = { hpt: 26 };
+      curRow++;
+
+      // --- ROW: AVERAGE PER DAY ---
+      mergeRange(curRow, 0, curRow, 3);
+      setCell(curRow, 0, 'Doanh thu trung bình mỗi ngày:', 's', null, {
+          font: { name: 'Calibri', sz: 10, italic: true, bold: true, color: { rgb: '475569' } },
+          fill: { fgColor: { rgb: 'F1F5F9' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      for (let c = 1; c <= 3; c++) {
+          setCell(curRow, c, '', 's', null, { border: thinBorder, fill: { fgColor: { rgb: 'F1F5F9' } } });
+      }
+      setCell(curRow, 4, <%= averagePerDay %>, 'n', numFmt, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '166534' } },
+          fill: { fgColor: { rgb: 'DCFCE7' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      rowHeights[curRow] = { hpt: 22 };
+      curRow++;
+
+      // --- ROW: SPACER ---
+      curRow++;
+      rowHeights[curRow - 1] = { hpt: 18 };
+
+      // --- SIGNATURE SECTION ---
+      setCell(curRow, 1, 'NGƯỜI LẬP BÁO CÁO', 's', null, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '0F172A' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+      });
+      setCell(curRow, 4, 'KẾ TOÁN TRƯỞNG / BAN GIÁM ĐỐC', 's', null, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '0F172A' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+      });
+      rowHeights[curRow] = { hpt: 20 };
+      curRow++;
+
+      setCell(curRow, 1, '(Ký, ghi rõ họ tên)', 's', null, {
+          font: { name: 'Calibri', sz: 9, italic: true, color: { rgb: '64748B' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+      });
+      setCell(curRow, 4, '(Ký, đóng dấu)', 's', null, {
+          font: { name: 'Calibri', sz: 9, italic: true, color: { rgb: '64748B' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+      });
+      rowHeights[curRow] = { hpt: 18 };
+      curRow += 3; // Space for signature
+
+      setCell(curRow, 1, '<%= (currentUser != null && currentUser.getFullName() != null) ? currentUser.getFullName() : "Ban Quản Trị" %>', 's', null, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '0F172A' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+      });
+      setCell(curRow, 4, 'Đại diện Ban Quản Trị Nestora', 's', null, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '0F172A' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+      });
+      rowHeights[curRow] = { hpt: 22 };
+
+      // Set sheet properties
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: curRow, c: 4 } });
+      ws['!merges'] = merges;
+      ws['!rows'] = rowHeights;
       ws['!cols'] = [
           { wch: 8 },  // STT
-          { wch: 20 }, // NGÀY THỐNG KÊ
+          { wch: 24 }, // NGÀY THỐNG KÊ
           { wch: 28 }, // DOANH THU PHÒNG
           { wch: 28 }, // DOANH THU DỊCH VỤ
-          { wch: 32 }  // TỔNG DOANH THU
+          { wch: 34 }  // TỔNG DOANH THU
       ];
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Báo Cáo Doanh Thu");
-      XLSX.writeFile(wb, "Bao_Cao_Doanh_Thu_Nestora.xlsx");
+      XLSX.utils.book_append_sheet(wb, ws, 'Báo Cáo Doanh Thu');
+      XLSX.writeFile(wb, 'Bao_Cao_Doanh_Thu_Nestora_' + new Date().toISOString().slice(0, 10) + '.xlsx');
   }
 
   (function() {

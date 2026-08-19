@@ -75,6 +75,14 @@ public class RoomTypeDAO {
             tx.begin();
             RoomType roomType = em.find(RoomType.class, id);
             if (roomType != null) {
+                // Kiểm tra xem có phòng nào đang sử dụng loại phòng này không
+                Long roomCount = em.createQuery("SELECT COUNT(r) FROM Room r WHERE r.roomType.id = :rtid", Long.class)
+                        .setParameter("rtid", id).getSingleResult();
+                if (roomCount != null && roomCount > 0) {
+                    // Ngăn chặn xóa hàng loạt các phòng đang hoạt động
+                    tx.rollback();
+                    return false;
+                }
                 em.remove(roomType);
                 tx.commit();
                 return true;

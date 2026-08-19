@@ -18,6 +18,9 @@
       display: inline-block !important;
   }
 </style>
+<%
+  boolean isAdminRole = currentUser != null && "Admin".equalsIgnoreCase(currentUser.getRole());
+%>
 <aside class="sidebar">
   <div class="sidebar-head">
     <div class="brand">
@@ -29,12 +32,14 @@
   </div>
 
   <div class="sidebar-scroll">
+    <% if (isAdminRole) { %>
     <div class="nav-section">
       <a class="nav-link <%= "dashboard".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/home">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/dashboard.svg')" aria-hidden="true"></span>
         <span>Tổng quan</span>
       </a>
     </div>
+    <% } %>
 
     <div class="nav-section">
       <div class="nav-label">Vận hành</div>
@@ -42,14 +47,17 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-map.svg')" aria-hidden="true"></span>
         <span>Sơ đồ phòng</span>
       </a>
+      <% if (isAdminRole) { %>
       <a class="nav-link <%= "rooms".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/rooms?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-list.svg')" aria-hidden="true"></span>
         <span>Danh sách phòng</span>
       </a>
+      <% } %>
       <a class="nav-link <%= "roomTypes".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/roomtypes?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/room-list.svg')" aria-hidden="true"></span>
         <span>Loại phòng</span>
       </a>
+      <% if (isAdminRole) { %>
       <a class="nav-link <%= "equipments".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/equipments?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/equipment.svg')" aria-hidden="true"></span>
         <span>Quản lý thiết bị</span>
@@ -58,6 +66,7 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
         <span>Người dùng & Khách hàng</span>
       </a>
+      <% } %>
       <a class="nav-link <%= "bookings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/bookings?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
         <span>Đặt phòng</span>
@@ -74,6 +83,7 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/service.svg')" aria-hidden="true"></span>
         <span>Menu Buffet</span>
       </a>
+      <% if (isAdminRole) { %>
       <a class="nav-link <%= "notifications".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/notifications?action=list">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
         <span>Thông báo</span>
@@ -82,8 +92,10 @@
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/booking.svg')" aria-hidden="true"></span>
         <span>Đánh giá & Góp ý</span>
       </a>
+      <% } %>
     </div>
 
+    <% if (isAdminRole) { %>
     <div class="nav-section">
       <div class="nav-label">Tài chính</div>
       <a class="nav-link <%= "bills".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/bills?action=list">
@@ -92,11 +104,14 @@
       </a>
       <a class="nav-link <%= "profits".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/profits.jsp">
         <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/revenue.svg')" aria-hidden="true"></span>
-        <span>Doanh thu</span>
+        <span>Doanh thu chung</span>
+      </a>
+      <a class="nav-link <%= "staffProfits".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/staff-profits.jsp">
+        <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/customer.svg')" aria-hidden="true"></span>
+        <span>Doanh thu nhân viên</span>
       </a>
     </div>
 
-    <% if (currentUser != null && "Admin".equals(currentUser.getRole())) { %>
     <div class="nav-section">
       <div class="nav-label">Quản trị</div>
       <a class="nav-link <%= "employees".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/users?action=employees">
@@ -112,10 +127,12 @@
       <span class="nav-icon collapse-icon" aria-hidden="true">‹</span>
       <span>Thu gọn menu</span>
     </a>
+    <% if (isAdminRole) { %>
     <a class="nav-link <%= "settings".equals(activeMenu) ? "active" : "" %>" href="<%= request.getContextPath() %>/admin/settings">
       <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/settings.svg')" aria-hidden="true"></span>
       <span>Cài đặt</span>
     </a>
+    <% } %>
     <a class="nav-link danger" href="<%= request.getContextPath() %>/logout">
       <span class="nav-icon exported-icon" style="--icon:url('<%= request.getContextPath() %>/assets/icons/logout.svg')" aria-hidden="true"></span>
       <span>Đăng xuất</span>

@@ -37,6 +37,14 @@
     </div>
   </div>
 
+  <% if ("1".equals(request.getParameter("cancelled"))) { %>
+    <div class="alert alert-success" style="margin-bottom: 20px;">Đã hủy hóa đơn thành công.</div>
+  <% } else if ("cannotCancelPaid".equals(request.getParameter("error")) || "alreadyPaid".equals(request.getParameter("error"))) { %>
+    <div class="alert alert-error" style="margin-bottom: 20px;">Hóa đơn đã được thanh toán, không thể hủy!</div>
+  <% } else if ("cancelFailed".equals(request.getParameter("error"))) { %>
+    <div class="alert alert-error" style="margin-bottom: 20px;">Không thể hủy hóa đơn ở trạng thái hiện tại.</div>
+  <% } %>
+
   <section class="client-surface">
     <% if (bills != null && !bills.isEmpty()) { %>
       <div class="table-wrap">

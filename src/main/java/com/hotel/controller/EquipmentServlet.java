@@ -32,7 +32,7 @@ public class EquipmentServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
 
-        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
+        if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
@@ -106,7 +106,7 @@ public class EquipmentServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
 
-        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
+        if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }

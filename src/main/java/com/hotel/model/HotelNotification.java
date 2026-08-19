@@ -30,7 +30,7 @@ public class HotelNotification {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by", insertable = false, updatable = false)
     private User creator;
 
@@ -38,21 +38,59 @@ public class HotelNotification {
 
     public HotelNotification(int notificationId, String title, String content, String type, LocalDateTime createdAt, Integer createdBy, Boolean isActive) {
         this.notificationId = notificationId;
-        this.title = title;
-        this.content = content;
-        this.type = type;
-        this.createdAt = createdAt;
+        this.title = com.hotel.util.EncodingUtil.fixEncoding(title);
+        this.content = com.hotel.util.EncodingUtil.fixEncoding(content);
+        this.type = (type != null && !type.trim().isEmpty()) ? type : "INFO";
+        this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
         this.createdBy = createdBy;
-        this.isActive = isActive;
+        this.isActive = isActive != null ? isActive : true;
+    }
+
+    public HotelNotification(int notificationId, String title, String content, String type, Integer createdBy, Boolean isActive) {
+        this.notificationId = notificationId;
+        this.title = com.hotel.util.EncodingUtil.fixEncoding(title);
+        this.content = com.hotel.util.EncodingUtil.fixEncoding(content);
+        this.type = (type != null && !type.trim().isEmpty()) ? type : "INFO";
+        this.createdAt = LocalDateTime.now();
+        this.createdBy = createdBy;
+        this.isActive = isActive != null ? isActive : true;
+    }
+
+    public HotelNotification(int notificationId, String title, String content, String type, Boolean isActive) {
+        this.notificationId = notificationId;
+        this.title = com.hotel.util.EncodingUtil.fixEncoding(title);
+        this.content = com.hotel.util.EncodingUtil.fixEncoding(content);
+        this.type = (type != null && !type.trim().isEmpty()) ? type : "INFO";
+        this.createdAt = LocalDateTime.now();
+        this.createdBy = null;
+        this.isActive = isActive != null ? isActive : true;
     }
 
     public HotelNotification(String title, String content, String type, Integer createdBy, Boolean isActive) {
-        this.title = title;
-        this.content = content;
+        this.title = com.hotel.util.EncodingUtil.fixEncoding(title);
+        this.content = com.hotel.util.EncodingUtil.fixEncoding(content);
         this.type = (type != null && !type.trim().isEmpty()) ? type : "INFO";
         this.createdAt = LocalDateTime.now();
         this.createdBy = createdBy;
         this.isActive = (isActive != null) ? isActive : true;
+    }
+
+    public HotelNotification(String title, String content, String type, Boolean isActive) {
+        this.title = com.hotel.util.EncodingUtil.fixEncoding(title);
+        this.content = com.hotel.util.EncodingUtil.fixEncoding(content);
+        this.type = (type != null && !type.trim().isEmpty()) ? type : "INFO";
+        this.createdAt = LocalDateTime.now();
+        this.createdBy = null;
+        this.isActive = (isActive != null) ? isActive : true;
+    }
+
+    public HotelNotification(String title, String content, String type) {
+        this.title = com.hotel.util.EncodingUtil.fixEncoding(title);
+        this.content = com.hotel.util.EncodingUtil.fixEncoding(content);
+        this.type = (type != null && !type.trim().isEmpty()) ? type : "INFO";
+        this.createdAt = LocalDateTime.now();
+        this.createdBy = null;
+        this.isActive = true;
     }
 
     // Getters and Setters
@@ -70,7 +108,7 @@ public class HotelNotification {
     }
 
     public void setTitle(String title) {
-        this.title = title;
+        this.title = com.hotel.util.EncodingUtil.fixEncoding(title);
     }
 
     public String getContent() {
@@ -79,11 +117,11 @@ public class HotelNotification {
     }
 
     public void setContent(String content) {
-        this.content = content;
+        this.content = com.hotel.util.EncodingUtil.fixEncoding(content);
     }
 
     public String getType() {
-        return type;
+        return (type != null && !type.trim().isEmpty()) ? type : "INFO";
     }
 
     public void setType(String type) {
@@ -91,11 +129,20 @@ public class HotelNotification {
     }
 
     public LocalDateTime getCreatedAt() {
-        return createdAt;
+        return createdAt != null ? createdAt : LocalDateTime.now();
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getFormattedCreatedAt() {
+        if (createdAt == null) return "";
+        try {
+            return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        } catch (Exception e) {
+            return createdAt.toString();
+        }
     }
 
     public Integer getCreatedBy() {
@@ -120,6 +167,15 @@ public class HotelNotification {
 
     public void setCreator(User creator) {
         this.creator = creator;
+    }
+
+    public String getCreatorName() {
+        try {
+            if (creator != null && creator.getFullName() != null && !creator.getFullName().trim().isEmpty()) {
+                return com.hotel.util.EncodingUtil.fixEncoding(creator.getFullName());
+            }
+        } catch (Exception ignored) {}
+        return "Quản trị viên";
     }
 
     @Override

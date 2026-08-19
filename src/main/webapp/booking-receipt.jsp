@@ -23,7 +23,9 @@
     long days = diffMs / (1000 * 60 * 60 * 24);
     if (days <= 0) days = 1;
     
-    double totalAmount = days * booking.getRoomPrice();
+    double subTotal = days * booking.getRoomPrice();
+    double taxAmount = subTotal * 0.08;
+    double totalAmount = subTotal + taxAmount;
     
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
@@ -309,23 +311,85 @@
                 </div>
 
                 <!-- Tổng thanh toán dự kiến -->
-                <div class="receipt-total">
-                    <span>Tổng tạm tính</span>
+                <div class="receipt-section" style="border-bottom: none; padding-bottom: 0;">
+                    <div class="receipt-row">
+                        <span style="color: var(--muted);">Tạm tính tiền phòng</span>
+                        <strong><%= money.format(subTotal) %></strong>
+                    </div>
+                    <div class="receipt-row" style="color: #b45309; font-weight: 600;">
+                        <span>Thuế GTGT / VAT (8%)</span>
+                        <span>+ <%= money.format(taxAmount) %></span>
+                    </div>
+                </div>
+
+                <div class="receipt-total" style="margin-top: 10px;">
+                    <div>
+                        <span style="display: block; font-weight: 700; font-size: 15px;">Tổng thanh toán</span>
+                        <span style="display: block; font-size: 12px; color: var(--muted); font-weight: normal;">(Đã bao gồm 8% thuế VAT)</span>
+                    </div>
                     <span class="amount"><%= money.format(totalAmount) %></span>
                 </div>
 
+                <% 
+                    String bNote = booking.getNote() != null ? booking.getNote() : "";
+                    boolean isGuestDeposit = "Confirmed".equals(booking.getStatus()) && (bNote.contains("Đã cọc 20%") || bNote.contains("Khách vãng lai"));
+                    boolean isMemberPrivilege = "Pending".equals(booking.getStatus()) || bNote.contains("Hội viên") || bNote.contains("Miễn cọc");
+                %>
+                <% if (isGuestDeposit) { %>
+                <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px 18px; margin-top: 16px; font-size: 14px; color: #166534; line-height: 1.5;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>✓ <strong>Đã thanh toán cọc 20% (VietQR):</strong></span>
+                        <strong style="color: #15803d;"><%= money.format(totalAmount * 0.20) %></strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px dashed #bbf7d0; padding-top: 6px; font-weight: 700;">
+                        <span>👉 <strong>Số tiền còn lại thanh toán khi trả phòng (80%):</strong></span>
+                        <strong style="color: #166534; font-size: 15px;"><%= money.format(totalAmount * 0.80) %></strong>
+                    </div>
+                </div>
+                <% } else if (isMemberPrivilege) { %>
+                <div style="background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 10px; padding: 14px 18px; margin-top: 16px; font-size: 13px; color: #1e40af; line-height: 1.5;">
+                    👑 <strong>Đặc quyền Hội viên:</strong> Giữ phòng miễn cọc trước. Quý khách vui lòng thanh toán 100% chi phí (<strong style="color: #1e3a8a;"><%= money.format(totalAmount) %></strong>) khi làm thủ tục nhận phòng tại quầy lễ tân.
+                </div>
+                <% } %>
+
+                <!-- Lưu ý trường hợp quên mang phiếu -->
+                <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px 18px; margin-top: 18px; font-size: 13px; color: #475569; line-height: 1.6;">
+                    <div style="font-weight: 700; color: var(--luxury-navy); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <span>💡 Hướng dẫn nhận phòng dành cho quý khách:</span>
+                    </div>
+                    <ul style="margin: 4px 0 0 18px; padding: 0;">
+                        <li>Bấm <strong>"📥 Lưu / Tải PDF"</strong> hoặc chụp ảnh màn hình phiếu đặt phòng này để lưu lại mã <strong>#DP<%= booking.getBookingId() %></strong>.</li>
+                        <li><strong>Trường hợp quên lưu hoặc mất phiếu:</strong> Quý khách <strong>hoàn toàn yên tâm</strong>! Khi đến khách sạn, quý khách chỉ cần đọc <strong>Số điện thoại (<%= booking.getCustomer().getCustomerPhone() != null ? booking.getCustomer().getCustomerPhone() : "" %>)</strong> hoặc xuất trình <strong>CCCD / Họ tên</strong> tại quầy Lễ tân để nhận phòng nhanh chóng.</li>
+                    </ul>
+                </div>
+
                 <!-- Hành động -->
-                <div class="receipt-actions">
-                    <button class="btn btn-outline" onclick="window.print()">🖨️ In phiếu đặt</button>
+                <div class="receipt-actions" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px;">
+                    <button class="btn btn-primary" onclick="saveReceiptAsPdf()" style="display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                        📥 Lưu / Tải PDF
+                    </button>
+                    <button class="btn btn-outline" onclick="window.print()" style="display: flex; align-items: center; gap: 6px;">
+                        🖨️ In phiếu
+                    </button>
                     <% if (currentUser == null || "Customer".equals(currentUser.getRole())) { %>
-                        <a href="<%= request.getContextPath() %>/home" class="btn btn-primary">Quay lại Trang chủ</a>
+                        <a href="<%= request.getContextPath() %>/home" class="btn btn-outline">🏠 Trang chủ</a>
                     <% } else { %>
-                        <a href="<%= request.getContextPath() %>/bookings?action=list" class="btn btn-primary">Về danh sách đặt phòng</a>
+                        <a href="<%= request.getContextPath() %>/bookings?action=list" class="btn btn-outline">📋 Quản lý đặt phòng</a>
                     <% } %>
                 </div>
             </div>
         </div>
     </main>
     <%@ include file="WEB-INF/jspf/client-footer.jspf" %>
+    <script>
+        function saveReceiptAsPdf() {
+            var oldTitle = document.title;
+            document.title = 'Phieu_Dat_Phong_DP<%= booking.getBookingId() %>_Nestora_Hotel';
+            window.print();
+            setTimeout(function() {
+                document.title = oldTitle;
+            }, 1000);
+        }
+    </script>
 </body>
 </html>

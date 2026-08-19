@@ -7,7 +7,8 @@
 <%!
     private String escapeHtml(String val) {
         if (val == null) return "";
-        return val.replace("&", "&amp;").replace("<", "&lt;")
+        String fixed = com.hotel.util.EncodingUtil.fixEncoding(val);
+        return fixed.replace("&", "&amp;").replace("<", "&lt;")
                   .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
 %>
@@ -22,7 +23,7 @@
 
     User currentUser = AuthUtil.getUser(request);
     String role = currentUser != null ? currentUser.getRole() : "";
-    if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
+    if (!"Admin".equalsIgnoreCase(role) && !"Manager".equalsIgnoreCase(role)) {
         response.sendRedirect(request.getContextPath() + "/home");
         return;
     }

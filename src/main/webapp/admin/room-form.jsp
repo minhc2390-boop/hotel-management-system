@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Room" %>
@@ -28,8 +27,8 @@
 
   User currentUser = AuthUtil.getUser(request);
   String role = currentUser != null ? currentUser.getRole() : "";
-  if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
-    response.sendRedirect(request.getContextPath() + "/home");
+  if (!"Admin".equalsIgnoreCase(role)) {
+    response.sendRedirect(request.getContextPath() + "/rooms?action=map");
     return;
   }
 
@@ -611,32 +610,31 @@
       btnAddRow.addEventListener('click', function () {
         const rowCount = tbody.querySelectorAll('tr').length;
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="text-align: center;">
-            <input type="checkbox" class="equip-check" name="eqEnabled" value="${rowCount}" checked>
-          </td>
-          <td><input type="text" class="form-control" name="eqName" placeholder="Tên thiết bị mới..." required></td>
-          <td><input type="number" class="form-control" name="eqQuantity" value="1" min="1"></td>
-          <td>
-            <select class="form-control" name="eqUnit">
-              <option value="Cái" selected>Cái</option>
-              <option value="Bộ">Bộ</option>
-              <option value="Chiếc">Chiếc</option>
-            </select>
-          </td>
-          <td>
-            <select class="form-control" name="eqStatus">
-              <option value="Hoạt động tốt" selected>Hoạt động tốt</option>
-              <option value="Cần kiểm tra">Cần kiểm tra</option>
-              <option value="Bảo trì">Bảo trì</option>
-              <option value="Hỏng">Hỏng</option>
-            </select>
-          </td>
-          <td><input type="text" class="form-control" name="eqDescription" placeholder="Ghi chú tình trạng / hư hao..."></td>
-          <td style="text-align: center;">
-            <button type="button" class="btn-action-del" onclick="this.closest('tr').remove()" title="Xóa dòng này">×</button>
-          </td>
-        `;
+        tr.innerHTML =
+          '<td style="text-align: center;">' +
+            '<input type="checkbox" class="equip-check" name="eqEnabled" value="' + rowCount + '" checked>' +
+          '</td>' +
+          '<td><input type="text" class="form-control" name="eqName" placeholder="Tên thiết bị mới..." required></td>' +
+          '<td><input type="number" class="form-control" name="eqQuantity" value="1" min="1"></td>' +
+          '<td>' +
+            '<select class="form-control" name="eqUnit">' +
+              '<option value="Cái" selected>Cái</option>' +
+              '<option value="Bộ">Bộ</option>' +
+              '<option value="Chiếc">Chiếc</option>' +
+            '</select>' +
+          '</td>' +
+          '<td>' +
+            '<select class="form-control" name="eqStatus">' +
+              '<option value="Hoạt động tốt" selected>Hoạt động tốt</option>' +
+              '<option value="Cần kiểm tra">Cần kiểm tra</option>' +
+              '<option value="Bảo trì">Bảo trì</option>' +
+              '<option value="Hỏng">Hỏng</option>' +
+            '</select>' +
+          '</td>' +
+          '<td><input type="text" class="form-control" name="eqDescription" placeholder="Ghi chú tình trạng / hư hao..."></td>' +
+          '<td style="text-align: center;">' +
+            '<button type="button" class="btn-action-del" onclick="this.closest(\'tr\').remove()" title="Xóa dòng này">×</button>' +
+          '</td>';
         tbody.appendChild(tr);
       });
     }
@@ -644,18 +642,3 @@
 </script>
 </body>
 </html>
-=======
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %><%@ page import="com.hotel.model.User" %><%@ page import="com.hotel.model.Room" %><%@ page import="com.hotel.model.RoomType" %><%@ page import="java.util.List" %>
-<%
-HttpSession sess=request.getSession(false); User currentUser=sess!=null?(User)sess.getAttribute("currentUser"):null;if(currentUser==null||(!"Admin".equals(currentUser.getRole())&&!"Receptionist".equals(currentUser.getRole()))){response.sendRedirect(request.getContextPath()+"/home");return;} Room room=(Room)request.getAttribute("room"); List<RoomType> roomTypes=(List<RoomType>)request.getAttribute("roomTypes"); boolean isEdit=room!=null; String activeMenu="rooms";
-%>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><%=isEdit?"Cập nhật phòng":"Thêm phòng"%> - Nestora</title><link rel="stylesheet" href="<%=request.getContextPath()%>/css/style.css"></head><body><div class="admin-layout"><%@ include file="../WEB-INF/jspf/admin-sidebar.jspf" %><main class="main-shell"><%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %><section class="content"><div class="content-inner">
-<div class="page-head"><div><div class="breadcrumb">Vận hành / Phòng / <%=isEdit?"Chỉnh sửa":"Thêm mới"%></div><h1 class="page-title"><%=isEdit?"Cập nhật thông tin phòng":"Thêm phòng mới"%></h1><p class="page-desc">Nhập thông tin cơ bản của phòng khách sạn.</p></div></div>
-<section class="surface surface-pad form-surface"><h2 class="form-title">Thông tin phòng</h2><form action="<%=request.getContextPath()%>/rooms" method="post"><input type="hidden" name="action" value="<%=isEdit?"update":"insert"%>"><%if(isEdit){%><input type="hidden" name="id" value="<%=room.getId()%>"><%}%><div class="form-grid">
-<div class="form-group"><label class="form-label" for="roomNumber">Số phòng</label><input class="form-control" id="roomNumber" name="roomNumber" required placeholder="Ví dụ: 101" value="<%=isEdit?room.getRoomNumber():""%>"></div>
-<div class="form-group"><label class="form-label" for="roomTypeId">Loại phòng</label><select class="form-control" id="roomTypeId" name="roomTypeId" required><option value="">Chọn loại phòng</option><%if(roomTypes!=null){for(RoomType t:roomTypes){boolean selected=isEdit&&t.getId()==room.getRoomTypeId();%><option value="<%=t.getId()%>" <%=selected?"selected":""%>><%=t.getName()%> · <%=t.getCapacity()%> người</option><%}}%></select></div>
-<div class="form-group"><label class="form-label" for="status">Trạng thái</label><select class="form-control" id="status" name="status"><option value="Available" <%=isEdit&&"Available".equals(room.getStatus())?"selected":""%>>Phòng trống</option><option value="Booked" <%=isEdit&&"Booked".equals(room.getStatus())?"selected":""%>>Đang ở</option><option value="Maintenance" <%=isEdit&&"Maintenance".equals(room.getStatus())?"selected":""%>>Bảo trì</option></select></div>
-<div class="form-group full"><label class="form-label" for="description">Mô tả</label><textarea class="form-control" id="description" name="description" placeholder="Vị trí, tiện nghi, hướng nhìn..."><%=isEdit&&room.getDescription()!=null?room.getDescription():""%></textarea></div>
-</div><div class="form-actions"><a class="btn btn-outline" href="<%=request.getContextPath()%>/rooms?action=list">Hủy</a><button class="btn btn-primary" type="submit"><%=isEdit?"Lưu thay đổi":"Tạo phòng"%></button></div></form></section>
-</div></section></main></div><script src="<%=request.getContextPath()%>/js/app.js"></script></body></html>
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437

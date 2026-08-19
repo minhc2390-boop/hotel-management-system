@@ -1,13 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Room" %>
-<<<<<<< HEAD
-<%@ page import="com.hotel.dao.RoomDAO" %>
-=======
 <%@ page import="com.hotel.model.Booking" %>
 <%@ page import="com.hotel.dao.RoomDAO" %>
 <%@ page import="com.hotel.dao.BookingDAO" %>
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
 <%@ page import="java.util.List" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.Locale" %>
@@ -19,19 +15,12 @@
         return;
     }
     String activeMenu = "roomMap";
-<<<<<<< HEAD
+
     RoomDAO roomDAO = new RoomDAO();
     roomDAO.syncRoomStatuses();
     List<Room> rooms = (List<Room>) request.getAttribute("rooms");
     if (rooms == null) {
         rooms = roomDAO.getAllRooms();
-    }
-    NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-=======
-
-    List<Room> rooms = (List<Room>) request.getAttribute("rooms");
-    if (rooms == null) {
-        rooms = new RoomDAO().getAllRooms();
     }
 
     List<Booking> bookings = (List<Booking>) request.getAttribute("bookings");
@@ -52,7 +41,6 @@
         }
     }
     int totalRooms = rooms != null ? rooms.size() : 0;
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -180,53 +168,14 @@
               <div>
                 <div class="breadcrumb">Vận hành / Sơ đồ phòng</div>
                 <h1 class="page-title">Sơ đồ phòng</h1>
-<<<<<<< HEAD
-                <p class="page-desc">Theo dõi trạng thái phòng theo từng tầng và cập nhật dọn dẹp, bảo trì.</p>
-=======
-                <p class="page-desc">Nhấn vào phòng còn trống để tiến hành đặt phòng trực tiếp.</p>
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
+                <p class="page-desc">Theo dõi trạng thái phòng và nhấn vào phòng để thao tác đặt phòng, xem chi tiết.</p>
               </div>
+              <% if (currentUser != null && "Admin".equalsIgnoreCase(currentUser.getRole())) { %>
               <div class="page-actions">
                 <a class="btn btn-primary" href="<%= request.getContextPath() %>/rooms?action=add">＋ Thêm phòng</a>
               </div>
+              <% } %>
             </div>
-<<<<<<< HEAD
-            <section class="surface surface-pad">
-              <div class="surface-head" style="padding: 0 0 16px">
-                <div>
-                  <h2 class="surface-title">Danh sách phòng thực tế</h2>
-                  <p class="surface-subtitle"><%= rooms != null ? rooms.size() : 0 %> phòng đang quản lý trên hệ thống</p>
-                </div>
-              </div>
-              <div class="room-map-grid">
-                <% if (rooms != null && !rooms.isEmpty()) {
-                    for (Room r : rooms) {
-                        String dotColor = "#16a36a"; // Available
-                        String statusLabel = "Trống";
-                        if ("Occupied".equalsIgnoreCase(r.getStatus())) {
-                            dotColor = "#1769e0";
-                            statusLabel = "Đang sử dụng";
-                        } else if ("Cleaning".equalsIgnoreCase(r.getStatus())) {
-                            dotColor = "#f59e0b";
-                            statusLabel = "Dọn dẹp";
-                        } else if ("Maintenance".equalsIgnoreCase(r.getStatus())) {
-                            dotColor = "#ff4163";
-                            statusLabel = "Bảo trì";
-                        } else if ("Booked".equalsIgnoreCase(r.getStatus())) {
-                            dotColor = "#8b5cf6";
-                            statusLabel = "Đã đặt";
-                        }
-                %>
-                  <a href="<%= request.getContextPath() %>/rooms?action=edit&id=<%= r.getId() %>" class="room-tile" style="text-decoration: none; color: inherit;">
-                    <span class="room-dot" style="background: <%= dotColor %>"></span>
-                    <div class="room-no">Phòng <%= r.getRoomNumber() %></div>
-                    <div class="room-type"><%= r.getRoomType() != null ? r.getRoomType().getName() : "-" %></div>
-                    <div class="room-person" style="font-weight: 700; color: <%= dotColor %>"><%= statusLabel %></div>
-                    <div class="room-price"><%= r.getRoomType() != null ? money.format(r.getRoomType().getPricePerDay()) : "-" %></div>
-                  </a>
-                <% } } else { %>
-                  <div class="empty">Chưa có phòng nào trong hệ thống</div>
-=======
 
             <div class="room-map-filters" id="room-filters">
               <button class="filter-tab active" data-filter="all">Tất cả (<%= totalRooms %>)</button>
@@ -245,6 +194,7 @@
 
               <div class="room-map-grid" id="room-grid">
                 <%
+                  boolean isCurrentAdmin = currentUser != null && "Admin".equalsIgnoreCase(currentUser.getRole());
                   if (rooms != null && !rooms.isEmpty()) {
                     for (Room r : rooms) {
                       String status = r.getStatus() != null ? r.getStatus() : "Available";
@@ -260,7 +210,31 @@
                       String actionBtnText = "＋ Đặt phòng này";
                       String actionBtnClass = "btn-action-available";
 
-                      if (isBooked) {
+                      Booking upcomingBooking = null;
+                      if (isAvailable && bookings != null) {
+                        java.util.Date now = new java.util.Date();
+                        for (Booking b : bookings) {
+                          if (b.getRoom() != null && b.getRoom().getId() == r.getId()
+                              && ("Pending".equalsIgnoreCase(b.getStatus()) || "Confirmed".equalsIgnoreCase(b.getStatus()))
+                              && b.getCheckInDate() != null) {
+                            long diffHours = (b.getCheckInDate().getTime() - now.getTime()) / (1000 * 60 * 60);
+                            if (diffHours >= -4 && diffHours <= 36) {
+                              upcomingBooking = b;
+                              break;
+                            }
+                          }
+                        }
+                      }
+
+                      if (upcomingBooking != null) {
+                        dotColor = "#eab308";
+                        statusBadgeText = "Có khách đặt";
+                        personText = "Đặt trước: " + (upcomingBooking.getCustomer() != null ? upcomingBooking.getCustomer().getCustomerName() : "Khách");
+                        linkUrl = request.getContextPath() + "/bookings?action=receipt&id=" + upcomingBooking.getBookingId();
+                        titleText = "Phòng đã có lịch đặt của " + personText + ". Bấm để xem phiếu";
+                        actionBtnText = "📋 Nhận phòng (#DP" + upcomingBooking.getBookingId() + ")";
+                        actionBtnClass = "btn-action-booked";
+                      } else if (isBooked) {
                         dotColor = "#1769e0";
                         statusBadgeText = "Đang ở";
                         personText = "Đang ở";
@@ -287,9 +261,9 @@
                         dotColor = "#f59e0b";
                         statusBadgeText = "Bảo trì";
                         personText = "Cần dọn / Bảo trì";
-                        linkUrl = request.getContextPath() + "/rooms?action=edit&id=" + r.getId();
-                        titleText = "Chỉnh sửa thông tin phòng " + r.getRoomNumber();
-                        actionBtnText = "✎ Cập nhật phòng";
+                        linkUrl = isCurrentAdmin ? (request.getContextPath() + "/rooms?action=edit&id=" + r.getId()) : (request.getContextPath() + "/rooms?action=map");
+                        titleText = isCurrentAdmin ? ("Chỉnh sửa thông tin phòng " + r.getRoomNumber()) : ("Phòng " + r.getRoomNumber() + " đang bảo trì");
+                        actionBtnText = isCurrentAdmin ? "✎ Cập nhật phòng" : "🟡 Đang bảo trì";
                         actionBtnClass = "btn-action-maintenance";
                       }
                 %>
@@ -311,12 +285,9 @@
                   } else {
                 %>
                   <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--muted);">Chưa có thông tin phòng nào.</div>
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
                 <% } %>
               </div>
             </section>
-          </div>
-        </section>
           </div>
         </section>
       </main>

@@ -1,6 +1,8 @@
 package com.hotel.dao;
 
+import com.hotel.model.Equipment;
 import com.hotel.model.Room;
+import com.hotel.model.RoomType;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
@@ -13,28 +15,27 @@ public class RoomDAO {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
+            java.util.Date now = new java.util.Date();
+
+            // 1. Tìm tất cả các phòng đang có khách ở (CheckedIn) hoặc có lịch đặt hiệu lực ngay tại thời điểm hiện tại
+            String activeRoomJpql = "SELECT DISTINCT b.room.id FROM Booking b WHERE b.room IS NOT NULL AND (" +
+                                    "b.status = 'CheckedIn' OR " +
+                                    "((b.status = 'Pending' OR b.status = 'Confirmed') AND :now >= b.checkInDate AND :now <= b.checkOutDate)" +
+                                    ")";
+            List<Integer> activeBookedRoomIds = em.createQuery(activeRoomJpql, Integer.class)
+                    .setParameter("now", now)
+                    .getResultList();
+            java.util.Set<Integer> activeSet = new java.util.HashSet<>(activeBookedRoomIds);
+
+            // 2. Lấy danh sách phòng và cập nhật trạng thái
             List<Room> rooms = em.createQuery("SELECT r FROM Room r", Room.class).getResultList();
             for (Room r : rooms) {
-                if ("Maintenance".equalsIgnoreCase(r.getStatus()) || "Cleaning".equalsIgnoreCase(r.getStatus())) {
+                // Giữ nguyên nếu phòng đang Bảo trì, Đang dọn dẹp hoặc Đã ngưng hoạt động (Inactive)
+                if ("Maintenance".equalsIgnoreCase(r.getStatus()) || "Cleaning".equalsIgnoreCase(r.getStatus()) || "Inactive".equalsIgnoreCase(r.getStatus())) {
                     continue;
                 }
 
-                Long occupiedCount = em.createQuery(
-                    "SELECT COUNT(b) FROM Booking b WHERE b.room.id = :rid AND b.status = 'CheckedIn'", Long.class)
-                    .setParameter("rid", r.getId())
-                    .getSingleResult();
-
-                Long bookedCount = em.createQuery(
-                    "SELECT COUNT(b) FROM Booking b WHERE b.room.id = :rid AND (b.status = 'Pending' OR b.status = 'Confirmed')", Long.class)
-                    .setParameter("rid", r.getId())
-                    .getSingleResult();
-
-                if (occupiedCount != null && occupiedCount > 0) {
-                    if (!"Booked".equalsIgnoreCase(r.getStatus())) {
-                        r.setStatus("Booked");
-                        em.merge(r);
-                    }
-                } else if (bookedCount != null && bookedCount > 0) {
+                if (activeSet.contains(r.getId())) {
                     if (!"Booked".equalsIgnoreCase(r.getStatus())) {
                         r.setStatus("Booked");
                         em.merge(r);
@@ -141,11 +142,7 @@ public class RoomDAO {
         syncRoomStatuses();
         EntityManager em = DBContext.getEntityManager();
         try {
-<<<<<<< HEAD
             String jpql = "SELECT r FROM Room r WHERE UPPER(r.status) = 'AVAILABLE' ORDER BY r.roomNumber ASC";
-=======
-            String jpql = "SELECT r FROM Room r WHERE r.status = 'Available' ORDER BY r.roomNumber ASC";
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
             TypedQuery<Room> query = em.createQuery(jpql, Room.class);
             List<Room> list = query.getResultList();
             if (list != null) {
@@ -277,6 +274,20 @@ public class RoomDAO {
             tx.begin();
             Room room = em.find(Room.class, id);
             if (room != null) {
+                // Kiểm tra xem phòng đã có lịch sử đặt phòng hoặc chi tiết hóa đơn chưa
+                Long bookingCount = em.createQuery("SELECT COUNT(b) FROM Booking b WHERE b.room.id = :rid", Long.class)
+                        .setParameter("rid", id).getSingleResult();
+                Long billDetailCount = em.createQuery("SELECT COUNT(bd) FROM BillDetail bd WHERE bd.room.id = :rid", Long.class)
+                        .setParameter("rid", id).getSingleResult();
+
+                // Nếu có giao dịch lịch sử -> Chuyển trạng thái sang Inactive (Xóa mềm) để bảo toàn dữ liệu
+                if ((bookingCount != null && bookingCount > 0) || (billDetailCount != null && billDetailCount > 0)) {
+                    room.setStatus("Inactive");
+                    em.merge(room);
+                    tx.commit();
+                    return true;
+                }
+
                 em.createNativeQuery("DELETE FROM Equipments WHERE room_id = :rid")
                   .setParameter("rid", id)
                   .executeUpdate();

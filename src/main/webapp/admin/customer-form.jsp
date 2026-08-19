@@ -3,6 +3,10 @@
 <% 
   HttpSession sess = request.getSession(false); 
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null; 
+  if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
+    response.sendRedirect(request.getContextPath() + "/home");
+    return;
+  }
   String activeMenu = "customers"; 
   User user = (User) request.getAttribute("user");
   boolean isEdit = (user != null);

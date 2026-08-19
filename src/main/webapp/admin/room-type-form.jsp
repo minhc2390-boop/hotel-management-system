@@ -1,9 +1,13 @@
-﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.RoomType" %>
 <% 
   HttpSession sess = request.getSession(false); 
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null; 
+  if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
+    response.sendRedirect(request.getContextPath() + "/roomtypes?action=list");
+    return;
+  }
   String activeMenu = "roomTypes"; 
   RoomType roomType = (RoomType) request.getAttribute("roomType");
   boolean isEdit = (roomType != null);

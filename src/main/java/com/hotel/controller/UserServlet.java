@@ -32,7 +32,7 @@ public class UserServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
 
-        if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+        if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
@@ -84,7 +84,7 @@ public class UserServlet extends HttpServlet {
                 List<User> employees = new java.util.ArrayList<>();
                 if (allUsers != null) {
                     for (User u : allUsers) {
-                        if ("Admin".equals(u.getRole()) || "Receptionist".equals(u.getRole())) {
+                        if (u != null && !"Admin".equalsIgnoreCase(u.getRole()) && ("Receptionist".equalsIgnoreCase(u.getRole()) || "Staff".equalsIgnoreCase(u.getRole()))) {
                             employees.add(u);
                         }
                     }
@@ -134,7 +134,7 @@ public class UserServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         User currentUser = AuthUtil.getUser(request);
 
-        if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
+        if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }

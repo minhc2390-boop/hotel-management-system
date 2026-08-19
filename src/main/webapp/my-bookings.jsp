@@ -57,6 +57,8 @@
         <div class="alert alert-error">Vui lòng dùng nút Hủy và nhập lý do hủy đặt phòng.</div>
     <% } else if ("invalidCancelReason".equals(request.getParameter("error"))) { %>
         <div class="alert alert-error">Lý do hủy phải có từ 3 đến 500 ký tự.</div>
+    <% } else if ("cannotCancelPaid".equals(request.getParameter("error"))) { %>
+        <div class="alert alert-error">Đơn đặt phòng đã được nhận phòng/trả phòng hoặc đã thanh toán, không thể hủy.</div>
     <% } else if ("cancelFailed".equals(request.getParameter("error"))) { %>
         <div class="alert alert-error">Không thể hủy đặt phòng ở trạng thái hiện tại.</div>
     <% } %>

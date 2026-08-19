@@ -1,12 +1,16 @@
 package com.hotel.dao;
 
 import com.hotel.model.Booking;
+import com.hotel.model.Customer;
 import com.hotel.model.Feedback;
+import com.hotel.model.Room;
 import com.hotel.model.User;
+import com.hotel.util.AuthUtil;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.LockModeType;
+import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -18,16 +22,53 @@ public class FeedbackDAO {
         EntityManager em = DBContext.getEntityManager();
         try {
             String jpql = "SELECT f FROM Feedback f "
-                    + "JOIN FETCH f.booking b "
-                    + "JOIN FETCH b.room r "
-                    + "JOIN FETCH r.roomType "
-                    + "JOIN FETCH b.customer "
-                    + "JOIN FETCH f.customerUser "
+                    + "LEFT JOIN FETCH f.booking b "
+                    + "LEFT JOIN FETCH b.room r "
+                    + "LEFT JOIN FETCH r.roomType "
+                    + "LEFT JOIN FETCH b.customer "
+                    + "LEFT JOIN FETCH f.customerUser "
                     + "ORDER BY f.createdAt DESC";
             return em.createQuery(jpql, Feedback.class).getResultList();
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public boolean deleteFeedback(int id) {
+        EntityManager em = DBContext.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            Feedback f = em.find(Feedback.class, id);
+            if (f != null) {
+                em.remove(f);
+            }
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    public int deleteAllFeedbacks() {
+        EntityManager em = DBContext.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            int count = em.createQuery("DELETE FROM Feedback f").executeUpdate();
+            tx.commit();
+            return count;
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            return 0;
         } finally {
             em.close();
         }

@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @WebFilter(filterName = "AuthFilter", urlPatterns = {
-        "/admin/*", "/manager/*", "/rooms/manage", "/services/manage", "/bills/manage", "/roomtypes", "/services", "/bookings"
+        "/admin/*", "/manager/*", "/rooms/manage", "/services/manage", "/bills/manage", "/roomtypes", "/services", "/bookings", "/equipments", "/users", "/laundry"
 })
 public class AuthFilter implements Filter {
 
@@ -27,10 +27,11 @@ public class AuthFilter implements Filter {
         String uri = httpRequest.getRequestURI();
         String action = httpRequest.getParameter("action");
 
-        // Cho phép truy cập công khai khi đặt phòng (action=insert) hoặc xem hóa đơn đặt phòng (action=receipt)
+        // Cho phép truy cập công khai khi đặt phòng hoặc xem phiếu xác nhận đặt phòng
         boolean isPublicBooking = uri.endsWith("/bookings") && ("insert".equals(action) || "receipt".equals(action));
+        boolean isPublicLaundry = uri.endsWith("/laundry") && ("clientBook".equals(action) || "clientBookForm".equals(action));
 
-        if (!isPublicBooking) {
+        if (!isPublicBooking && !isPublicLaundry) {
             // 1. Chưa đăng nhập -> redirect về trang đăng nhập
             if (!AuthUtil.isAuthenticated(httpRequest)) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
@@ -41,7 +42,7 @@ public class AuthFilter implements Filter {
         User currentUser = AuthUtil.getUser(httpRequest);
         String role = (currentUser != null && currentUser.getRole() != null) ? currentUser.getRole() : "";
 
-        // 2. Chỉ user có quyền quản lý mới truy cập được các URL /manager/*
+        // 2. Quyền quản lý cấp cao
         if (uri.contains("/manager/")) {
             if (!"Admin".equalsIgnoreCase(role) && !"Manager".equalsIgnoreCase(role)) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/home");
@@ -49,9 +50,16 @@ public class AuthFilter implements Filter {
             }
         }
 
-        // 3. Đối với các URL quản trị khác của khách sạn (như admin, quản lý phòng, dịch vụ, hóa đơn, loại phòng)
-        // Yêu cầu tối thiểu là Admin, Receptionist hoặc Manager.
-        if (uri.contains("/admin/")) {
+        // 3. Quyền Admin / Quản trị viên
+        if (uri.contains("/users") || uri.contains("/settings")) {
+            if (!"Admin".equalsIgnoreCase(role)) {
+                httpResponse.sendRedirect(httpRequest.getContextPath() + "/home");
+                return;
+            }
+        }
+
+        // 4. Đối với các URL quản trị khác (/admin/*, /equipments, /roomtypes)
+        if (uri.contains("/admin/") || uri.contains("/equipments") || uri.contains("/roomtypes")) {
             if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role) && !"Manager".equalsIgnoreCase(role)) {
                 httpResponse.sendRedirect(httpRequest.getContextPath() + "/home");
                 return;

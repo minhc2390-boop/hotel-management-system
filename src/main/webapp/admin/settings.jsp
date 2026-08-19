@@ -3,11 +3,23 @@
 <%
   HttpSession sess = request.getSession(false);
   User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
-  if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+  if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
     response.sendRedirect(request.getContextPath() + "/home");
     return;
   }
   String activeMenu = "settings";
+
+  com.hotel.dao.SystemSettingDAO sysDAO = new com.hotel.dao.SystemSettingDAO();
+  java.util.Map<String, String> sysSettings = sysDAO.getAllSettings();
+  
+  String dbHotelName = sysSettings.getOrDefault("hotel_name", "Nestora");
+  String dbHotelAddress = sysSettings.getOrDefault("hotel_address", "Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam");
+  String dbHotelPhone = sysSettings.getOrDefault("hotel_phone", "+84 (0) 258 3567 890");
+  String dbHotelEmail = sysSettings.getOrDefault("hotel_email", "info@nestorahotel.com");
+  String dbBankId = sysSettings.getOrDefault("hotel_bank_id", sysSettings.getOrDefault("bankId", "MB"));
+  String dbBankAccount = sysSettings.getOrDefault("hotel_bank_account", sysSettings.getOrDefault("bankAccount", "1903567890123"));
+  String dbBankName = sysSettings.getOrDefault("hotel_bank_name", sysSettings.getOrDefault("bankName", "CONG TY NESTORA HOTEL"));
+  String dbTheme = sysSettings.getOrDefault("nestora_theme", "light");
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -297,22 +309,22 @@
 
               <div class="form-group" style="margin-top: 24px;">
                 <label for="hotel-name-input">Tên khách sạn hiển thị (Branding)</label>
-                <input type="text" class="form-control" id="hotel-name-input" placeholder="Tên khách sạn (ví dụ: Nestora Hotel)">
+                <input type="text" class="form-control" id="hotel-name-input" value="<%= dbHotelName %>" placeholder="Tên khách sạn (ví dụ: Nestora Hotel)">
               </div>
 
               <div class="form-group">
                 <label for="hotel-address-input">Địa chỉ khách sạn</label>
-                <input type="text" class="form-control" id="hotel-address-input" placeholder="Địa chỉ chi tiết">
+                <input type="text" class="form-control" id="hotel-address-input" value="<%= dbHotelAddress %>" placeholder="Địa chỉ chi tiết">
               </div>
 
               <div class="form-group">
                 <label for="hotel-phone-input">Số điện thoại liên hệ</label>
-                <input type="text" class="form-control" id="hotel-phone-input" placeholder="Số điện thoại bàn / Hotline">
+                <input type="text" class="form-control" id="hotel-phone-input" value="<%= dbHotelPhone %>" placeholder="Số điện thoại bàn / Hotline">
               </div>
 
               <div class="form-group">
                 <label for="hotel-email-input">Email khách sạn</label>
-                <input type="email" class="form-control" id="hotel-email-input" placeholder="Địa chỉ email nhận thông tin">
+                <input type="email" class="form-control" id="hotel-email-input" value="<%= dbHotelEmail %>" placeholder="Địa chỉ email nhận thông tin">
               </div>
             </div>
           </div>
@@ -324,33 +336,33 @@
             </div>
             <div class="setting-card-body">
               <p style="font-size: 13px; color: var(--muted); margin-bottom: 18px;">
-                Các cấu hình tài khoản dưới đây sẽ được sử dụng để tự động sinh mã VietQR quét tiền phòng động tại trang Chi tiết hóa đơn khách hàng.
+                Các cấu hình tài khoản dưới đây sẽ được sử dụng để tự động sinh mã VietQR quét tiền phòng động tại trang Đặt phòng và Chi tiết hóa đơn.
               </p>
 
               <div class="form-group">
                 <label for="bank-id-select">Ngân hàng thụ hưởng</label>
                 <select class="form-control" id="bank-id-select">
-                  <option value="MB">MB Bank (Ngân hàng Quân Đội)</option>
-                  <option value="VCB">Vietcombank</option>
-                  <option value="TCB">Techcombank</option>
-                  <option value="BIDV">BIDV</option>
-                  <option value="CTG">VietinBank</option>
-                  <option value="ACB">ACB</option>
-                  <option value="VPB">VPBank</option>
-                  <option value="TPB">TPBank</option>
-                  <option value="VIB">VIB</option>
-                  <option value="STB">Sacombank</option>
+                  <option value="MB" <%= "MB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>MB Bank (Ngân hàng Quân Đội)</option>
+                  <option value="VCB" <%= "VCB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>Vietcombank</option>
+                  <option value="TCB" <%= "TCB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>Techcombank</option>
+                  <option value="BIDV" <%= "BIDV".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>BIDV</option>
+                  <option value="CTG" <%= "CTG".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>VietinBank</option>
+                  <option value="ACB" <%= "ACB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>ACB</option>
+                  <option value="VPB" <%= "VPB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>VPBank</option>
+                  <option value="TPB" <%= "TPB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>TPBank</option>
+                  <option value="VIB" <%= "VIB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>VIB</option>
+                  <option value="STB" <%= "STB".equalsIgnoreCase(dbBankId) ? "selected" : "" %>>Sacombank</option>
                 </select>
               </div>
 
               <div class="form-group">
                 <label for="bank-account-input">Số tài khoản ngân hàng</label>
-                <input type="text" class="form-control" id="bank-account-input" placeholder="Nhập chính xác số tài khoản">
+                <input type="text" class="form-control" id="bank-account-input" value="<%= dbBankAccount %>" placeholder="Nhập chính xác số tài khoản">
               </div>
 
               <div class="form-group">
                 <label for="bank-name-input">Tên chủ tài khoản (Viết hoa không dấu)</label>
-                <input type="text" class="form-control" id="bank-name-input" placeholder="Ví dụ: CONG TY NESTORA HOTEL">
+                <input type="text" class="form-control" id="bank-name-input" value="<%= dbBankName %>" placeholder="Ví dụ: CONG TY NESTORA HOTEL">
               </div>
 
               <div style="margin-top: 30px; display: flex; gap: 10px;">
@@ -369,19 +381,6 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toast-container"></div>
 
-<%
-  com.hotel.dao.SystemSettingDAO sysDAO = new com.hotel.dao.SystemSettingDAO();
-  java.util.Map<String, String> sysSettings = sysDAO.getAllSettings();
-  
-  String dbHotelName = sysSettings.getOrDefault("hotel_name", "Nestora");
-  String dbHotelAddress = sysSettings.getOrDefault("hotel_address", "Số 12 Đường Hùng Vương, Thành phố Nha Trang, Việt Nam");
-  String dbHotelPhone = sysSettings.getOrDefault("hotel_phone", "+84 (0) 258 3567 890");
-  String dbHotelEmail = sysSettings.getOrDefault("hotel_email", "info@nestorahotel.com");
-  String dbBankId = sysSettings.getOrDefault("hotel_bank_id", "MB");
-  String dbBankAccount = sysSettings.getOrDefault("hotel_bank_account", "1903567890123");
-  String dbBankName = sysSettings.getOrDefault("hotel_bank_name", "CONG TY NESTORA HOTEL");
-  String dbTheme = sysSettings.getOrDefault("nestora_theme", "light");
-%>
 <script>
   let currentTheme = '<%= dbTheme %>';
 
@@ -400,15 +399,6 @@
       const savedTheme = localStorage.getItem('nestora_theme') || dbSettings.nestora_theme || 'light';
       currentTheme = savedTheme;
       selectTheme(savedTheme);
-
-      document.getElementById('hotel-name-input').value = dbSettings.hotel_name || localStorage.getItem('hotel_name') || 'Nestora';
-      document.getElementById('hotel-address-input').value = dbSettings.hotel_address || localStorage.getItem('hotel_address') || '';
-      document.getElementById('hotel-phone-input').value = dbSettings.hotel_phone || localStorage.getItem('hotel_phone') || '';
-      document.getElementById('hotel-email-input').value = dbSettings.hotel_email || localStorage.getItem('hotel_email') || '';
-
-      document.getElementById('bank-id-select').value = dbSettings.hotel_bank_id || localStorage.getItem('hotel_bank_id') || 'MB';
-      document.getElementById('bank-account-input').value = dbSettings.hotel_bank_account || localStorage.getItem('hotel_bank_account') || '';
-      document.getElementById('bank-name-input').value = dbSettings.hotel_bank_name || localStorage.getItem('hotel_bank_name') || '';
   });
 
   function selectTheme(themeName) {
@@ -480,7 +470,29 @@
   }
 
   function resetToDefaults() {
-      if (confirm("Bạn có chắc chắn muốn khôi phục toàn bộ cài đặt về mặc định?")) {
+      if (typeof window.showCustomConfirm === 'function') {
+          window.showCustomConfirm({
+              title: 'Khôi phục cài đặt mặc định',
+              message: '<p style="margin:0;font-size:15px;color:var(--text);">Bạn có chắc chắn muốn khôi phục toàn bộ cài đặt giao diện và cấu hình về mặc định?</p>',
+              confirmText: 'Khôi phục ngay',
+              cancelText: 'Hủy bỏ',
+              onConfirm: function() {
+                  localStorage.removeItem('nestora_theme');
+                  localStorage.removeItem('hotel_name');
+                  localStorage.removeItem('hotel_address');
+                  localStorage.removeItem('hotel_phone');
+                  localStorage.removeItem('hotel_email');
+                  localStorage.removeItem('hotel_bank_id');
+                  localStorage.removeItem('hotel_bank_account');
+                  localStorage.removeItem('hotel_bank_name');
+
+                  showToast("Đã khôi phục toàn bộ cài đặt về mặc định!");
+                  setTimeout(function() {
+                      window.location.reload();
+                  }, 700);
+              }
+          });
+      } else if (confirm("Bạn có chắc chắn muốn khôi phục toàn bộ cài đặt về mặc định?")) {
           localStorage.removeItem('nestora_theme');
           localStorage.removeItem('hotel_name');
           localStorage.removeItem('hotel_address');
@@ -496,21 +508,23 @@
 
   function showToast(message) {
       const container = document.getElementById('toast-container');
+      if (!container) return;
       const toast = document.createElement('div');
       toast.className = 'toast';
-      toast.innerHTML = `<span class="toast-icon">✓</span><span>${message}</span>`;
+      const msgText = message || 'Lưu cài đặt hệ thống vào CSDL thành công!';
+      toast.innerHTML = '<span class="toast-icon">✓</span><span style="font-weight:600;font-size:14px;color:var(--text);">' + msgText + '</span>';
       container.appendChild(toast);
 
-      setTimeout(() => {
+      setTimeout(function() {
           toast.classList.add('show');
       }, 50);
 
-      setTimeout(() => {
+      setTimeout(function() {
           toast.classList.remove('show');
-          setTimeout(() => {
+          setTimeout(function() {
               toast.remove();
           }, 300);
-      }, 3000);
+      }, 3500);
   }
 </script>
 

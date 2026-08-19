@@ -9,7 +9,7 @@
 <%
   HttpSession sess = request.getSession(false);
   User currentUser = (sess != null) ? (User) sess.getAttribute("currentUser") : null;
-  if (currentUser == null || (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole()))) {
+  if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Manager".equalsIgnoreCase(currentUser.getRole()))) {
     response.sendRedirect(request.getContextPath() + "/home"); return;
   }
   Integer totalRoomsObj = (Integer) request.getAttribute("totalRooms");
@@ -37,7 +37,8 @@
   double[] dailyRev7 = new double[7];
   String[] dailyLabels7 = new String[7];
   java.time.format.DateTimeFormatter fmt7 = java.time.format.DateTimeFormatter.ofPattern("dd/MM");
-  double maxDayRevenue7 = 100000; // Tránh chia cho 0
+  double maxDayRevenue7 = 100000;
+  com.hotel.dao.BillDetailDAO dashBillDetailDAO = new com.hotel.dao.BillDetailDAO();
 
   for (int i = 0; i < 7; i++) {
       java.time.LocalDate date = today.minusDays(6 - i);
@@ -46,10 +47,27 @@
       double dayTotal = 0;
       if (recentBills != null) {
           for (Bill b : recentBills) {
-              if ("Paid".equals(b.getStatus())) {
-                  java.time.LocalDate billDate = b.getCreatedAt().toLocalDateTime().toLocalDate();
-                  if (billDate.equals(date)) {
-                      dayTotal += b.getTotalAmount();
+              if (b != null && "Paid".equalsIgnoreCase(b.getStatus())) {
+                  java.time.LocalDate billDate = null;
+                  if (b.getCheckOutDate() != null) {
+                      billDate = b.getCheckOutDate().toLocalDateTime().toLocalDate();
+                  } else if (b.getCreatedAt() != null) {
+                      billDate = b.getCreatedAt().toLocalDateTime().toLocalDate();
+                  } else if (b.getCheckInDate() != null) {
+                      billDate = b.getCheckInDate().toLocalDateTime().toLocalDate();
+                  }
+
+                  if (billDate != null && billDate.equals(date)) {
+                      double amt = b.getTotalAmount();
+                      if (amt <= 0 && b.getId() > 0) {
+                          List<com.hotel.model.BillDetail> details = dashBillDetailDAO.getBillDetailsByBillId(b.getId());
+                          if (details != null && !details.isEmpty()) {
+                              for (com.hotel.model.BillDetail bd : details) {
+                                  amt += (bd.getPrice() * bd.getQuantity()) * 1.08;
+                              }
+                          }
+                      }
+                      dayTotal += amt;
                   }
               }
           }
@@ -71,7 +89,7 @@
     <%@ include file="../WEB-INF/jspf/admin-topbar.jspf" %>
     <section class="content"><div class="content-inner">
       <div class="page-head">
-        <div><div class="breadcrumb">Trang chủ / Tổng quan</div><h1 class="page-title">Chào buổi sáng, <%= currentUser.getFullName() %>!</h1><p class="page-desc">Dưới đây là tình hình hoạt động khách sạn hôm nay.</p></div>
+        <div><div class="breadcrumb">Trang chủ / Tổng quan</div><h1 class="page-title">Xin chào, <%= currentUser.getFullName() %>!</h1><p class="page-desc">Dưới đây là tình hình hoạt động khách sạn hôm nay.</p></div>
         <div class="page-actions"><a class="btn btn-primary" href="<%= request.getContextPath() %>/admin/booking-form.jsp">＋ Tạo đặt phòng</a></div>
       </div>
 
@@ -85,7 +103,7 @@
       <div class="dashboard-grid">
         <section class="surface">
           <div class="surface-head"><div><h2 class="surface-title">Doanh thu 7 ngày gần đây</h2><p class="surface-subtitle">Biểu đồ thể hiện doanh thu thực tế từ backend.</p></div><a href="<%= request.getContextPath() %>/admin/profits.jsp" class="table-primary">Xem chi tiết</a></div>
-          <div style="position: relative; height: 260px; width: 100%; padding: 10px 0;">
+          <div style="position: relative; height: 290px; width: 100%; padding: 10px 0;">
               <canvas id="dashboardChart"></canvas>
           </div>
         </section>
@@ -156,20 +174,17 @@
     
     const ctx7 = document.getElementById('dashboardChart').getContext('2d');
     new Chart(ctx7, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: dailyLabels7,
             datasets: [{
                 label: 'Doanh thu',
                 data: dailyRevData7,
-                fill: true,
-                backgroundColor: 'rgba(23, 105, 224, 0.12)',
-                borderColor: '#1769e0',
-                borderWidth: 2.5,
-                tension: 0.35,
-                pointBackgroundColor: '#1769e0',
-                pointRadius: 4,
-                pointHoverRadius: 6
+                backgroundColor: 'rgba(23, 105, 224, 0.85)',
+                hoverBackgroundColor: '#1d4ed8',
+                borderRadius: 0,
+                barPercentage: 0.5,
+                categoryPercentage: 0.7
             }]
         },
         options: {
@@ -197,10 +212,38 @@
             scales: {
                 y: {
                     beginAtZero: true,
+                    min: 0,
+                    max: 15000000, // Hạn mức cao nhất là 15 triệu ₫
                     ticks: {
+                        stepSize: 3000000, // Bước nhảy phân bổ đều: 0, 3tr, 6tr, 9tr, 12tr, 15tr
                         callback: function(value) {
-                            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumSignificantDigits: 3 }).format(value);
-                        }
+                            if (value === 0) return '0 ₫';
+                            if (value >= 1000000) {
+                                return (value / 1000000).toLocaleString('vi-VN') + ' triệu ₫';
+                            }
+                            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                        },
+                        font: {
+                            size: 11,
+                            weight: '500'
+                        },
+                        color: '#64748b'
+                    },
+                    grid: {
+                        color: 'rgba(203, 213, 225, 0.45)',
+                        borderDash: [4, 4]
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 11,
+                            weight: '600'
+                        },
+                        color: '#475569'
                     }
                 }
             }

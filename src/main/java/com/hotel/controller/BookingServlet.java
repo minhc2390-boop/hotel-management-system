@@ -62,9 +62,10 @@ public class BookingServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/home");
                 return;
             }
-            // Bảo mật: Nếu đăng nhập dưới dạng Customer, chỉ xem được phiếu đặt của chính mình (hoặc có email khớp)
+            // Bảo mật: Nếu đăng nhập dưới dạng Customer, chỉ xem được phiếu đặt của chính mình (hoặc có email khớp/liên kết tài khoản)
             if (currentUser != null && "Customer".equals(currentUser.getRole())) {
                 boolean isOwnBooking = (booking.getCreatedBy() != null && booking.getCreatedBy().getId() == currentUser.getId()) ||
+                                       (booking.getCustomer() != null && booking.getCustomer().getUser() != null && booking.getCustomer().getUser().getId() == currentUser.getId()) ||
                                        (booking.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(booking.getCustomer().getCustomerEmail()));
                 if (!isOwnBooking) {
                     response.sendRedirect(request.getContextPath() + "/home");
@@ -171,26 +172,25 @@ public class BookingServlet extends HttpServlet {
             case "checkin":
                 int checkinId = ParamUtil.getInt(request, "id", 0);
                 Booking checkinBooking = bookingDAO.getBookingById(checkinId);
-<<<<<<< HEAD
                 if (checkinBooking != null && !"Admin".equalsIgnoreCase(currentUser.getRole())) {
                     if (checkinBooking.getCreatedBy() == null || checkinBooking.getCreatedBy().getId() != currentUser.getId()) {
                         response.sendRedirect(request.getContextPath() + "/bookings?action=list&mode=checkin&error=permissionDenied");
                         return;
                     }
                 }
-                bookingDAO.checkInBookings(java.util.Collections.singletonList(checkinId));
-=======
                 boolean checkinSuccess = bookingDAO.checkInBookings(java.util.Collections.singletonList(checkinId));
                 if (checkinSuccess && checkinBooking != null && checkinBooking.getRoom() != null) {
                     roomDAO.updateRoomStatus(checkinBooking.getRoom().getId(), "Booked");
                 }
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
                 response.sendRedirect(request.getContextPath() + "/bookings?action=list&mode=checkin");
                 break;
 
             case "checkout":
                 int checkoutId = ParamUtil.getInt(request, "id", 0);
-<<<<<<< HEAD
+                String targetRoomStatus = ParamUtil.getString(request, "roomStatus", "Maintenance");
+                if (!"Available".equalsIgnoreCase(targetRoomStatus) && !"Maintenance".equalsIgnoreCase(targetRoomStatus)) {
+                    targetRoomStatus = "Maintenance";
+                }
                 Booking checkoutBooking = bookingDAO.getBookingById(checkoutId);
                 if (checkoutBooking != null && !"Admin".equalsIgnoreCase(currentUser.getRole())) {
                     if (checkoutBooking.getCreatedBy() == null || checkoutBooking.getCreatedBy().getId() != currentUser.getId()) {
@@ -198,13 +198,6 @@ public class BookingServlet extends HttpServlet {
                         return;
                     }
                 }
-=======
-                String targetRoomStatus = ParamUtil.getString(request, "roomStatus", "Maintenance");
-                if (!"Available".equalsIgnoreCase(targetRoomStatus) && !"Maintenance".equalsIgnoreCase(targetRoomStatus)) {
-                    targetRoomStatus = "Maintenance";
-                }
-                Booking checkoutBooking = bookingDAO.getBookingById(checkoutId);
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
                 int singleBillId = bookingDAO.checkOutBookings(
                         java.util.Collections.singletonList(checkoutId), currentUser.getId(), targetRoomStatus);
                 if (singleBillId > 0) {
@@ -254,6 +247,8 @@ public class BookingServlet extends HttpServlet {
             boolean isOwner = currentUser != null && booking != null
                     && ((booking.getCreatedBy() != null
                             && booking.getCreatedBy().getId() == currentUser.getId())
+                        || (booking.getCustomer() != null && booking.getCustomer().getUser() != null
+                            && booking.getCustomer().getUser().getId() == currentUser.getId())
                         || (booking.getCustomer() != null && currentUser.getEmail() != null
                             && currentUser.getEmail().equalsIgnoreCase(booking.getCustomer().getCustomerEmail())));
             String returnAction = isManager ? "list" : "mybookings";
@@ -265,6 +260,12 @@ public class BookingServlet extends HttpServlet {
             if (cancellationReason.length() < 3 || cancellationReason.length() > 500) {
                 response.sendRedirect(request.getContextPath()
                         + "/bookings?action=" + returnAction + "&error=invalidCancelReason");
+                return;
+            }
+
+            if (!"Pending".equalsIgnoreCase(booking.getStatus()) && !"Confirmed".equalsIgnoreCase(booking.getStatus())) {
+                response.sendRedirect(request.getContextPath()
+                        + "/bookings?action=" + returnAction + "&error=cannotCancelPaid");
                 return;
             }
 
@@ -385,11 +386,6 @@ public class BookingServlet extends HttpServlet {
                         }
                         return;
                     }
-                    if (!bookingDAO.isRoomAvailable(roomId, checkInDate, checkOutDate)) {
-                        response.sendRedirect(request.getContextPath()
-                                + (currentUser != null ? "/bookings?action=add&error=roomsUnavailable" : "/home?error=overbooked"));
-                        return;
-                    }
                     selectedRooms.add(room);
                 }
 
@@ -397,25 +393,45 @@ public class BookingServlet extends HttpServlet {
                 String status = "Pending";
                 User creator = currentUser;
 
-                if (currentUser == null || "Customer".equals(currentUser.getRole())) {
-                    // Khách tự đặt phòng online (khách vãng lai chưa đăng nhập hoặc khách có tài khoản)
-                    String finalName = (currentUser != null && currentUser.getFullName() != null && !currentUser.getFullName().isEmpty())
-                            ? currentUser.getFullName() : customerName;
-                    if (finalName == null || finalName.trim().isEmpty()) {
-                        finalName = "Khách vãng lai";
-                    }
-                    String finalEmail = (currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty())
-                            ? currentUser.getEmail() : customerEmail;
-                    
-                    customer = customerDAO.findOrCreateCustomer(finalName, customerPhone, finalEmail, customerCccd);
+                double memberDiscountRate = 0.0;
+
+                if (currentUser == null) {
+                    // Khách vãng lai không có tài khoản: TỰ ĐỘNG XÁC NHẬN ĐƠN VÌ ĐÃ CỌC 20%
+                    status = "Confirmed";
+                    String finalName = (customerName != null && !customerName.trim().isEmpty()) ? customerName.trim() : "Khách lưu trú";
+                    String finalEmail = (customerEmail != null && !customerEmail.trim().isEmpty()) ? customerEmail.trim() : "";
+                    String finalPhone = (customerPhone != null && !customerPhone.trim().isEmpty()) ? customerPhone.trim() : "";
+
+                    User matchedUser = (!finalEmail.isEmpty()) ? userDAO.findByEmail(finalEmail) : null;
+                    customer = customerDAO.findOrCreateCustomer(finalName, finalPhone, finalEmail, customerCccd, matchedUser);
+                    creator = userDAO.getUserById(1); // Gán admin làm người đại diện tạo
                     if (creator == null) {
-                        creator = userDAO.getUserById(1); // Gán admin (ID = 1) làm người tạo mặc định cho đặt phòng vãng lai
-                        if (creator == null) {
-                            creator = userDAO.findByEmailOrUsername("admin");
-                        }
+                        creator = userDAO.findByEmailOrUsername("admin");
                     }
+                    String depositNote = "[Khách vãng lai - Đã cọc 20% VietQR]";
+                    note = (note != null && !note.trim().isEmpty()) ? note.trim() + " " + depositNote : depositNote;
+                } else if ("Customer".equals(currentUser.getRole())) {
+                    // Khách hàng có tài khoản thành viên: Đặc quyền miễn cọc, lưu đơn ở trạng thái Pending
+                    status = "Pending";
+                    String finalName = (customerName != null && !customerName.trim().isEmpty())
+                            ? customerName.trim()
+                            : (currentUser.getFullName() != null && !currentUser.getFullName().isEmpty()
+                                ? currentUser.getFullName() : "Khách lưu trú");
+                    String finalEmail = (customerEmail != null && !customerEmail.trim().isEmpty())
+                            ? customerEmail.trim()
+                            : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
+                    String finalPhone = (customerPhone != null && !customerPhone.trim().isEmpty())
+                            ? customerPhone.trim()
+                            : (currentUser.getPhone() != null ? currentUser.getPhone() : "");
+
+                    customer = customerDAO.findOrCreateCustomer(finalName, finalPhone, finalEmail, customerCccd, currentUser);
+                    
+                    // Tính chiết khấu thành viên theo hạng thẻ
+                    memberDiscountRate = calculateMemberDiscountRate(currentUser.getId(), currentUser.getEmail());
+                    String memberNote = "[Hội viên - Miễn cọc trước, thanh toán 100% khi nhận phòng]";
+                    note = (note != null && !note.trim().isEmpty()) ? note.trim() + " " + memberNote : memberNote;
                 } else {
-                    // Admin/Receptionist đặt phòng hộ khách hàng
+                    // Admin/Receptionist tạo đơn tại quầy: Mặc định Confirmed
                     int customerId = ParamUtil.getInt(request, "customerId", 0);
                     if (customerId > 0) {
                         customer = customerDAO.getCustomerById(customerId);
@@ -438,13 +454,20 @@ public class BookingServlet extends HttpServlet {
                             }
                         }
                     } else {
-                        customer = customerDAO.findOrCreateCustomer(customerName, customerPhone, customerEmail, customerCccd);
+                        User matchedUser = (!customerEmail.isEmpty()) ? userDAO.findByEmail(customerEmail) : null;
+                        customer = customerDAO.findOrCreateCustomer(customerName, customerPhone, customerEmail, customerCccd, matchedUser);
                     }
-                    status = "Confirmed"; // Admin đặt mặc định xác nhận luôn
+                    status = "Confirmed";
                 }
 
                 if (customer == null) {
-                    response.sendRedirect(request.getContextPath() + (currentUser != null ? "/bookings?action=add" : "/home"));
+                    if (currentUser != null && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()))) {
+                        response.sendRedirect(request.getContextPath() + "/bookings?action=add");
+                    } else if (firstRoomId > 0) {
+                        response.sendRedirect(request.getContextPath() + "/rooms?action=bookForm&roomId=" + firstRoomId + "&error=customerCreateFailed");
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/home");
+                    }
                     return;
                 }
 
@@ -452,6 +475,10 @@ public class BookingServlet extends HttpServlet {
                 Timestamp checkOutTimestamp = new Timestamp(checkOutDate.getTime());
                 List<Booking> bookings = new ArrayList<>();
                 for (Room room : selectedRooms) {
+                    double finalRoomPrice = room.getRoomType().getPricePerDay();
+                    if (memberDiscountRate > 0) {
+                        finalRoomPrice = finalRoomPrice * (1.0 - memberDiscountRate);
+                    }
                     bookings.add(new Booking(
                             customer,
                             room,
@@ -459,7 +486,7 @@ public class BookingServlet extends HttpServlet {
                             checkInTimestamp,
                             checkOutTimestamp,
                             status,
-                            room.getRoomType().getPricePerDay(),
+                            finalRoomPrice,
                             note
                     ));
                 }
@@ -473,8 +500,6 @@ public class BookingServlet extends HttpServlet {
                             && ("Admin".equals(currentUser.getRole()) || "Receptionist".equals(currentUser.getRole()))) {
                         response.sendRedirect(request.getContextPath()
                                 + "/bookings?action=list&createdCount=" + bookings.size());
-                    } else if (currentUser != null) {
-                        response.sendRedirect(request.getContextPath() + "/bookings?action=mybookings");
                     } else {
                         response.sendRedirect(request.getContextPath()
                                 + "/bookings?action=receipt&id=" + bookings.get(0).getBookingId());
@@ -583,21 +608,6 @@ public class BookingServlet extends HttpServlet {
         }
     }
 
-    private Date parseFlexibleDate(String dateStr) throws java.text.ParseException {
-        if (dateStr == null || dateStr.trim().isEmpty()) {
-            throw new java.text.ParseException("Date string is empty", 0);
-        }
-        dateStr = dateStr.trim();
-        if (dateStr.contains("T")) {
-            try {
-                return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").parse(dateStr);
-            } catch (java.text.ParseException e) {
-                return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(dateStr);
-            }
-        }
-        return new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
-    }
-
     private List<Integer> getRequestedRoomIds(HttpServletRequest request) {
         String[] rawValues = request.getParameterValues("roomIds");
         if (rawValues == null || rawValues.length == 0) {
@@ -664,5 +674,28 @@ public class BookingServlet extends HttpServlet {
             } catch (Exception ignored) {}
         }
         return null;
+    }
+
+    private double calculateMemberDiscountRate(int userId, String email) {
+        if (userId <= 0) return 0.0;
+        try {
+            List<Booking> list = bookingDAO.getBookingsByUserId(userId, email);
+            if (list == null || list.isEmpty()) return 0.0;
+            double totalSpent = 0;
+            for (Booking b : list) {
+                if ("CheckedOut".equals(b.getStatus())) {
+                    long diffMs = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
+                    long days = diffMs / (1000 * 60 * 60 * 24);
+                    if (days <= 0) days = 1;
+                    totalSpent += b.getRoomPrice() * days;
+                }
+            }
+            if (totalSpent >= 100000000) return 0.15; // Diamond: 15%
+            if (totalSpent >= 50000000) return 0.10;  // Platinum: 10%
+            if (totalSpent >= 20000000) return 0.05;  // Gold: 5%
+            return 0.0;
+        } catch (Exception e) {
+            return 0.0;
+        }
     }
 }

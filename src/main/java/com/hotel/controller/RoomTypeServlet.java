@@ -44,10 +44,18 @@ public class RoomTypeServlet extends HttpServlet {
                 break;
 
             case "add":
+                if (!"Admin".equalsIgnoreCase(role)) {
+                    response.sendRedirect(request.getContextPath() + "/roomtypes?action=list");
+                    return;
+                }
                 request.getRequestDispatcher("/admin/room-type-form.jsp").forward(request, response);
                 break;
 
             case "edit":
+                if (!"Admin".equalsIgnoreCase(role)) {
+                    response.sendRedirect(request.getContextPath() + "/roomtypes?action=list");
+                    return;
+                }
                 int editId = ParamUtil.getInt(request, "id", 0);
                 RoomType typeToEdit = roomTypeDAO.getRoomTypeById(editId);
                 request.setAttribute("roomType", typeToEdit);
@@ -56,7 +64,7 @@ public class RoomTypeServlet extends HttpServlet {
 
             case "delete":
                 // Chỉ Admin (Quản lý) mới có quyền xóa loại phòng
-                if (AuthUtil.isManager(request)) {
+                if ("Admin".equalsIgnoreCase(role)) {
                     int deleteId = ParamUtil.getInt(request, "id", 0);
                     roomTypeDAO.deleteRoomType(deleteId);
                 }
@@ -82,8 +90,9 @@ public class RoomTypeServlet extends HttpServlet {
 
         User currentUser = AuthUtil.getUser(request);
         String role = currentUser.getRole();
-        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        // Chỉ Admin mới có quyền thêm/sửa loại phòng
+        if (!"Admin".equalsIgnoreCase(role)) {
+            response.sendRedirect(request.getContextPath() + "/roomtypes?action=list");
             return;
         }
 

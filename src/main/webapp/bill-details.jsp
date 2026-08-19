@@ -15,14 +15,6 @@ User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null
 Bill bill = (Bill) request.getAttribute("bill");
 List<BillDetail> details = (List<BillDetail>) request.getAttribute("details");
 List<Service> services = (List<Service>) request.getAttribute("services");
-<<<<<<< HEAD
-String reqBankId = (String) request.getAttribute("bankId");
-String reqBankAccount = (String) request.getAttribute("bankAccount");
-String reqBankName = (String) request.getAttribute("bankName");
-if (reqBankId == null || reqBankId.isEmpty()) reqBankId = "MB";
-if (reqBankAccount == null || reqBankAccount.isEmpty()) reqBankAccount = "1903567890123";
-if (reqBankName == null || reqBankName.isEmpty()) reqBankName = "CONG TY NESTORA HOTEL";
-=======
 List<Laundry> laundryList = (List<Laundry>) request.getAttribute("laundryList");
 String bankId = (String) request.getAttribute("bankId");
 String bankAccount = (String) request.getAttribute("bankAccount");
@@ -31,8 +23,6 @@ String bankName = (String) request.getAttribute("bankName");
 if (bankId == null || bankId.trim().isEmpty()) bankId = "MB";
 if (bankAccount == null || bankAccount.trim().isEmpty()) bankAccount = "1903567890123";
 if (bankName == null || bankName.trim().isEmpty()) bankName = "CONG TY NESTORA HOTEL";
-
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
 if (currentUser == null || bill == null) {
 	response.sendRedirect(request.getContextPath() + "/login");
 	return;
@@ -104,6 +94,32 @@ if (roomNumber.isEmpty()) {
 				<p class="page-desc">Thông tin phòng, dịch vụ đi kèm &amp; dịch vụ giặt ủi.</p>
 			</div>
 		</div>
+		<% if (request.getParameter("paid") != null) { %>
+			<div class="alert alert-success" style="margin-bottom: 20px; padding: 14px 18px; border-radius: 8px; background: #dcfce7; color: #166534; border: 1px solid #4ade80; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+				<span><strong>Thành công:</strong> Đã xác nhận thanh toán hóa đơn #<%= bill.getId() %> thành công!</span>
+			</div>
+		<% } else if ("1".equals(request.getParameter("cancelled"))) { %>
+			<div class="alert alert-success" style="margin-bottom: 20px; padding: 14px 18px; border-radius: 8px; background: #dcfce7; color: #166534; border: 1px solid #4ade80; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+				<span><strong>Đã hủy:</strong> Hóa đơn #<%= bill.getId() %> đã được hủy thành công.</span>
+			</div>
+		<% } else if ("cannotCancelPaid".equals(request.getParameter("error")) || "alreadyPaid".equals(request.getParameter("error"))) { %>
+			<div class="alert alert-danger" style="margin-bottom: 20px; padding: 14px 18px; border-radius: 8px; background: #fee2e2; color: #991b1b; border: 1px solid #f87171; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+				<span><strong>Không thể hủy:</strong> Hóa đơn đã được thanh toán, không thể hủy đơn!</span>
+			</div>
+		<% } else if ("cannotModifyFinalizedBill".equals(request.getParameter("error"))) { %>
+			<div class="alert alert-danger" style="margin-bottom: 20px; padding: 14px 18px; border-radius: 8px; background: #fee2e2; color: #991b1b; border: 1px solid #f87171; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+				<span><strong>Không thể sửa:</strong> Hóa đơn đã thanh toán hoặc đã hủy, không thể thêm dịch vụ!</span>
+			</div>
+		<% } else if (request.getParameter("error") != null) { %>
+			<div class="alert alert-danger" style="margin-bottom: 20px; padding: 14px 18px; border-radius: 8px; background: #fee2e2; color: #991b1b; border: 1px solid #f87171; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+				<span><strong>Thông báo:</strong> Thao tác không thành công. Vui lòng kiểm tra lại!</span>
+			</div>
+		<% } %>
 		<div class="checkout-grid">
 			<div>
 				<section class="surface">
@@ -162,8 +178,68 @@ if (roomNumber.isEmpty()) {
 							</tbody>
 						</table>
 					</div>
-					<div class="surface-pad text-right">
-						<span class="checkout-total">Tổng tiền: <%=money.format(bill.getTotalAmount())%></span>
+					<%
+						Double reqSubTotal = (Double) request.getAttribute("subTotal");
+						Double reqTaxAmount = (Double) request.getAttribute("taxAmount");
+						Double reqTaxRate = (Double) request.getAttribute("taxRate");
+						Double reqRoomTotal = (Double) request.getAttribute("roomTotal");
+						Double reqServiceTotal = (Double) request.getAttribute("serviceTotal");
+						Double reqLaundryTotal = (Double) request.getAttribute("laundryTotal");
+						Double reqGrossTotal = (Double) request.getAttribute("grossTotal");
+						Double reqDepositDeduction = (Double) request.getAttribute("depositDeduction");
+						Double reqFinalPayable = (Double) request.getAttribute("finalPayable");
+
+						double rTotal = reqRoomTotal != null ? reqRoomTotal : 0;
+						double sTotal = reqServiceTotal != null ? reqServiceTotal : 0;
+						double lTotal = reqLaundryTotal != null ? reqLaundryTotal : 0;
+						double subTotal = reqSubTotal != null ? reqSubTotal : (rTotal + sTotal + lTotal);
+						double taxRate = reqTaxRate != null ? reqTaxRate : 0.08;
+						double taxAmount = reqTaxAmount != null ? reqTaxAmount : (subTotal * taxRate);
+						double grossTotal = reqGrossTotal != null ? reqGrossTotal : (subTotal + taxAmount);
+						double depositDeduction = reqDepositDeduction != null ? reqDepositDeduction : 0.0;
+						double grandTotal = reqFinalPayable != null ? reqFinalPayable : bill.getTotalAmount();
+					%>
+					<div class="surface-pad" style="border-top: 1px solid var(--line); background: #fafafa; border-radius: 0 0 12px 12px; padding: 20px;">
+						<div style="max-width: 420px; margin-left: auto; display: flex; flex-direction: column; gap: 10px; font-size: 14px;">
+							<div style="display: flex; justify-content: space-between; color: var(--muted);">
+								<span>Tiền phòng:</span>
+								<strong style="color: var(--text);"><%= money.format(rTotal) %></strong>
+							</div>
+							<% if (sTotal > 0) { %>
+							<div style="display: flex; justify-content: space-between; color: var(--muted);">
+								<span>Tiền dịch vụ:</span>
+								<strong style="color: var(--text);"><%= money.format(sTotal) %></strong>
+							</div>
+							<% } %>
+							<% if (lTotal > 0) { %>
+							<div style="display: flex; justify-content: space-between; color: var(--muted);">
+								<span>Tiền giặt ủi:</span>
+								<strong style="color: var(--text);"><%= money.format(lTotal) %></strong>
+							</div>
+							<% } %>
+							<div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--line); padding-top: 8px; color: var(--text);">
+								<span>Tạm tính (Trước thuế):</span>
+								<strong><%= money.format(subTotal) %></strong>
+							</div>
+							<div style="display: flex; justify-content: space-between; color: #b45309; font-weight: 600;">
+								<span>Thuế GTGT / VAT (8%):</span>
+								<span>+ <%= money.format(taxAmount) %></span>
+							</div>
+							<% if (depositDeduction > 0) { %>
+							<div style="display: flex; justify-content: space-between; color: var(--text);">
+								<span>Tổng tiền trước khấu trừ:</span>
+								<strong><%= money.format(grossTotal) %></strong>
+							</div>
+							<div style="display: flex; justify-content: space-between; color: #15803d; font-weight: 600; background: #f0fdf4; padding: 6px 10px; border-radius: 6px; border: 1px dashed #86efac;">
+								<span>Đã đặt cọc trước (20% + VAT):</span>
+								<span>- <%= money.format(depositDeduction) %></span>
+							</div>
+							<% } %>
+							<div style="display: flex; justify-content: space-between; border-top: 2px solid var(--brand); padding-top: 10px; font-size: 15px; color: var(--brand);">
+								<span style="font-weight: 700;"><%= depositDeduction > 0 ? "Còn lại cần thanh toán:" : "Tổng thanh toán (Đã gồm 8% thuế):" %></span>
+								<strong class="checkout-total" style="font-size: 18px; color: var(--brand);"><%= money.format(grandTotal) %></strong>
+							</div>
+						</div>
 					</div>
 				</section>
 				<%
@@ -238,42 +314,44 @@ if (roomNumber.isEmpty()) {
 				<%
 				if ("Unpaid".equals(bill.getStatus())) {
 				%>
-				<div class="form-group" style="margin-top:18px">
-					<label class="form-label" style="font-weight: 600; margin-bottom: 6px; display: block;">Phương thức thanh toán</label>
-					<select class="form-control" id="payment-method-select" onchange="handlePaymentMethodChange()">
-						<option value="cash">Tiền mặt</option>
-						<option value="transfer">Chuyển khoản (VietQR)</option>
-						<option value="card">Thẻ ngân hàng</option>
-					</select>
-				</div>
-				<div id="transfer-qr-container">
-					<span class="form-label" style="color: var(--brand); font-weight: 700; margin-bottom: 10px; display: block;">MÃ QR THANH TOÁN (VIETQR)</span>
-					<div class="qr-wrapper">
-						<img id="vietqr-image" src="" alt="VietQR Payment Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+				<form action="<%=request.getContextPath()%>/bills" method="post" id="payForm">
+					<input type="hidden" name="action" value="pay">
+					<input type="hidden" name="billId" value="<%=bill.getId()%>">
+					<div class="form-group" style="margin-top:18px">
+						<label class="form-label" for="payment-method-select" style="font-weight: 600; margin-bottom: 6px; display: block;">Phương thức thanh toán</label>
+						<select class="form-control" id="payment-method-select" name="paymentMethod" onchange="handlePaymentMethodChange()">
+							<option value="Cash">Tiền mặt</option>
+							<option value="BankTransfer">Chuyển khoản (VietQR)</option>
+							<option value="Card">Thẻ ngân hàng</option>
+						</select>
 					</div>
-					<div class="qr-bank-details">
-						Ngân hàng: <strong id="display-bank-id"><%= bankId %></strong><br>
-						Số TK: <strong id="display-account-no"><%= bankAccount %></strong><br>
-						Chủ TK: <strong id="display-account-name"><%= bankName %></strong>
+					<div id="transfer-qr-container">
+						<span class="form-label" style="color: var(--brand); font-weight: 700; margin-bottom: 10px; display: block;">MÃ QR THANH TOÁN (VIETQR)</span>
+						<div class="qr-wrapper">
+							<img id="vietqr-image" src="" alt="VietQR Payment Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+						</div>
+						<div class="qr-bank-details">
+							Ngân hàng: <strong id="display-bank-id"><%= bankId %></strong><br>
+							Số TK: <strong id="display-account-no"><%= bankAccount %></strong><br>
+							Chủ TK: <strong id="display-account-name"><%= bankName %></strong>
+						</div>
 					</div>
+					<div style="display: grid; gap: 8px; margin-top: 18px">
+						<% if (admin || (currentUser != null && bill.getUserId() == currentUser.getId())) { %>
+							<button type="submit" class="btn btn-success" style="width: 100%; font-weight: 700; cursor: pointer; padding: 10px 16px;">✓ Xác nhận thanh toán</button>
+						<% } %>
+						<a class="btn btn-outline" href="<%=request.getContextPath()%>/<%=admin ? "bills?action=list" : "bills?action=mybills"%>">Quay lại</a>
+					</div>
+				</form>
+				<%
+				} else {
+				%>
+				<div style="display: grid; gap: 8px; margin-top: 18px">
+					<a class="btn btn-outline" href="<%=request.getContextPath()%>/<%=admin ? "bills?action=list" : "bills?action=mybills"%>">Quay lại</a>
 				</div>
 				<%
 				}
 				%>
-				<div style="display: grid; gap: 8px; margin-top: 18px">
-					<%
-					if ("Unpaid".equals(bill.getStatus()) && admin) {
-					%><a class="btn btn-success" href="<%=request.getContextPath()%>/bills?action=pay&id=<%=bill.getId()%>">Xác nhận thanh toán</a>
-					<%
-					}
-					%>
-					<%
-					if ("Unpaid".equals(bill.getStatus())) {
-					%><a class="btn btn-danger" href="<%=request.getContextPath()%>/bills?action=cancel&id=<%=bill.getId()%>" onclick="return confirm('Hủy đơn này?')">Hủy đơn</a>
-					<%
-					}
-					%><a class="btn btn-outline" href="<%=request.getContextPath()%>/<%=admin ? "bills?action=list" : "bills?action=mybills"%>">Quay lại</a>
-				</div>
 			</aside>
 		</div>
 	</main>
@@ -284,17 +362,11 @@ if (roomNumber.isEmpty()) {
 	      var qrContainer = document.getElementById('transfer-qr-container');
 	      if (!select || !qrContainer) return;
 	      
-	      if (select.value === 'transfer') {
+	      if (select.value === 'BankTransfer' || select.value === 'transfer') {
 	          var amount = '<%= (long)bill.getTotalAmount() %>';
-<<<<<<< HEAD
-	          var bankId = '<%= reqBankId %>';
-	          var accountNo = '<%= reqBankAccount %>';
-	          var accountName = '<%= reqBankName %>';
-=======
 	          var bankId = '<%= bankId %>';
 	          var accountNo = '<%= bankAccount %>';
 	          var accountName = '<%= bankName %>';
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
 	          
 	          document.getElementById('display-bank-id').innerText = bankId;
 	          document.getElementById('display-account-no').innerText = accountNo;

@@ -25,6 +25,7 @@ public class NotificationServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html; charset=UTF-8");
 
         if (!AuthUtil.isAuthenticated(request)) {
             response.sendRedirect(request.getContextPath() + "/login");
@@ -33,7 +34,7 @@ public class NotificationServlet extends HttpServlet {
 
         User currentUser = AuthUtil.getUser(request);
         String role = currentUser != null ? currentUser.getRole() : "";
-        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
+        if (!"Admin".equalsIgnoreCase(role) && !"Manager".equalsIgnoreCase(role)) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
@@ -99,6 +100,7 @@ public class NotificationServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html; charset=UTF-8");
 
         if (!AuthUtil.isAuthenticated(request)) {
             response.sendRedirect(request.getContextPath() + "/login");
@@ -107,7 +109,7 @@ public class NotificationServlet extends HttpServlet {
 
         User currentUser = AuthUtil.getUser(request);
         String role = currentUser != null ? currentUser.getRole() : "";
-        if (!"Admin".equalsIgnoreCase(role) && !"Receptionist".equalsIgnoreCase(role)) {
+        if (!"Admin".equalsIgnoreCase(role) && !"Manager".equalsIgnoreCase(role)) {
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
@@ -138,6 +140,7 @@ public class NotificationServlet extends HttpServlet {
             item = new HotelNotification();
         }
 
+        // Nhận trực tiếp chuỗi UTF-8, không can thiệp encode lại
         String title = ParamUtil.getString(request, "title", "");
         String content = ParamUtil.getString(request, "content", "");
         String type = ParamUtil.getString(request, "type", "INFO");
@@ -150,8 +153,10 @@ public class NotificationServlet extends HttpServlet {
         item.setType(type);
         item.setIsActive(isActive);
 
-        if (id == 0 && currentUser != null) {
-            item.setCreatedBy(currentUser.getId());
+        if (id == 0) {
+            if (currentUser != null) {
+                item.setCreatedBy(currentUser.getId());
+            }
             item.setCreatedAt(LocalDateTime.now());
         }
 

@@ -23,6 +23,10 @@ public class Customer {
     @Column(name = "customer_email")
     private String customerEmail;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private User user;
+
     public Customer() {}
 
     public Customer(String customerName, String customerCccd, String customerPhone, String customerEmail) {
@@ -32,12 +36,29 @@ public class Customer {
         this.customerEmail = customerEmail;
     }
 
+    public Customer(String customerName, String customerCccd, String customerPhone, String customerEmail, User user) {
+        this.customerName = customerName;
+        this.customerCccd = customerCccd;
+        this.customerPhone = customerPhone;
+        this.customerEmail = customerEmail;
+        this.user = user;
+    }
+
     public Customer(int customerId, String customerName, String customerCccd, String customerPhone, String customerEmail) {
         this.customerId = customerId;
         this.customerName = customerName;
         this.customerCccd = customerCccd;
         this.customerPhone = customerPhone;
         this.customerEmail = customerEmail;
+    }
+
+    public Customer(int customerId, String customerName, String customerCccd, String customerPhone, String customerEmail, User user) {
+        this.customerId = customerId;
+        this.customerName = customerName;
+        this.customerCccd = customerCccd;
+        this.customerPhone = customerPhone;
+        this.customerEmail = customerEmail;
+        this.user = user;
     }
 
     public int getCustomerId() {
@@ -78,5 +99,13 @@ public class Customer {
 
     public void setCustomerEmail(String customerEmail) {
         this.customerEmail = customerEmail;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

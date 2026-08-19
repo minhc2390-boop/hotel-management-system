@@ -75,6 +75,13 @@ public class ServiceDAO {
             tx.begin();
             Service service = em.find(Service.class, id);
             if (service != null) {
+                Long billDetailCount = em.createQuery("SELECT COUNT(bd) FROM BillDetail bd WHERE bd.service.id = :sid", Long.class)
+                        .setParameter("sid", id).getSingleResult();
+                if (billDetailCount != null && billDetailCount > 0) {
+                    // Dịch vụ đã có trong lịch sử hóa đơn -> Chặn xóa để tránh lỗi FK
+                    tx.rollback();
+                    return false;
+                }
                 em.remove(service);
                 tx.commit();
                 return true;

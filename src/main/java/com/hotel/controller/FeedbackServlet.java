@@ -43,6 +43,29 @@ public class FeedbackServlet extends HttpServlet {
             return;
         }
 
+        if ("delete".equals(action)) {
+            if (!isManager(currentUser)) {
+                response.sendRedirect(request.getContextPath() + "/home");
+                return;
+            }
+            int id = ParamUtil.getInt(request, "id", 0);
+            if (id > 0) {
+                feedbackDAO.deleteFeedback(id);
+            }
+            response.sendRedirect(request.getContextPath() + "/feedbacks?action=list");
+            return;
+        }
+
+        if ("clearAll".equals(action)) {
+            if (!isManager(currentUser)) {
+                response.sendRedirect(request.getContextPath() + "/home");
+                return;
+            }
+            feedbackDAO.deleteAllFeedbacks();
+            response.sendRedirect(request.getContextPath() + "/feedbacks?action=list");
+            return;
+        }
+
         int bookingId = ParamUtil.getInt(request, "bookingId", 0);
         Booking booking = bookingDAO.getBookingById(bookingId);
         if (!isEligibleOwner(booking, currentUser)) {
@@ -136,6 +159,10 @@ public class FeedbackServlet extends HttpServlet {
         if (booking.getCreatedBy() != null && booking.getCreatedBy().getId() == currentUser.getId()) {
             return true;
         }
+        if (booking.getCustomer() != null && booking.getCustomer().getUser() != null
+                && booking.getCustomer().getUser().getId() == currentUser.getId()) {
+            return true;
+        }
         return booking.getCustomer() != null
                 && currentUser.getEmail() != null
                 && currentUser.getEmail().equalsIgnoreCase(booking.getCustomer().getCustomerEmail());
@@ -144,6 +171,6 @@ public class FeedbackServlet extends HttpServlet {
     private boolean isManager(User user) {
         return user != null
                 && ("Admin".equalsIgnoreCase(user.getRole())
-                || "Receptionist".equalsIgnoreCase(user.getRole()));
+                || "Manager".equalsIgnoreCase(user.getRole()));
     }
 }

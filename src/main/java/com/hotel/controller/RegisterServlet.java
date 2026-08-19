@@ -65,6 +65,12 @@ public class RegisterServlet extends HttpServlet {
         boolean success = userDAO.register(user);
 
         if (success) {
+            try {
+                com.hotel.dao.CustomerDAO customerDAO = new com.hotel.dao.CustomerDAO();
+                customerDAO.findOrCreateCustomer(fullName, phone, email, null, user);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             request.setAttribute("success", "Đăng ký tài khoản thành công! Vui lòng đăng nhập bằng tài khoản vừa tạo.");
             request.setAttribute("activeTab", "login");
             request.setAttribute("email", username);

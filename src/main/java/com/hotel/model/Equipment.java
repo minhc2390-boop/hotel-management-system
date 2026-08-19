@@ -33,39 +33,39 @@ public class Equipment {
     public Equipment() {}
 
     public Equipment(String equipmentName, int totalQuantity, String unit, String status, String description) {
-        this.equipmentName = equipmentName;
+        this.equipmentName = com.hotel.util.EncodingUtil.fixEncoding(equipmentName);
         this.totalQuantity = totalQuantity;
-        this.unit = unit;
-        this.status = status;
-        this.description = description;
+        this.unit = com.hotel.util.EncodingUtil.fixEncoding(unit);
+        this.status = com.hotel.util.EncodingUtil.fixEncoding(status);
+        this.description = com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public Equipment(Room room, String equipmentName, int totalQuantity, String unit, String status, String description) {
         this.room = room;
-        this.equipmentName = equipmentName;
+        this.equipmentName = com.hotel.util.EncodingUtil.fixEncoding(equipmentName);
         this.totalQuantity = totalQuantity;
-        this.unit = unit;
-        this.status = status;
-        this.description = description;
+        this.unit = com.hotel.util.EncodingUtil.fixEncoding(unit);
+        this.status = com.hotel.util.EncodingUtil.fixEncoding(status);
+        this.description = com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public Equipment(int equipmentId, Room room, String equipmentName, int totalQuantity, String unit, String status, String description) {
         this.equipmentId = equipmentId;
         this.room = room;
-        this.equipmentName = equipmentName;
+        this.equipmentName = com.hotel.util.EncodingUtil.fixEncoding(equipmentName);
         this.totalQuantity = totalQuantity;
-        this.unit = unit;
-        this.status = status;
-        this.description = description;
+        this.unit = com.hotel.util.EncodingUtil.fixEncoding(unit);
+        this.status = com.hotel.util.EncodingUtil.fixEncoding(status);
+        this.description = com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public Equipment(int equipmentId, String equipmentName, int totalQuantity, String unit, String status, String description) {
         this.equipmentId = equipmentId;
-        this.equipmentName = equipmentName;
+        this.equipmentName = com.hotel.util.EncodingUtil.fixEncoding(equipmentName);
         this.totalQuantity = totalQuantity;
-        this.unit = unit;
-        this.status = status;
-        this.description = description;
+        this.unit = com.hotel.util.EncodingUtil.fixEncoding(unit);
+        this.status = com.hotel.util.EncodingUtil.fixEncoding(status);
+        this.description = com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 
     public int getEquipmentId() {
@@ -97,7 +97,7 @@ public class Equipment {
     }
 
     public void setEquipmentName(String equipmentName) {
-        this.equipmentName = equipmentName;
+        this.equipmentName = com.hotel.util.EncodingUtil.fixEncoding(equipmentName);
     }
 
     public int getTotalQuantity() {
@@ -113,7 +113,7 @@ public class Equipment {
     }
 
     public void setUnit(String unit) {
-        this.unit = unit;
+        this.unit = com.hotel.util.EncodingUtil.fixEncoding(unit);
     }
 
     public String getStatus() {
@@ -121,7 +121,7 @@ public class Equipment {
     }
 
     public void setStatus(String status) {
-        this.status = status;
+        this.status = com.hotel.util.EncodingUtil.fixEncoding(status);
     }
 
     public String getDescription() {
@@ -129,6 +129,6 @@ public class Equipment {
     }
 
     public void setDescription(String description) {
-        this.description = description;
+        this.description = com.hotel.util.EncodingUtil.fixEncoding(description);
     }
 }

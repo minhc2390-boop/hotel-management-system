@@ -3,7 +3,9 @@ package com.hotel.dao;
 import com.hotel.model.Booking;
 import com.hotel.model.Bill;
 import com.hotel.model.BillDetail;
+import com.hotel.model.Customer;
 import com.hotel.model.Room;
+import com.hotel.model.RoomType;
 import com.hotel.model.User;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -23,7 +25,7 @@ public class BookingDAO {
     public List<Booking> getAllBookings() {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy ORDER BY b.bookingId DESC";
+            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer c LEFT JOIN FETCH c.user LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy ORDER BY b.bookingId DESC";
             TypedQuery<Booking> query = em.createQuery(jpql, Booking.class);
             return query.getResultList();
         } catch (Exception e) {
@@ -51,7 +53,8 @@ public class BookingDAO {
 
             StringBuilder jpql = new StringBuilder(
                 "SELECT b FROM Booking b " +
-                "LEFT JOIN FETCH b.customer " +
+                "LEFT JOIN FETCH b.customer c " +
+                "LEFT JOIN FETCH c.user " +
                 "LEFT JOIN FETCH b.room r " +
                 "LEFT JOIN FETCH r.roomType " +
                 "LEFT JOIN FETCH b.createdBy "
@@ -93,6 +96,7 @@ public class BookingDAO {
             String jpql = "SELECT COUNT(b) FROM Booking b " +
                           "WHERE b.room.id = :roomId " +
                           "  AND LOWER(b.status) != 'cancelled' " +
+                          "  AND LOWER(b.status) != 'checkedout' " +
                           "  AND :checkIn < b.checkOutDate " +
                           "  AND :checkOut > b.checkInDate";
 
@@ -114,7 +118,7 @@ public class BookingDAO {
     public List<Booking> getBookingsByUserId(int userId, String email) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy WHERE b.createdBy.id = :userId OR (b.customer.customerEmail = :email) ORDER BY b.bookingId DESC";
+            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer c LEFT JOIN FETCH c.user LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy WHERE b.createdBy.id = :userId OR (c.user.id = :userId) OR (c.customerEmail = :email) ORDER BY b.bookingId DESC";
             TypedQuery<Booking> query = em.createQuery(jpql, Booking.class);
             query.setParameter("userId", userId);
             query.setParameter("email", email);
@@ -130,7 +134,7 @@ public class BookingDAO {
     public Booking getBookingById(int id) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy WHERE b.bookingId = :id";
+            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer c LEFT JOIN FETCH c.user LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy WHERE b.bookingId = :id";
             TypedQuery<Booking> query = em.createQuery(jpql, Booking.class);
             query.setParameter("id", id);
             List<Booking> list = query.getResultList();
@@ -143,6 +147,34 @@ public class BookingDAO {
             em.close();
         }
         return null;
+    }
+
+    /**
+     * Lấy danh sách lịch sử đặt phòng theo mã phòng (roomId)
+     */
+    public List<Booking> getBookingsByRoomId(int roomId) {
+        if (roomId <= 0) {
+            return Collections.emptyList();
+        }
+        EntityManager em = DBContext.getEntityManager();
+        try {
+            String jpql = "SELECT b FROM Booking b "
+                    + "LEFT JOIN FETCH b.customer c "
+                    + "LEFT JOIN FETCH c.user "
+                    + "LEFT JOIN FETCH b.room r "
+                    + "LEFT JOIN FETCH r.roomType "
+                    + "LEFT JOIN FETCH b.createdBy "
+                    + "WHERE b.room.id = :roomId "
+                    + "ORDER BY b.bookingId DESC";
+            TypedQuery<Booking> query = em.createQuery(jpql, Booking.class);
+            query.setParameter("roomId", roomId);
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            em.close();
+        }
+        return Collections.emptyList();
     }
 
     public boolean insertBooking(Booking booking) {
@@ -177,14 +209,48 @@ public class BookingDAO {
                 }
 
                 Room managedRoom = em.find(Room.class, roomId, LockModeType.PESSIMISTIC_WRITE);
-                if (managedRoom == null || !"Available".equalsIgnoreCase(managedRoom.getStatus())) {
-                    throw new IllegalStateException("Room is no longer available: " + roomId);
+                if (managedRoom == null || "Maintenance".equalsIgnoreCase(managedRoom.getStatus())) {
+                    throw new IllegalStateException("Phòng đang trong trạng thái bảo trì hoặc không tồn tại: " + roomId);
                 }
 
-                booking.setCustomer(em.merge(booking.getCustomer()));
-                booking.setCreatedBy(em.merge(booking.getCreatedBy()));
+                Customer managedCustomer = null;
+                if (booking.getCustomer().getCustomerId() > 0) {
+                    managedCustomer = em.find(Customer.class, booking.getCustomer().getCustomerId());
+                }
+                if (managedCustomer == null) {
+                    managedCustomer = em.merge(booking.getCustomer());
+                }
+                booking.setCustomer(managedCustomer);
+
+                User managedUser = null;
+                if (booking.getCreatedBy().getId() > 0) {
+                    managedUser = em.find(User.class, booking.getCreatedBy().getId());
+                }
+                if (managedUser == null && booking.getCreatedBy().getUsername() != null) {
+                    List<User> uList = em.createQuery("SELECT u FROM User u WHERE LOWER(u.username) = :uname OR LOWER(u.email) = :uemail", User.class)
+                            .setParameter("uname", booking.getCreatedBy().getUsername().toLowerCase())
+                            .setParameter("uemail", booking.getCreatedBy().getEmail() != null ? booking.getCreatedBy().getEmail().toLowerCase() : "")
+                            .getResultList();
+                    if (!uList.isEmpty()) {
+                        managedUser = uList.get(0);
+                    }
+                }
+                if (managedUser == null) {
+                    managedUser = em.find(User.class, 1);
+                    if (managedUser == null) {
+                        List<User> admins = em.createQuery("SELECT u FROM User u WHERE u.role = 'Admin' ORDER BY u.id ASC", User.class).getResultList();
+                        if (!admins.isEmpty()) managedUser = admins.get(0);
+                    }
+                }
+                booking.setCreatedBy(managedUser);
+
                 booking.setRoom(managedRoom);
-                managedRoom.setStatus("Booked");
+                java.util.Date now = new java.util.Date();
+                if ("CheckedIn".equalsIgnoreCase(booking.getStatus()) ||
+                    (booking.getCheckInDate() != null && booking.getCheckOutDate() != null
+                     && !now.before(booking.getCheckInDate()) && now.before(booking.getCheckOutDate()))) {
+                    managedRoom.setStatus("Booked");
+                }
                 em.persist(booking);
             }
 
@@ -341,12 +407,12 @@ public class BookingDAO {
                 return -1;
             }
 
-            double totalAmount = 0;
+            double subTotalAmount = 0;
             java.sql.Timestamp earliestCheckIn = firstBooking.getCheckInDate();
             java.sql.Timestamp latestCheckOut = firstBooking.getCheckOutDate();
             for (Booking booking : bookings) {
                 int days = calculateStayDays(booking);
-                totalAmount += days * booking.getRoomPrice();
+                subTotalAmount += days * booking.getRoomPrice();
                 if (booking.getCheckInDate().before(earliestCheckIn)) {
                     earliestCheckIn = booking.getCheckInDate();
                 }
@@ -355,12 +421,14 @@ public class BookingDAO {
                 }
             }
 
+            double totalAmountWithTax = subTotalAmount * 1.08; // Đã bao gồm 8% thuế VAT
+
             Bill bill = new Bill();
             bill.setUser(billCreator);
             bill.setCustomer(firstBooking.getCustomer());
             bill.setCheckInDate(earliestCheckIn);
             bill.setCheckOutDate(latestCheckOut);
-            bill.setTotalAmount(totalAmount);
+            bill.setTotalAmount(totalAmountWithTax);
             bill.setStatus("Unpaid");
             em.persist(bill);
             em.flush();
@@ -374,11 +442,7 @@ public class BookingDAO {
                 em.persist(roomCharge);
 
                 booking.setStatus("CheckedOut");
-<<<<<<< HEAD
-                booking.getRoom().setStatus("Cleaning");
-=======
                 booking.getRoom().setStatus(targetRoomStatus);
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
             }
 
             tx.commit();
@@ -399,7 +463,7 @@ public class BookingDAO {
         }
 
         String jpql = "SELECT b FROM Booking b "
-                + "JOIN FETCH b.customer JOIN FETCH b.room "
+                + "JOIN FETCH b.customer c LEFT JOIN FETCH c.user JOIN FETCH b.room "
                 + "LEFT JOIN FETCH b.createdBy "
                 + "WHERE b.bookingId IN :bookingIds";
         List<Booking> bookings = em.createQuery(jpql, Booking.class)
@@ -444,7 +508,7 @@ public class BookingDAO {
     public List<Booking> getBookingsByCustomerId(int customerId) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy WHERE b.customer.customerId = :customerId ORDER BY b.bookingId DESC";
+            String jpql = "SELECT b FROM Booking b LEFT JOIN FETCH b.customer c LEFT JOIN FETCH c.user LEFT JOIN FETCH b.room r LEFT JOIN FETCH r.roomType LEFT JOIN FETCH b.createdBy WHERE b.customer.customerId = :customerId ORDER BY b.bookingId DESC";
             TypedQuery<Booking> query = em.createQuery(jpql, Booking.class);
             query.setParameter("customerId", customerId);
             return query.getResultList();

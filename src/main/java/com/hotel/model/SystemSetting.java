@@ -13,12 +13,8 @@ public class SystemSetting {
     @Column(name = "setting_key", nullable = false, length = 100)
     private String settingKey;
 
-<<<<<<< HEAD
-    @Column(name = "setting_value", length = 500)
-=======
     @org.hibernate.annotations.Nationalized
     @Column(name = "setting_value", length = 500, columnDefinition = "NVARCHAR(500)")
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
     private String settingValue;
 
     public SystemSetting() {

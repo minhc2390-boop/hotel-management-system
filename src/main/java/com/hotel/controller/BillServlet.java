@@ -2,6 +2,7 @@ package com.hotel.controller;
 
 import com.hotel.dao.BillDAO;
 import com.hotel.dao.BillDetailDAO;
+import com.hotel.dao.BookingDAO;
 import com.hotel.dao.RoomDAO;
 import com.hotel.dao.ServiceDAO;
 import com.hotel.model.*;
@@ -24,6 +25,7 @@ import java.util.List;
 public class BillServlet extends HttpServlet {
     private final BillDAO billDAO = new BillDAO();
     private final BillDetailDAO billDetailDAO = new BillDetailDAO();
+    private final BookingDAO bookingDAO = new BookingDAO();
     private final RoomDAO roomDAO = new RoomDAO();
     private final ServiceDAO serviceDAO = new ServiceDAO();
 
@@ -47,8 +49,8 @@ public class BillServlet extends HttpServlet {
 
         switch (action) {
             case "list":
-                // Admin/Receptionist sees all bills
-                if (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole())) {
+                // Chỉ Admin mới được xem toàn bộ danh sách hóa đơn
+                if (!"Admin".equalsIgnoreCase(currentUser.getRole())) {
                     response.sendRedirect(request.getContextPath() + "/home");
                     return;
                 }
@@ -68,8 +70,9 @@ public class BillServlet extends HttpServlet {
                 int billId = Integer.parseInt(request.getParameter("id"));
                 Bill bill = billDAO.getBillById(billId);
                 
-                // Security check: Customer can only see their own bills (either matching user id or customer email)
+                // Security check: Customer can only see their own bills (matching user id, linked customer user, or customer email)
                 boolean isOwnBill = (bill.getUserId() == currentUser.getId()) || 
+                                    (bill.getCustomer() != null && bill.getCustomer().getUser() != null && bill.getCustomer().getUser().getId() == currentUser.getId()) ||
                                     (bill.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(bill.getCustomer().getCustomerEmail()));
                 if ("Customer".equals(currentUser.getRole()) && !isOwnBill) {
                     response.sendRedirect(request.getContextPath() + "/home");
@@ -79,15 +82,6 @@ public class BillServlet extends HttpServlet {
                 List<BillDetail> details = billDetailDAO.getBillDetailsByBillId(billId);
                 List<Service> services = serviceDAO.getAllServices();
                 
-<<<<<<< HEAD
-                com.hotel.dao.SystemSettingDAO settingDAO = new com.hotel.dao.SystemSettingDAO();
-                String bankId = settingDAO.getSetting("hotel_bank_id");
-                String bankAccount = settingDAO.getSetting("hotel_bank_account");
-                String bankName = settingDAO.getSetting("hotel_bank_name");
-                if (bankId.isEmpty()) bankId = "MB";
-                if (bankAccount.isEmpty()) bankAccount = "1903567890123";
-                if (bankName.isEmpty()) bankName = "CONG TY NESTORA HOTEL";
-=======
                 // 1. Fetch VietQR bank info from SystemSettingDAO
                 com.hotel.dao.SystemSettingDAO systemSettingDAO = new com.hotel.dao.SystemSettingDAO();
                 String bankId = systemSettingDAO.getBankId();
@@ -123,20 +117,42 @@ public class BillServlet extends HttpServlet {
                     }
                 }
 
-                double calculatedTotal = roomTotal + serviceTotal + laundryTotal;
-                if (calculatedTotal > 0 && Math.abs(calculatedTotal - bill.getTotalAmount()) > 0.01) {
-                    bill.setTotalAmount(calculatedTotal);
-                    billDAO.updateBillTotal(billId, calculatedTotal);
+                // 3. Kiểm tra xem đơn đặt phòng tương ứng có thanh toán cọc 20% trước đó không
+                double depositPaid = 0.0;
+                if (details != null) {
+                    for (BillDetail bd : details) {
+                        if (bd.getRoomId() != null || bd.getRoom() != null) {
+                            int rId = bd.getRoom() != null ? bd.getRoom().getId() : bd.getRoomId();
+                            List<Booking> roomBookings = bookingDAO.getBookingsByRoomId(rId);
+                            if (roomBookings != null) {
+                                for (Booking b : roomBookings) {
+                                    if (b.getNote() != null && (b.getNote().contains("Đã cọc 20%") || b.getNote().contains("cọc 20%"))) {
+                                        int stayDays = bd.getQuantity() > 0 ? bd.getQuantity() : 1;
+                                        double lineRoomTotal = stayDays * bd.getPrice();
+                                        depositPaid += lineRoomTotal * 0.20;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
+
+                double subTotal = roomTotal + serviceTotal + laundryTotal;
+                double taxRate = 0.08; // Thuế VAT 8%
+                double taxAmount = subTotal * taxRate;
+                double grossTotal = subTotal + taxAmount;
+                double depositDeduction = depositPaid * 1.08; // Tiền cọc đã gồm 8% thuế
+                double finalPayable = Math.max(0.0, grossTotal - depositDeduction);
+
+                if (finalPayable > 0 && Math.abs(finalPayable - bill.getTotalAmount()) > 0.01) {
+                    bill.setTotalAmount(finalPayable);
+                    billDAO.updateBillTotal(billId, finalPayable);
+                }
 
                 request.setAttribute("bankId", bankId);
                 request.setAttribute("bankAccount", bankAccount);
                 request.setAttribute("bankName", bankName);
-<<<<<<< HEAD
-                
-=======
->>>>>>> 06d2f05fb617ae75d9425627b09472113407a437
                 request.setAttribute("bill", bill);
                 request.setAttribute("details", details);
                 request.setAttribute("services", services);
@@ -144,39 +160,120 @@ public class BillServlet extends HttpServlet {
                 request.setAttribute("laundryTotal", laundryTotal);
                 request.setAttribute("roomTotal", roomTotal);
                 request.setAttribute("serviceTotal", serviceTotal);
+                request.setAttribute("subTotal", subTotal);
+                request.setAttribute("taxRate", taxRate);
+                request.setAttribute("taxAmount", taxAmount);
+                request.setAttribute("grossTotal", grossTotal);
+                request.setAttribute("depositDeduction", depositDeduction);
+                request.setAttribute("finalPayable", finalPayable);
                 request.getRequestDispatcher("/bill-details.jsp").forward(request, response);
                 break;
 
             case "pay":
                 int payBillId = ParamUtil.getInt(request, "id", 0);
-                response.sendRedirect(request.getContextPath()
-                        + "/bills?action=detail&id=" + payBillId + "&error=paymentMethodRequired");
+                if (payBillId == 0) {
+                    payBillId = ParamUtil.getInt(request, "billId", 0);
+                }
+                String getRawMethod = ParamUtil.getString(request, "paymentMethod", "Cash");
+                String getPayMethod = "Cash";
+                if ("transfer".equalsIgnoreCase(getRawMethod) || "BankTransfer".equalsIgnoreCase(getRawMethod) || "qr".equalsIgnoreCase(getRawMethod)) {
+                    getPayMethod = "BankTransfer";
+                } else if ("card".equalsIgnoreCase(getRawMethod)) {
+                    getPayMethod = "Card";
+                }
+
+                Bill getPayBill = billDAO.getBillById(payBillId);
+                if (getPayBill != null) {
+                    boolean canPay = "Admin".equalsIgnoreCase(currentUser.getRole()) 
+                                  || "Receptionist".equalsIgnoreCase(currentUser.getRole())
+                                  || (getPayBill.getUserId() == currentUser.getId())
+                                  || (getPayBill.getCustomer() != null && getPayBill.getCustomer().getUser() != null && getPayBill.getCustomer().getUser().getId() == currentUser.getId())
+                                  || (getPayBill.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(getPayBill.getCustomer().getCustomerEmail()));
+                    if (!canPay) {
+                        response.sendRedirect(request.getContextPath() + "/home");
+                        return;
+                    }
+
+                    if ("Paid".equalsIgnoreCase(getPayBill.getStatus())) {
+                        response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + payBillId + "&paid=1");
+                        return;
+                    }
+
+                    if ("Cancelled".equalsIgnoreCase(getPayBill.getStatus())) {
+                        response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + payBillId + "&error=billCancelled");
+                        return;
+                    }
+
+                    boolean paid = billDAO.markBillPaid(payBillId, getPayMethod);
+                    if (paid) {
+                        List<BillDetail> payDetails = billDetailDAO.getBillDetailsByBillId(payBillId);
+                        if (payDetails != null) {
+                            for (BillDetail detail : payDetails) {
+                                if (detail.getRoomId() != null) {
+                                    roomDAO.updateRoomStatus(detail.getRoomId(), "Available");
+                                } else if (detail.getRoom() != null) {
+                                    roomDAO.updateRoomStatus(detail.getRoom().getId(), "Available");
+                                }
+                            }
+                        }
+                    }
+                    response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + payBillId + (paid ? "&paid=1" : "&error=paymentFailed"));
+                    return;
+                }
+                response.sendRedirect(request.getContextPath() + "/bills?action=list");
                 break;
 
             case "cancel":
-                int cancelBillId = Integer.parseInt(request.getParameter("id"));
+                int cancelBillId = ParamUtil.getInt(request, "id", 0);
+                if (cancelBillId <= 0) {
+                    response.sendRedirect(request.getContextPath() + "/bills?action=list");
+                    return;
+                }
                 Bill cancelBill = billDAO.getBillById(cancelBillId);
+                if (cancelBill == null) {
+                    response.sendRedirect(request.getContextPath() + "/bills?action=list");
+                    return;
+                }
                 
+                String cancelReturnAction = "Customer".equals(currentUser.getRole()) ? "mybills" : "list";
+
                 // Customer can only cancel their own unpaid bill
-                if ("Customer".equals(currentUser.getRole()) && cancelBill.getUserId() != currentUser.getId()) {
+                boolean isManager = "Admin".equalsIgnoreCase(currentUser.getRole()) || "Receptionist".equalsIgnoreCase(currentUser.getRole());
+                boolean isOwner = (cancelBill.getUserId() == currentUser.getId())
+                               || (cancelBill.getCustomer() != null && cancelBill.getCustomer().getUser() != null && cancelBill.getCustomer().getUser().getId() == currentUser.getId())
+                               || (cancelBill.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(cancelBill.getCustomer().getCustomerEmail()));
+                if (!isManager && !isOwner) {
                     response.sendRedirect(request.getContextPath() + "/home");
                     return;
                 }
                 
-                billDAO.updateBillStatus(cancelBillId, "Cancelled");
-                
-                // Free up the room
-                List<BillDetail> cancelDetails = billDetailDAO.getBillDetailsByBillId(cancelBillId);
-                for (BillDetail bd : cancelDetails) {
-                    if (bd.getRoomId() != null) {
-                        roomDAO.updateRoomStatus(bd.getRoomId(), "Available");
-                    }
+                // If bill is already Paid, CANNOT cancel!
+                if ("Paid".equalsIgnoreCase(cancelBill.getStatus())) {
+                    response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + cancelBillId + "&error=cannotCancelPaid");
+                    return;
+                }
+
+                if ("Cancelled".equalsIgnoreCase(cancelBill.getStatus())) {
+                    response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + cancelBillId);
+                    return;
                 }
                 
-                if ("Customer".equals(currentUser.getRole())) {
-                    response.sendRedirect(request.getContextPath() + "/bills?action=mybills");
+                boolean updated = billDAO.updateBillStatus(cancelBillId, "Cancelled");
+                if (updated) {
+                    // Free up the room
+                    List<BillDetail> cancelDetails = billDetailDAO.getBillDetailsByBillId(cancelBillId);
+                    if (cancelDetails != null) {
+                        for (BillDetail bd : cancelDetails) {
+                            if (bd.getRoomId() != null) {
+                                roomDAO.updateRoomStatus(bd.getRoomId(), "Available");
+                            } else if (bd.getRoom() != null) {
+                                roomDAO.updateRoomStatus(bd.getRoom().getId(), "Available");
+                            }
+                        }
+                    }
+                    response.sendRedirect(request.getContextPath() + "/bills?action=" + cancelReturnAction + "&cancelled=1");
                 } else {
-                    response.sendRedirect(request.getContextPath() + "/bills?action=list");
+                    response.sendRedirect(request.getContextPath() + "/bills?action=" + cancelReturnAction + "&error=cancelFailed");
                 }
                 break;
 
@@ -202,89 +299,71 @@ public class BillServlet extends HttpServlet {
         }
 
         if ("pay".equals(action)) {
-            if (!"Admin".equals(currentUser.getRole()) && !"Receptionist".equals(currentUser.getRole())) {
+            int billId = ParamUtil.getInt(request, "billId", 0);
+            if (billId == 0) {
+                billId = ParamUtil.getInt(request, "id", 0);
+            }
+            String rawMethod = ParamUtil.getString(request, "paymentMethod", "Cash");
+            String paymentMethod = "Cash";
+            if ("transfer".equalsIgnoreCase(rawMethod) || "BankTransfer".equalsIgnoreCase(rawMethod) || "qr".equalsIgnoreCase(rawMethod)) {
+                paymentMethod = "BankTransfer";
+            } else if ("card".equalsIgnoreCase(rawMethod)) {
+                paymentMethod = "Card";
+            }
+
+            Bill payBill = billDAO.getBillById(billId);
+            if (payBill == null) {
+                response.sendRedirect(request.getContextPath() + "/bills?action=list");
+                return;
+            }
+
+            boolean canPay = "Admin".equalsIgnoreCase(currentUser.getRole()) 
+                          || "Receptionist".equalsIgnoreCase(currentUser.getRole())
+                          || (payBill.getUserId() == currentUser.getId())
+                          || (payBill.getCustomer() != null && payBill.getCustomer().getUser() != null && payBill.getCustomer().getUser().getId() == currentUser.getId())
+                          || (payBill.getCustomer() != null && currentUser.getEmail() != null && currentUser.getEmail().equalsIgnoreCase(payBill.getCustomer().getCustomerEmail()));
+            if (!canPay) {
                 response.sendRedirect(request.getContextPath() + "/home");
                 return;
             }
 
-            int billId = ParamUtil.getInt(request, "billId", 0);
-            String paymentMethod = ParamUtil.getString(request, "paymentMethod", "");
-            if (!"Cash".equals(paymentMethod)
-                    && !"BankTransfer".equals(paymentMethod)
-                    && !"Card".equals(paymentMethod)) {
-                response.sendRedirect(request.getContextPath()
-                        + "/bills?action=detail&id=" + billId + "&error=paymentMethodRequired");
+            if ("Paid".equalsIgnoreCase(payBill.getStatus())) {
+                response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId + "&paid=1");
+                return;
+            }
+
+            if ("Cancelled".equalsIgnoreCase(payBill.getStatus())) {
+                response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId + "&error=billCancelled");
                 return;
             }
 
             boolean paid = billDAO.markBillPaid(billId, paymentMethod);
             if (paid) {
                 List<BillDetail> payDetails = billDetailDAO.getBillDetailsByBillId(billId);
-                for (BillDetail detail : payDetails) {
-                    if (detail.getRoomId() != null) {
-                        roomDAO.updateRoomStatus(detail.getRoomId(), "Available");
+                if (payDetails != null) {
+                    for (BillDetail detail : payDetails) {
+                        if (detail.getRoomId() != null) {
+                            roomDAO.updateRoomStatus(detail.getRoomId(), "Available");
+                        } else if (detail.getRoom() != null) {
+                            roomDAO.updateRoomStatus(detail.getRoom().getId(), "Available");
+                        }
                     }
                 }
             }
             response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId
                     + (paid ? "&paid=1" : "&error=paymentFailed"));
-
-        } else if ("createBooking".equals(action)) {
-            int roomId = Integer.parseInt(request.getParameter("roomId"));
-            String checkInStr = request.getParameter("checkInDate");
-            String checkOutStr = request.getParameter("checkOutDate");
-            
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            try {
-                Date checkIn = df.parse(checkInStr);
-                Date checkOut = df.parse(checkOutStr);
-                
-                // Calculate stay days
-                long diffMs = checkOut.getTime() - checkIn.getTime();
-                long days = diffMs / (1000 * 60 * 60 * 24);
-                if (days <= 0) days = 1; // Minimum 1 day
-
-                Room room = roomDAO.getRoomById(roomId);
-                double roomPrice = room.getRoomType().getPricePerDay();
-                double totalRoomCharge = days * roomPrice;
-
-                // 1. Create and Insert Bill
-                Bill bill = new Bill();
-                bill.setUserId(currentUser.getId());
-                bill.setCheckInDate(new Timestamp(checkIn.getTime()));
-                bill.setCheckOutDate(new Timestamp(checkOut.getTime()));
-                bill.setTotalAmount(totalRoomCharge);
-                bill.setStatus("Unpaid");
-                
-                int billId = billDAO.insertBill(bill);
-                
-                if (billId > 0) {
-                    // 2. Create and Insert BillDetail for room charge
-                    BillDetail roomChargeDetail = new BillDetail();
-                    roomChargeDetail.setBillId(billId);
-                    roomChargeDetail.setRoomId(roomId);
-                    roomChargeDetail.setQuantity((int) days);
-                    roomChargeDetail.setPrice(roomPrice);
-                    billDetailDAO.insertBillDetail(roomChargeDetail);
-
-                    // 3. Mark room as Booked
-                    roomDAO.updateRoomStatus(roomId, "Booked");
-                    
-                    response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId);
-                } else {
-                    request.setAttribute("error", "Cannot process booking, please try again.");
-                    request.getRequestDispatcher("/rooms?action=bookForm&roomId=" + roomId).forward(request, response);
-                }
-
-            } catch (ParseException e) {
-                e.printStackTrace();
-                response.sendRedirect(request.getContextPath() + "/home");
-            }
+            return;
 
         } else if ("addService".equals(action)) {
             int billId = Integer.parseInt(request.getParameter("billId"));
             int serviceId = Integer.parseInt(request.getParameter("serviceId"));
             int quantity = Integer.parseInt(request.getParameter("quantity"));
+
+            Bill bill = billDAO.getBillById(billId);
+            if (bill == null || "Paid".equalsIgnoreCase(bill.getStatus()) || "Cancelled".equalsIgnoreCase(bill.getStatus())) {
+                response.sendRedirect(request.getContextPath() + "/bills?action=detail&id=" + billId + "&error=cannotModifyFinalizedBill");
+                return;
+            }
 
             Service service = serviceDAO.getServiceById(serviceId);
             if (service != null) {
@@ -296,9 +375,9 @@ public class BillServlet extends HttpServlet {
                 serviceDetail.setPrice(service.getPrice());
                 billDetailDAO.insertBillDetail(serviceDetail);
 
-                // 2. Update Bill Total Amount
-                Bill bill = billDAO.getBillById(billId);
-                double newTotal = bill.getTotalAmount() + (service.getPrice() * quantity);
+                // 2. Update Bill Total Amount with 8% VAT
+                double addedWithTax = (service.getPrice() * quantity) * 1.08;
+                double newTotal = bill.getTotalAmount() + addedWithTax;
                 billDAO.updateBillTotal(billId, newTotal);
             }
 

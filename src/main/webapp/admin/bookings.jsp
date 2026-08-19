@@ -99,7 +99,8 @@
                             <%= "checkin".equals(mode) ? "Xem danh sách và thực hiện thủ tục nhận phòng cho khách hàng." : ("checkout".equals(mode) ? "Thực hiện thủ tục trả phòng và thanh toán hóa đơn." : "Theo dõi lịch đặt và quản lý trạng thái nhận/trả phòng.") %>
                         </p>
                     </div>
-                    <div class="page-actions">
+                    <div class="page-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-outline" type="button" onclick="exportBookingsToExcel()">📊 Xuất Excel</button>
                         <% if (bulkModeAvailable) { %>
                             <button class="btn btn-outline" id="enable-bulk-mode" type="button">☑ Chọn nhiều phòng</button>
                         <% } %>
@@ -119,6 +120,8 @@
                     <div class="alert alert-error">Lý do hủy phải có từ 3 đến 500 ký tự.</div>
                 <% } else if ("cancelFailed".equals(request.getParameter("error"))) { %>
                     <div class="alert alert-error">Không thể hủy đặt phòng ở trạng thái hiện tại.</div>
+                <% } else if ("cannotCancelPaid".equals(request.getParameter("error"))) { %>
+                    <div class="alert alert-error">Đơn đặt phòng đã được nhận/trả phòng hoặc thanh toán, không thể hủy.</div>
                 <% } else if ("permissionDenied".equals(request.getParameter("error"))) { %>
                     <div class="alert alert-error">Bạn không có quyền xem hoặc thao tác trên đơn đặt phòng của nhân viên khác.</div>
                 <% } else if ("bulkFailed".equals(request.getParameter("error"))) { %>
@@ -403,5 +406,292 @@
     })();
 </script>
 <% } %>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+  function exportBookingsToExcel() {
+      const thinBorder = {
+          top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      };
+
+      const headerBorder = {
+          top: { style: 'thin', color: { rgb: '475569' } },
+          bottom: { style: 'medium', color: { rgb: '0F172A' } },
+          left: { style: 'thin', color: { rgb: '475569' } },
+          right: { style: 'thin', color: { rgb: '475569' } }
+      };
+
+      const totalBorder = {
+          top: { style: 'thin', color: { rgb: 'B45309' } },
+          bottom: { style: 'double', color: { rgb: '92400E' } },
+          left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+          right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      };
+
+      const ws = {};
+      const merges = [];
+      const rowHeights = [];
+
+      function setCell(r, c, v, t, z, s) {
+          const ref = XLSX.utils.encode_cell({ r, c });
+          const cell = { v: v, t: t || (typeof v === 'number' ? 'n' : 's') };
+          if (z) cell.z = z;
+          if (s) cell.s = s;
+          ws[ref] = cell;
+      }
+
+      function mergeRange(r1, c1, r2, c2) {
+          merges.push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
+      }
+
+      const todayStr = new Date().toLocaleDateString('vi-VN');
+      const numFmt = '#,##0 "₫"';
+
+      // ROW 0: TITLE
+      mergeRange(0, 0, 0, 8);
+      for (let c = 0; c <= 8; c++) {
+          setCell(0, c, c === 0 ? 'KHÁCH SẠN NESTORA HOTEL & RESORT' : '', 's', null, {
+              font: { name: 'Calibri', sz: 16, bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: '0F172A' } },
+              alignment: { horizontal: 'center', vertical: 'center' }
+          });
+      }
+      rowHeights[0] = { hpt: 32 };
+
+      // ROW 1: SUBTITLE
+      mergeRange(1, 0, 1, 8);
+      for (let c = 0; c <= 8; c++) {
+          setCell(1, c, c === 0 ? 'DANH SÁCH ĐƠN ĐẶT PHÒNG KHÁCH SẠN' : '', 's', null, {
+              font: { name: 'Calibri', sz: 13, bold: true, color: { rgb: 'F8FAFC' } },
+              fill: { fgColor: { rgb: '1E293B' } },
+              alignment: { horizontal: 'center', vertical: 'center' }
+          });
+      }
+      rowHeights[1] = { hpt: 24 };
+
+      // ROW 2: SPACER
+      rowHeights[2] = { hpt: 10 };
+
+      // ROW 3: METADATA
+      setCell(3, 0, 'Ngày xuất file:', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'F1F5F9' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      mergeRange(3, 1, 3, 2);
+      setCell(3, 1, todayStr, 's', null, {
+          font: { name: 'Calibri', sz: 10, color: { rgb: '334155' } },
+          fill: { fgColor: { rgb: 'F8FAFC' } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(3, 2, '', 's', null, { border: thinBorder, fill: { fgColor: { rgb: 'F8FAFC' } } });
+
+      setCell(3, 6, 'Người xuất:', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'F1F5F9' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: thinBorder
+      });
+      mergeRange(3, 7, 3, 8);
+      setCell(3, 7, '<%= (currentUser != null && currentUser.getFullName() != null) ? currentUser.getFullName() : "Ban Quản Trị" %>', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '1769E0' } },
+          fill: { fgColor: { rgb: 'F8FAFC' } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+          border: thinBorder
+      });
+      setCell(3, 8, '', 's', null, { border: thinBorder, fill: { fgColor: { rgb: 'F8FAFC' } } });
+      rowHeights[3] = { hpt: 22 };
+
+      // ROW 4: SPACER
+      rowHeights[4] = { hpt: 10 };
+
+      // ROW 5: HEADERS
+      const headers = ['MÃ ĐẶT', 'KHÁCH HÀNG', 'SĐT', 'PHÒNG', 'LOẠI PHÒNG', 'NGÀY NHẬN', 'NGÀY TRẢ', 'TỔNG TIỀN (VNĐ)', 'TRẠNG THÁI'];
+      for (let c = 0; c < headers.length; c++) {
+          setCell(5, c, headers[c], 's', null, {
+              font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: '1E293B' } },
+              alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+              border: headerBorder
+          });
+      }
+      rowHeights[5] = { hpt: 26 };
+
+      const bookingList = [
+      <% if (bookings != null) {
+           for (Booking b : bookings) {
+             String cName = (b.getCustomer() != null && b.getCustomer().getCustomerName() != null) ? b.getCustomer().getCustomerName() : (b.getCreatedBy() != null ? b.getCreatedBy().getFullName() : "N/A");
+             String cPhone = (b.getCustomer() != null && b.getCustomer().getCustomerPhone() != null) ? b.getCustomer().getCustomerPhone() : (b.getCreatedBy() != null ? b.getCreatedBy().getPhone() : "");
+             String rNum = b.getRoom() != null ? b.getRoom().getRoomNumber() : "-";
+             String rType = (b.getRoom() != null && b.getRoom().getRoomType() != null) ? b.getRoom().getRoomType().getName() : "-";
+             String inDate = b.getCheckInDate() != null ? sdf.format(b.getCheckInDate()) : "-";
+             String outDate = b.getCheckOutDate() != null ? sdf.format(b.getCheckOutDate()) : "-";
+             long diffDays = (b.getCheckOutDate() != null && b.getCheckInDate() != null) ? ((b.getCheckOutDate().getTime() - b.getCheckInDate().getTime()) / (1000 * 60 * 60 * 24)) : 1;
+             if (diffDays <= 0) diffDays = 1;
+             double total = diffDays * b.getRoomPrice() * 1.08;
+             String st = b.getStatus() != null ? b.getStatus() : "";
+             String stVi = "Pending".equalsIgnoreCase(st) ? "Chờ xử lý" : ("Confirmed".equalsIgnoreCase(st) ? "Đã xác nhận" : ("CheckedIn".equalsIgnoreCase(st) ? "Đang ở" : ("CheckedOut".equalsIgnoreCase(st) ? "Đã trả phòng" : "Đã hủy")));
+      %>
+        {
+          id: '#BK<%= b.getBookingId() %>',
+          name: '<%= cName.replace("'", "\\'") %>',
+          phone: '<%= cPhone.replace("'", "\\'") %>',
+          room: '<%= rNum.replace("'", "\\'") %>',
+          roomType: '<%= rType.replace("'", "\\'") %>',
+          inDate: '<%= inDate %>',
+          outDate: '<%= outDate %>',
+          total: <%= total %>,
+          status: '<%= stVi %>',
+          statusKey: '<%= st %>'
+        },
+      <%   }
+         } %>
+      ];
+
+      let curRow = 6;
+      let totalMoney = 0;
+
+      for (let i = 0; i < bookingList.length; i++) {
+          const item = bookingList[i];
+          const isEven = i % 2 === 0;
+          const rowBg = isEven ? 'FFFFFF' : 'F8FAFC';
+          if (item.statusKey !== 'Cancelled') totalMoney += item.total;
+
+          let statusFg = '166534';
+          let statusBg = 'DCFCE7';
+          if (item.statusKey === 'Pending') {
+              statusFg = 'B45309';
+              statusBg = 'FEF3C7';
+          } else if (item.statusKey === 'CheckedIn') {
+              statusFg = '1D4ED8';
+              statusBg = 'DBEAFE';
+          } else if (item.statusKey === 'Cancelled') {
+              statusFg = '991B1B';
+              statusBg = 'FEE2E2';
+          } else if (item.statusKey === 'CheckedOut') {
+              statusFg = '374151';
+              statusBg = 'F3F4F6';
+          }
+
+          setCell(curRow, 0, item.id, 's', null, {
+              font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '1769E0' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 1, item.name, 's', null, {
+              font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'left', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 2, item.phone, 's', null, {
+              font: { name: 'Calibri', sz: 10, color: { rgb: '64748B' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 3, item.room, 's', null, {
+              font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 4, item.roomType, 's', null, {
+              font: { name: 'Calibri', sz: 10, color: { rgb: '334155' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'left', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 5, item.inDate, 's', null, {
+              font: { name: 'Calibri', sz: 10, color: { rgb: '334155' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 6, item.outDate, 's', null, {
+              font: { name: 'Calibri', sz: 10, color: { rgb: '334155' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 7, item.total, 'n', numFmt, {
+              font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: { horizontal: 'right', vertical: 'center' },
+              border: thinBorder
+          });
+
+          setCell(curRow, 8, item.status, 's', null, {
+              font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: statusFg } },
+              fill: { fgColor: { rgb: statusBg } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: thinBorder
+          });
+
+          rowHeights[curRow] = { hpt: 22 };
+          curRow++;
+      }
+
+      // TOTAL SUMMARY ROW
+      mergeRange(curRow, 0, curRow, 6);
+      setCell(curRow, 0, 'TỔNG CỘNG GIÁ TRỊ ĐẶT PHÒNG (KHÔNG TÍNH ĐƠN HỦY):', 's', null, {
+          font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '92400E' } },
+          fill: { fgColor: { rgb: 'FEF3C7' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: totalBorder
+      });
+      for (let c = 1; c <= 6; c++) {
+          setCell(curRow, c, '', 's', null, { border: totalBorder, fill: { fgColor: { rgb: 'FEF3C7' } } });
+      }
+
+      setCell(curRow, 7, totalMoney, 'n', numFmt, {
+          font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: '92400E' } },
+          fill: { fgColor: { rgb: 'FDE68A' } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: totalBorder
+      });
+
+      setCell(curRow, 8, bookingList.length + ' Đơn', 's', null, {
+          font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+          fill: { fgColor: { rgb: 'FEF3C7' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: totalBorder
+      });
+      rowHeights[curRow] = { hpt: 26 };
+
+      // Set sheet properties
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: curRow, c: 8 } });
+      ws['!merges'] = merges;
+      ws['!rows'] = rowHeights;
+      ws['!cols'] = [
+          { wch: 12 }, // MÃ ĐẶT
+          { wch: 26 }, // KHÁCH HÀNG
+          { wch: 16 }, // SĐT
+          { wch: 12 }, // PHÒNG
+          { wch: 22 }, // LOẠI PHÒNG
+          { wch: 16 }, // NGÀY NHẬN
+          { wch: 16 }, // NGÀY TRẢ
+          { wch: 24 }, // TỔNG TIỀN
+          { wch: 18 }  // TRẠNG THÁI
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Danh Sách Đặt Phòng');
+      XLSX.writeFile(wb, 'Danh_Sach_Dat_Phong_Nestora_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  }
+</script>
 </body>
 </html>

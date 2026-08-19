@@ -1,6 +1,8 @@
 package com.hotel.dao;
 
 import com.hotel.model.Bill;
+import com.hotel.model.Customer;
+import com.hotel.model.User;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
@@ -11,7 +13,7 @@ public class BillDAO {
     public List<Bill> getAllBills() {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer ORDER BY b.id DESC";
+            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer c LEFT JOIN FETCH c.user ORDER BY b.id DESC";
             TypedQuery<Bill> query = em.createQuery(jpql, Bill.class);
             return query.getResultList();
         } catch (Exception e) {
@@ -27,7 +29,7 @@ public class BillDAO {
     public List<Bill> getBillsByUserId(int userId, String email) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer WHERE b.user.id = :userId OR (b.customer.customerEmail = :email) ORDER BY b.id DESC";
+            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer c LEFT JOIN FETCH c.user WHERE b.user.id = :userId OR (c.user.id = :userId) OR (c.customerEmail = :email) ORDER BY b.id DESC";
             TypedQuery<Bill> query = em.createQuery(jpql, Bill.class);
             query.setParameter("userId", userId);
             query.setParameter("email", email);
@@ -43,7 +45,7 @@ public class BillDAO {
     public Bill getBillById(int id) {
         EntityManager em = DBContext.getEntityManager();
         try {
-            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer WHERE b.id = :id";
+            String jpql = "SELECT b FROM Bill b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.customer c LEFT JOIN FETCH c.user WHERE b.id = :id";
             TypedQuery<Bill> query = em.createQuery(jpql, Bill.class);
             query.setParameter("id", id);
             List<Bill> list = query.getResultList();
@@ -91,6 +93,11 @@ public class BillDAO {
             tx.begin();
             Bill bill = em.find(Bill.class, id);
             if (bill != null) {
+                // If bill is already Paid, prevent cancelling or changing status
+                if ("Paid".equalsIgnoreCase(bill.getStatus()) && !"Paid".equalsIgnoreCase(status)) {
+                    tx.rollback();
+                    return false;
+                }
                 bill.setStatus(status);
                 tx.commit();
                 return true;
@@ -110,12 +117,13 @@ public class BillDAO {
         try {
             tx.begin();
             Bill bill = em.find(Bill.class, id);
-            if (bill == null || !"Unpaid".equals(bill.getStatus())) {
+            if (bill == null || !"Unpaid".equalsIgnoreCase(bill.getStatus())) {
                 tx.rollback();
                 return false;
             }
             bill.setPaymentMethod(paymentMethod);
             bill.setStatus("Paid");
+            bill.setCheckOutDate(new java.sql.Timestamp(System.currentTimeMillis())); // Ghi nhận thời gian hoàn tất thanh toán
             tx.commit();
             return true;
         } catch (Exception e) {
@@ -134,6 +142,10 @@ public class BillDAO {
             tx.begin();
             Bill bill = em.find(Bill.class, id);
             if (bill != null) {
+                if ("Paid".equalsIgnoreCase(bill.getStatus())) {
+                    tx.rollback();
+                    return false;
+                }
                 bill.setTotalAmount(total);
                 tx.commit();
                 return true;
@@ -154,6 +166,10 @@ public class BillDAO {
             tx.begin();
             Bill bill = em.find(Bill.class, id);
             if (bill != null) {
+                if ("Paid".equalsIgnoreCase(bill.getStatus())) {
+                    tx.rollback();
+                    return false;
+                }
                 em.remove(bill);
                 tx.commit();
                 return true;

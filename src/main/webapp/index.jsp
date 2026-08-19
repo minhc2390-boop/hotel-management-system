@@ -10,6 +10,12 @@
     User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
     List<Room> availableRooms = (List<Room>) request.getAttribute("availableRooms");
     List<Service> services = (List<Service>) request.getAttribute("services");
+    if (availableRooms == null) {
+        try { availableRooms = new com.hotel.dao.RoomDAO().getAvailableRooms(); } catch (Exception ignored) {}
+    }
+    if (services == null) {
+        try { services = new com.hotel.dao.ServiceDAO().getAllServices(); } catch (Exception ignored) {}
+    }
     NumberFormat money = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 %>
 <!DOCTYPE html>
@@ -697,6 +703,65 @@
                         <% if (sName.contains("giặt") || sName.contains("laundry")) { %>
                             <a href="<%= request.getContextPath() %>/laundry?action=clientBook" class="btn btn-primary" style="margin-top: 14px; width: 100%; display: inline-block; text-align: center; padding: 10px 16px; font-weight: 600;">🧺 Tạo đơn giặt ủi ngay</a>
                         <% } %>
+                    </div>
+                <% } %>
+            </div>
+        </section>
+    <% } %>
+
+    <!-- Đánh giá từ khách hàng (Feedbacks) -->
+    <% 
+        List<com.hotel.model.Feedback> feedbacks = (List<com.hotel.model.Feedback>) request.getAttribute("feedbacks");
+        if (feedbacks != null && !feedbacks.isEmpty()) { 
+    %>
+        <section class="feedbacks-section" style="margin-top: 56px; margin-bottom: 56px;">
+            <div class="section-header" style="text-align: left; margin: 0 0 24px;">
+                <span class="section-subtitle" style="color: var(--accent-gold);">Cảm nhận thực tế</span>
+                <h2 class="section-title">Đánh Giá Từ Khách Hàng</h2>
+            </div>
+            <p style="color: var(--muted); max-width: 600px; font-size: 14px; margin: 0 0 24px;">Những phản hồi chân thực nhất từ các quý khách hàng sau trải nghiệm lưu trú tại Nestora Hotel & Resort.</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+                <% for (com.hotel.model.Feedback fb : feedbacks) { 
+                     if (fb == null) continue;
+                     String cName = (fb.getCustomerUser() != null && fb.getCustomerUser().getFullName() != null && !fb.getCustomerUser().getFullName().trim().isEmpty())
+                                  ? fb.getCustomerUser().getFullName()
+                                  : (fb.getBooking() != null && fb.getBooking().getCustomer() != null && fb.getBooking().getCustomer().getCustomerName() != null ? fb.getBooking().getCustomer().getCustomerName() : "Khách lưu trú");
+                     String initial = cName.length() > 0 ? cName.substring(0, 1).toUpperCase() : "K";
+                     String rNum = (fb.getBooking() != null && fb.getBooking().getRoom() != null && fb.getBooking().getRoom().getRoomNumber() != null) ? fb.getBooking().getRoom().getRoomNumber() : "";
+                     String rType = (fb.getBooking() != null && fb.getBooking().getRoom() != null && fb.getBooking().getRoom().getRoomType() != null && fb.getBooking().getRoom().getRoomType().getName() != null) ? fb.getBooking().getRoom().getRoomType().getName() : "";
+                     int rating = fb.getRating();
+                     if (rating < 1) rating = 1;
+                     if (rating > 5) rating = 5;
+                     String fbContent = fb.getContent() != null ? fb.getContent() : "";
+                %>
+                    <div style="background: #ffffff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #c5a880, #0f172a); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0;">
+                                        <%= initial %>
+                                    </div>
+                                    <div>
+                                        <strong style="display: block; font-size: 14px; color: var(--luxury-navy);">
+                                            <%= cName %>
+                                        </strong>
+                                        <% if (!rNum.isEmpty()) { %>
+                                            <span style="font-size: 12px; color: var(--accent-gold-dark); font-weight: 600;">Phòng <%= rNum %><%= !rType.isEmpty() ? " - " + rType : "" %></span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <div style="color: #f59e0b; font-size: 16px; letter-spacing: 2px; white-space: nowrap;">
+                                    <% for (int s = 1; s <= 5; s++) { %><%= s <= rating ? "★" : "☆" %><% } %>
+                                </div>
+                            </div>
+                            <p style="font-size: 13.5px; color: #334155; line-height: 1.6; margin: 0 0 12px; font-style: italic;">
+                                "<%= fbContent %>"
+                            </p>
+                        </div>
+                        <div style="font-size: 11px; color: #94a3b8; text-align: right; border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 8px;">
+                            <%= fb.getCreatedAt() != null ? new java.text.SimpleDateFormat("dd/MM/yyyy").format(fb.getCreatedAt()) : "" %>
+                        </div>
                     </div>
                 <% } %>
             </div>

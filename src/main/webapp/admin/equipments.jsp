@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.hotel.model.User" %>
 <%@ page import="com.hotel.model.Equipment" %>
 <%@ page import="com.hotel.model.Room" %>
@@ -8,17 +8,21 @@
 <%!
     private String equipEscape(String value) {
         if (value == null) return "";
-        return value.replace("&", "&amp;").replace("<", "&lt;")
-                    .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
+        return value.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#39;");
     }
 %>
 <%
     request.setCharacterEncoding("UTF-8");
     response.setCharacterEncoding("UTF-8");
+    response.setContentType("text/html; charset=UTF-8");
 
     HttpSession sess = request.getSession(false);
     User currentUser = sess != null ? (User) sess.getAttribute("currentUser") : null;
-    if (currentUser == null || (!"Admin".equalsIgnoreCase(currentUser.getRole()) && !"Receptionist".equalsIgnoreCase(currentUser.getRole()))) {
+    if (currentUser == null || !"Admin".equalsIgnoreCase(currentUser.getRole())) {
         response.sendRedirect(request.getContextPath() + "/home");
         return;
     }
@@ -43,6 +47,7 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Quản lý thiết bị phòng - Nestora</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,7 +65,7 @@
             <div class="page-head">
               <div>
                 <div class="breadcrumb">Vận hành / Quản lý thiết bị</div>
-                <h1 class="page-title">Quản lý & Kiểm tra thiết bị từng phòng</h1>
+                <h1 class="page-title">Quản lý &amp; Kiểm tra thiết bị từng phòng</h1>
                 <p class="page-desc">Theo dõi trang thiết bị cố định được trang bị cho từng phòng khách sạn, tình trạng hoạt động và kiểm tra hư hao.</p>
               </div>
               <div class="page-actions">
@@ -72,7 +77,7 @@
 
             <section class="surface">
               <div class="table-tools">
-                <form method="get" action="<%= request.getContextPath() %>/equipments" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1">
+                <form method="get" action="<%= request.getContextPath() %>/equipments" accept-charset="UTF-8" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1">
                   <div class="search-box" style="flex:1;min-width:220px">
                     <input type="search" name="keyword" placeholder="Tìm theo tên thiết bị, phòng hoặc mô tả..." value="<%= keyword != null ? equipEscape(keyword) : "" %>">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -90,7 +95,7 @@
                             boolean isSel = selectedRoomId != null && selectedRoomId == r.getId();
                       %>
                         <option value="<%= r.getId() %>" <%= isSel ? "selected" : "" %>>
-                          Phòng #<%= r.getRoomNumber() %> (<%= r.getRoomType() != null ? r.getRoomType().getName() : "" %>)
+                          Phòng #<%= equipEscape(r.getRoomNumber()) %> (<%= r.getRoomType() != null ? equipEscape(r.getRoomType().getName()) : "" %>)
                         </option>
                       <% } } %>
                       <option value="-1" <%= selectedRoomId != null && selectedRoomId == -1 ? "selected" : "" %>>Kho chung / Chưa gán</option>
@@ -134,9 +139,10 @@
                         for (Equipment eq : equipments) {
                             String st = eq.getStatus() != null ? eq.getStatus() : "";
                             String statusClass = "success";
-                            if (st.contains("kiểm tra") || st.contains("Bảo trì") || "Maintenance".equalsIgnoreCase(st)) {
+                            String lowerSt = st.toLowerCase();
+                            if (lowerSt.contains("kiểm tra") || lowerSt.contains("bảo trì") || "maintenance".equalsIgnoreCase(st)) {
                                 statusClass = "warning";
-                            } else if (st.contains("Hỏng") || "Broken".equalsIgnoreCase(st) || "OutOfStock".equalsIgnoreCase(st)) {
+                            } else if (lowerSt.contains("hỏng") || "broken".equalsIgnoreCase(st) || "outofstock".equalsIgnoreCase(st)) {
                                 statusClass = "danger";
                             }
                     %>
